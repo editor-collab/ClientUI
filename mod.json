@@ -10,5 +10,22 @@
 	"name": "Editor Collab UI",
 	"version": "v1.0.0",
 	"developer": "alk",
-	"description": "UI for the Editor Collab mod"
+	"description": "UI for the Editor Collab mod",
+	"resources": {
+		"spritesheets": {
+			"TulipEditor": [
+				"resources/*.png"
+			]
+		},
+		"sprites": [
+			"resources/images/*.png"
+		]
+	},
+	"tags": [
+		"online",
+        "editor", 
+        "content",
+		"enhancement",
+		"utility"
+    ]
 }

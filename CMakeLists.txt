@@ -8,7 +8,16 @@ project(EditorCollabUI VERSION 1.0.0)
 
 add_library(${PROJECT_NAME} SHARED
     src/main.cpp
-    # Add any extra C++ source files here
+    src/hooks/LevelBrowserLayer.cpp
+    src/managers/AccountManager.cpp
+    src/ui/GenericForm.cpp
+    src/ui/GenericList.cpp
+    src/ui/TulipEditorScene.cpp
+    src/ui/TulipExploreMenu.cpp
+)
+
+target_include_directories(${PROJECT_NAME} PRIVATE
+    include
 )
 
 if (NOT DEFINED ENV{GEODE_SDK})
