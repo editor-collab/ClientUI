@@ -11,6 +11,11 @@ namespace tulip::editor {
         ~AccountManager();
 
     public:
+        using Callback = geode::utils::MiniFunction<void(geode::Result<>)>;
+
         static AccountManager* get();
+
+        void authenticate(Callback&& callback);
+        void startChallenge(Callback&& callback);
     };
 }
