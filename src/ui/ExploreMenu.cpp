@@ -1,13 +1,13 @@
-#include <ui/TulipExploreMenu.hpp>
+#include <ui/ExploreMenu.hpp>
 #include <ui/GenericList.hpp>
-#include <ui/TulipEditorScene.hpp>
+#include <ui/MainScene.hpp>
 #include <data/DiscoverableLevel.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;
 
-TulipExploreMenu* TulipExploreMenu::create(cocos2d::CCSize const& size, bool isExplore) {
-    auto ret = new (std::nothrow) TulipExploreMenu();
+ExploreMenu* ExploreMenu::create(cocos2d::CCSize const& size, bool isExplore) {
+    auto ret = new (std::nothrow) ExploreMenu();
     if (ret && ret->init(size, isExplore)) {
         ret->autorelease();
         return ret;
@@ -16,7 +16,7 @@ TulipExploreMenu* TulipExploreMenu::create(cocos2d::CCSize const& size, bool isE
     return nullptr;
 }
 
-bool TulipExploreMenu::init(cocos2d::CCSize const& size, bool isExplore) {
+bool ExploreMenu::init(cocos2d::CCSize const& size, bool isExplore) {
     if (!CCNode::init()) {
         return false;
     }
@@ -48,7 +48,7 @@ bool TulipExploreMenu::init(cocos2d::CCSize const& size, bool isExplore) {
     return true;
 }
 
-void TulipExploreMenu::onJoinLevel(cocos2d::CCObject* sender) {
+void ExploreMenu::onJoinLevel(cocos2d::CCObject* sender) {
     // auto idx = static_cast<CCMenuItem*>(sender)->getTag();
     // auto& list = m_isExplore ? EditorLoop::get()->m_discoverableLevels : EditorLoop::get()->m_lastLevels;
 
@@ -61,7 +61,7 @@ void TulipExploreMenu::onJoinLevel(cocos2d::CCObject* sender) {
 	// );
 }
 
-void TulipExploreMenu::onJoinCode(cocos2d::CCObject* sender) {
+void ExploreMenu::onJoinCode(cocos2d::CCObject* sender) {
     // auto code = m_textInput->getString();
 
 	// if (code.size() == 8) {
@@ -72,15 +72,15 @@ void TulipExploreMenu::onJoinCode(cocos2d::CCObject* sender) {
 	// }
 }
 
-void TulipExploreMenu::onPromo(cocos2d::CCObject* sender) {
+void ExploreMenu::onPromo(cocos2d::CCObject* sender) {
     AppDelegate::get()->openURL("https://buy.stripe.com/aEUbLb38R2Cw91K9AA");
 }
 
-void TulipExploreMenu::onJoinHosted(cocos2d::CCObject* sender) {
+void ExploreMenu::onJoinHosted(cocos2d::CCObject* sender) {
     // ClientBridge::get()->sendHostJoinLevelRequest();
 }
 
-void TulipExploreMenu::onDeleteLast(cocos2d::CCObject* sender) {
+void ExploreMenu::onDeleteLast(cocos2d::CCObject* sender) {
     // auto idx = static_cast<CCMenuItem*>(sender)->getTag();
     // auto& list = EditorLoop::get()->m_lastLevels;
 
@@ -93,7 +93,7 @@ void TulipExploreMenu::onDeleteLast(cocos2d::CCObject* sender) {
     // });
 }
 
-void TulipExploreMenu::onOpenBrowser(cocos2d::CCObject* sender) {
+void ExploreMenu::onOpenBrowser(cocos2d::CCObject* sender) {
     auto searchObject = GJSearchObject::create(SearchType::MyLevels);
     searchObject->m_page = std::min<int>(GameManager::get()->getIntGameVariable("0091"), 999);
     CCDirector::get()->pushScene(CCTransitionFade::create(.5f, 
@@ -101,7 +101,7 @@ void TulipExploreMenu::onOpenBrowser(cocos2d::CCObject* sender) {
     ));
 }
 
-void TulipExploreMenu::createBanner(cocos2d::CCSize const& size) {
+void ExploreMenu::createBanner(cocos2d::CCSize const& size) {
     auto bg = CCLayerColor::create(ccc4(100, 97, 13, 255));
     bg->setContentSize(size);
     bg->setID("banner");
@@ -121,7 +121,7 @@ void TulipExploreMenu::createBanner(cocos2d::CCSize const& size) {
     bg->addChild(m_menu);
 }
 
-void TulipExploreMenu::createPromoBanner(cocos2d::CCSize const& size) {
+void ExploreMenu::createPromoBanner(cocos2d::CCSize const& size) {
     this->createBanner(size);
 
     auto label = CCLabelBMFont::create("Visit Stripe to get hosting!", "bigFont.fnt");
@@ -132,7 +132,7 @@ void TulipExploreMenu::createPromoBanner(cocos2d::CCSize const& size) {
 
     auto enterSprite = ButtonSprite::create("View", 60, true, "bigFont.fnt", "ButtonBG1.png"_spr, 28.0f, 0.7f);
     auto enterButton = CCMenuItemSpriteExtra::create(
-        enterSprite, this, menu_selector(TulipExploreMenu::onPromo)
+        enterSprite, this, menu_selector(ExploreMenu::onPromo)
     );
     enterButton->setID("promo-button");
 
@@ -145,7 +145,7 @@ void TulipExploreMenu::createPromoBanner(cocos2d::CCSize const& size) {
     m_menu->updateLayout();
 }
 
-void TulipExploreMenu::createCreateBanner(cocos2d::CCSize const& size) {
+void ExploreMenu::createCreateBanner(cocos2d::CCSize const& size) {
     this->createBanner(size);
 
     auto label = CCLabelBMFont::create("Open a level and share it!", "bigFont.fnt");
@@ -156,7 +156,7 @@ void TulipExploreMenu::createCreateBanner(cocos2d::CCSize const& size) {
 
     auto enterSprite = ButtonSprite::create("Open", 60, true, "bigFont.fnt", "ButtonBG1.png"_spr, 28.0f, 0.7f);
     auto enterButton = CCMenuItemSpriteExtra::create(
-        enterSprite, this, menu_selector(TulipExploreMenu::onOpenBrowser)
+        enterSprite, this, menu_selector(ExploreMenu::onOpenBrowser)
     );
     enterButton->setID("promo-button");
 
@@ -169,7 +169,7 @@ void TulipExploreMenu::createCreateBanner(cocos2d::CCSize const& size) {
     m_menu->updateLayout();
 }
 
-void TulipExploreMenu::createHostBanner(cocos2d::CCSize const& size) {
+void ExploreMenu::createHostBanner(cocos2d::CCSize const& size) {
     this->createBanner(size);
 
     auto nameLabel = CCLabelBMFont::create("TODO"/*EditorLoop::get()->m_sharedLevel.m_levelName.c_str()*/, "bigFont.fnt");
@@ -185,7 +185,7 @@ void TulipExploreMenu::createHostBanner(cocos2d::CCSize const& size) {
     enterSprite2->setContentSize({28.0f, 28.0f});
     enterSprite2->addChildAtPosition(enterSprite, Anchor::Center, ccp(0, 0));
     auto enterButton = CCMenuItemSpriteExtra::create(
-        enterSprite2, this, menu_selector(TulipExploreMenu::onJoinHosted)
+        enterSprite2, this, menu_selector(ExploreMenu::onJoinHosted)
     );
     enterButton->setAnchorPoint(CCPointMake(0.5f, 0.5f));
     enterButton->setID("hosted-enter-button");
@@ -199,7 +199,7 @@ void TulipExploreMenu::createHostBanner(cocos2d::CCSize const& size) {
     m_menu->updateLayout();
 }
 
-void TulipExploreMenu::createExploreBanner(cocos2d::CCSize const& size) {
+void ExploreMenu::createExploreBanner(cocos2d::CCSize const& size) {
     this->createBanner(size);
 
     auto label = CCLabelBMFont::create("Enter a code:", "bigFont.fnt");
@@ -214,7 +214,7 @@ void TulipExploreMenu::createExploreBanner(cocos2d::CCSize const& size) {
 
     auto enterSprite = ButtonSprite::create("OK", 40, true, "bigFont.fnt", "ButtonBG1.png"_spr, 28.0f, 0.7f);
     auto enterButton = CCMenuItemSpriteExtra::create(
-        enterSprite, this, menu_selector(TulipExploreMenu::onJoinCode)
+        enterSprite, this, menu_selector(ExploreMenu::onJoinCode)
     );
     enterButton->setID("enter-button");
     
@@ -249,7 +249,7 @@ void TulipExploreMenu::createExploreBanner(cocos2d::CCSize const& size) {
     m_menu->updateLayout();
 }
 
-void TulipExploreMenu::createList(cocos2d::CCSize const& size, bool isExplore) {
+void ExploreMenu::createList(cocos2d::CCSize const& size, bool isExplore) {
     auto list = std::vector<DiscoverableLevel>{};
     list.push_back(DiscoverableLevel{
         LevelKey(), "Test Level", "Test Host", 0, false, 
@@ -305,7 +305,7 @@ void TulipExploreMenu::createList(cocos2d::CCSize const& size, bool isExplore) {
             deleteSprite2->setContentSize({28.0f, 28.0f});
             deleteSprite2->addChildAtPosition(deleteSprite, Anchor::Center, ccp(0, 0));
             auto deleteButton = CCMenuItemSpriteExtra::create(
-                deleteSprite2, this, menu_selector(TulipExploreMenu::onDeleteLast)
+                deleteSprite2, this, menu_selector(ExploreMenu::onDeleteLast)
             );
             deleteButton->setTag(idx);
             deleteButton->setAnchorPoint(CCPointMake(0.5f, 0.5f));
@@ -320,7 +320,7 @@ void TulipExploreMenu::createList(cocos2d::CCSize const& size, bool isExplore) {
         enterSprite2->setContentSize({28.0f, 28.0f});
         enterSprite2->addChildAtPosition(enterSprite, Anchor::Center, ccp(0, 0));
         auto enterButton = CCMenuItemSpriteExtra::create(
-            enterSprite2, this, menu_selector(TulipExploreMenu::onJoinLevel)
+            enterSprite2, this, menu_selector(ExploreMenu::onJoinLevel)
         );
         enterButton->setTag(idx);
         enterButton->setAnchorPoint(CCPointMake(0.5f, 0.5f));

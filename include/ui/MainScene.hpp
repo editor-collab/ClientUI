@@ -2,20 +2,20 @@
 #include <Geode/Geode.hpp>
 
 namespace tulip::editor {
-    class TulipExploreMenu;
-    class TulipEditorScene : public cocos2d::CCLayerColor {
+    class ExploreMenu;
+    class MainScene : public cocos2d::CCLayerColor {
     public:
         cocos2d::CCSprite* m_background;
         cocos2d::CCSprite* m_listTop1;
         cocos2d::CCSprite* m_listTop2;
-        TulipExploreMenu* m_explore;
+        ExploreMenu* m_explore;
         bool m_isExplore = false;
 
-        TulipEditorScene();
-        ~TulipEditorScene();
+        MainScene();
+        ~MainScene();
         
         static cocos2d::CCScene* scene();
-        static TulipEditorScene* create();
+        static MainScene* create();
 
         void keyBackClicked() override;
 

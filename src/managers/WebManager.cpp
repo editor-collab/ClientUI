@@ -18,12 +18,12 @@ web::WebRequest WebManager::Impl::createRequest() const {
     req.userAgent(fmt::format("Editor Collab/{} (Geode/{}, Collab API/{})",
         Mod::get()->getVersion().toString(), Loader::get()->getVersion().toString(), "NaN"
     ));
-    req.timeout(std::chrono::seconds(10));
+    req.timeout(std::chrono::seconds(15));
     return req;
 }
 
 std::string WebManager::Impl::getServerURL() const {
-    return "localhost:4771";
+    return "localhost:9100";
 }
 
 WebManager* WebManager::get() {

@@ -1,5 +1,6 @@
 #include <hooks/LevelBrowserLayer.hpp>
-#include <ui/TulipEditorScene.hpp>
+#include <ui/MainScene.hpp>
+#include <managers/AccountManager.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;
@@ -21,9 +22,52 @@ struct LevelBrowserLayerHook : Modify<LevelBrowserLayerHook, LevelBrowserLayer> 
 			menuSprite->setScale(0.9f);
 
 			auto menuButton = CCMenuItemExt::createSpriteExtra(menuSprite, [](CCObject* sender) {
-				cocos::switchToScene(TulipEditorScene::create());
+				// cocos::switchToScene(MainScene::create());
+				AccountManager::get()->startChallenge([=](auto result) {
+					if (result.isErr()) {
+						createQuickPopup(
+							"Error",
+							result.unwrapErr(),
+							"OK",
+							"Cancel",
+							[](auto, auto) {}
+						);
+						return;
+					}
+					createQuickPopup(
+						"Success",
+						"Challenge completed!",
+						"OK",
+						"Cancel",
+						[](auto, auto) {}
+					);
+				});
 			});
 			menu->addChild(menuButton);
+
+			auto menu2Button = CCMenuItemExt::createSpriteExtra(menuSprite, [](CCObject* sender) {
+				// cocos::switchToScene(MainScene::create());
+				AccountManager::get()->authenticate([=](auto result) {
+					if (result.isErr()) {
+						createQuickPopup(
+							"Error",
+							result.unwrapErr(),
+							"OK",
+							"Cancel",
+							[](auto, auto) {}
+						);
+						return;
+					}
+					createQuickPopup(
+						"Success",
+						"Logged in succesfully!",
+						"OK",
+						"Cancel",
+						[](auto, auto) {}
+					);
+				});
+			});
+			menu->addChild(menu2Button);
 			
 			menu->updateLayout();
 		}

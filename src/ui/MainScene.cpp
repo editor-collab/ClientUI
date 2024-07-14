@@ -1,15 +1,15 @@
-#include <ui/TulipEditorScene.hpp>
-#include <ui/TulipExploreMenu.hpp>
+#include <ui/MainScene.hpp>
+#include <ui/ExploreMenu.hpp>
 #include <random>
 
 using namespace tulip::editor;
 using namespace geode::prelude;
 
-TulipEditorScene::TulipEditorScene() = default;
-TulipEditorScene::~TulipEditorScene() = default;
+MainScene::MainScene() = default;
+MainScene::~MainScene() = default;
 
-TulipEditorScene* TulipEditorScene::create() {
-    auto ret = new (std::nothrow) TulipEditorScene();
+MainScene* MainScene::create() {
+    auto ret = new (std::nothrow) MainScene();
     if (ret && ret->init()) {
         ret->autorelease();
         return ret;
@@ -18,19 +18,19 @@ TulipEditorScene* TulipEditorScene::create() {
     return nullptr;
 }
 
-CCScene* TulipEditorScene::scene() {
+CCScene* MainScene::scene() {
     auto scene = CCScene::create();
-    auto layer = TulipEditorScene::create();
+    auto layer = MainScene::create();
     scene->addChild(layer);
     return scene;
 }
 
-void TulipEditorScene::keyBackClicked() {
+void MainScene::keyBackClicked() {
     auto scene = CreatorLayer::scene();
     CCDirector::sharedDirector()->replaceScene(CCTransitionFade::create(0.5, scene));
 }
 
-bool TulipEditorScene::init() {
+bool MainScene::init() {
     if (!CCLayerColor::init()) {
         return false;
     }
@@ -53,17 +53,17 @@ bool TulipEditorScene::init() {
 
     auto backSprite = CCSprite::createWithSpriteFrameName("GJ_arrow_03_001.png");
     auto backButton = CCMenuItemSpriteExtra::create(
-        backSprite, this, menu_selector(TulipEditorScene::onClose)
+        backSprite, this, menu_selector(MainScene::onClose)
     );
     menu->addChildAtPosition(backButton, Anchor::TopLeft, ccp(25, -25));
 
     auto accountSprite = CCSprite::createWithSpriteFrameName("LoginButton.png"_spr);
-	auto accountButton = CCMenuItemSpriteExtra::create(accountSprite, this, menu_selector(TulipEditorScene::onAccount));
+	auto accountButton = CCMenuItemSpriteExtra::create(accountSprite, this, menu_selector(MainScene::onAccount));
 	accountButton->setID("account-button");
 	menu->addChildAtPosition(accountButton, Anchor::TopRight, ccp(-50.f, -70.f));
 
     auto discordSprite = CCSprite::createWithSpriteFrameName("DiscordButton.png"_spr);
-	auto discordButton = CCMenuItemSpriteExtra::create(discordSprite, this, menu_selector(TulipEditorScene::onDiscord));
+	auto discordButton = CCMenuItemSpriteExtra::create(discordSprite, this, menu_selector(MainScene::onDiscord));
 	discordButton->setID("discord-button");
 	menu->addChildAtPosition(discordButton, Anchor::TopLeft, ccp(50.f, -70.f));
 
@@ -125,14 +125,14 @@ bool TulipEditorScene::init() {
 
     auto tab1 = CCNode::create();
     tab1->setContentSize({120, 45});
-    auto tab1Button = CCMenuItemSpriteExtra::create(tab1, this, menu_selector(TulipEditorScene::onTab));
+    auto tab1Button = CCMenuItemSpriteExtra::create(tab1, this, menu_selector(MainScene::onTab));
     tab1Button->setAnchorPoint(ccp(1, 0.5));
     tab1Button->setTag(1);
     tabMenu->addChildAtPosition(tab1Button, Anchor::Center, ccp(-20, 5));
 
     auto tab2 = CCNode::create();
     tab2->setContentSize({120, 45});
-    auto tab2Button = CCMenuItemSpriteExtra::create(tab2, this, menu_selector(TulipEditorScene::onTab));
+    auto tab2Button = CCMenuItemSpriteExtra::create(tab2, this, menu_selector(MainScene::onTab));
     tab2Button->setAnchorPoint(ccp(0, 0.5));
     tab2Button->setTag(2);
     tabMenu->addChildAtPosition(tab2Button, Anchor::Center, ccp(20, 5));
@@ -158,7 +158,7 @@ bool TulipEditorScene::init() {
     listRight->setScaleY(listContainer->getContentHeight() / listRight->getContentHeight());
     listContainer->addChildAtPosition(listRight, Anchor::Right, ccp(-6, 0));
 
-    m_explore = TulipExploreMenu::create({356, 205}, false);
+    m_explore = ExploreMenu::create({356, 205}, false);
     m_explore->setID("explore-menu");
     m_explore->setAnchorPoint(ccp(0.5, 0.5));
     m_explore->setZOrder(1);
@@ -170,14 +170,14 @@ bool TulipEditorScene::init() {
     return true;
 }
 
-void TulipEditorScene::update(float dt) {
+void MainScene::update(float dt) {
     m_background->setPositionX(m_background->getPositionX() - dt * 20);
     if (m_background->getPositionX() < -512) {
         m_background->setPositionX(0);
     }
 }
 
-void TulipEditorScene::onTab(CCObject* sender) {
+void MainScene::onTab(CCObject* sender) {
     auto tab = typeinfo_cast<CCMenuItemSprite*>(sender);
     if (tab->getTag() == 1) {
         m_listTop1->setVisible(true);
@@ -190,24 +190,24 @@ void TulipEditorScene::onTab(CCObject* sender) {
     this->recreateMenu();
 }
 
-void TulipEditorScene::onAccount(cocos2d::CCObject* sender) {
+void MainScene::onAccount(cocos2d::CCObject* sender) {
 	// SetupAccountLayer::create()->show();
 }
 
-void TulipEditorScene::onDiscord(cocos2d::CCObject* sender) {
+void MainScene::onDiscord(cocos2d::CCObject* sender) {
 	AppDelegate::get()->openURL("https://discord.gg/GFMnMMkpBq");
 }
 
-void TulipEditorScene::recreateMenu() {
+void MainScene::recreateMenu() {
     auto listContainer = m_explore->getParent();
     m_explore->removeFromParent();
-    m_explore = TulipExploreMenu::create({356, 205}, m_isExplore);
+    m_explore = ExploreMenu::create({356, 205}, m_isExplore);
     m_explore->setID("explore-menu");
     m_explore->setAnchorPoint(ccp(0.5, 0.5));
     m_explore->setZOrder(1);
     listContainer->addChildAtPosition(m_explore, Anchor::Center, ccp(0, 0));
 }
 
-void TulipEditorScene::onClose(CCObject* sender) {
+void MainScene::onClose(CCObject* sender) {
     this->keyBackClicked();
 }

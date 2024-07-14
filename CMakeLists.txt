@@ -15,8 +15,9 @@ add_library(${PROJECT_NAME} SHARED
     src/managers/WebManager.cpp
     src/ui/GenericForm.cpp
     src/ui/GenericList.cpp
-    src/ui/TulipEditorScene.cpp
-    src/ui/TulipExploreMenu.cpp
+    src/ui/MainScene.cpp
+    src/ui/ExploreMenu.cpp
+    src/utils/CryptoHelper.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE
@@ -30,5 +31,37 @@ else()
 endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
+
+CPMAddPackage(
+    NAME ChaCha20Poly1305
+    GITHUB_REPOSITORY "mrdcvlsc/ChaCha20-Poly1305"
+    GIT_TAG "v3.0"
+    DOWNLOAD_ONLY YES
+)
+
+CPMAddPackage(
+    NAME BLAKE2
+    GITHUB_REPOSITORY "BLAKE2/BLAKE2"
+    GIT_TAG "ed1974e"
+    DOWNLOAD_ONLY YES
+)
+
+CPMAddPackage("gh:tplgy/cppcodec#8019b8b")
+
+add_library(ChaCha20Poly1305 STATIC
+    ${ChaCha20Poly1305_SOURCE_DIR}/ChaCha20-Poly1305.cpp
+)
+target_include_directories(ChaCha20Poly1305 PUBLIC ${ChaCha20Poly1305_SOURCE_DIR})
+
+add_library(BLAKE2 STATIC
+    ${BLAKE2_SOURCE_DIR}/ref/blake2b-ref.c
+)
+target_include_directories(BLAKE2 PUBLIC ${BLAKE2_SOURCE_DIR}/ref)
+
+target_link_libraries(${PROJECT_NAME}
+    ChaCha20Poly1305
+    BLAKE2
+    cppcodec
+)
 
 setup_geode_mod(${PROJECT_NAME})

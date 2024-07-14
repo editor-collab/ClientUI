@@ -4,7 +4,7 @@
 namespace tulip::editor {
     class GenericList;
 
-    class TulipExploreMenu : public cocos2d::CCNode {
+    class ExploreMenu : public cocos2d::CCNode {
     public:
         GenericList* m_list;
         geode::Ref<cocos2d::CCLabelBMFont> m_codeLabel;
@@ -12,7 +12,7 @@ namespace tulip::editor {
         geode::Ref<geode::TextInput> m_textInput;
         bool m_isExplore;
 
-        static TulipExploreMenu* create(cocos2d::CCSize const& size, bool isExplore);
+        static ExploreMenu* create(cocos2d::CCSize const& size, bool isExplore);
         bool init(cocos2d::CCSize const& size, bool isExplore);
 
         void onJoinLevel(cocos2d::CCObject* sender);
