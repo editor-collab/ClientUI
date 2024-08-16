@@ -8,6 +8,7 @@ project(EditorCollabUI VERSION 1.0.0)
 
 add_library(${PROJECT_NAME} SHARED
     src/main.cpp
+    src/hooks/EditLevelLayer.cpp
     src/hooks/LevelBrowserLayer.cpp
     src/managers/AccountManager.cpp
     src/managers/ErrorManager.cpp
@@ -18,6 +19,7 @@ add_library(${PROJECT_NAME} SHARED
     src/ui/MainScene.cpp
     src/ui/ExploreMenu.cpp
     src/utils/CryptoHelper.cpp
+    src/utils/ThemeProvider.cpp
 )
 
 target_include_directories(${PROJECT_NAME} PRIVATE

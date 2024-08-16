@@ -17,5 +17,7 @@ namespace tulip::editor {
 
         void authenticate(Callback&& callback);
         void startChallenge(Callback&& callback);
+
+        std::string getLoginToken() const;
     };
 }

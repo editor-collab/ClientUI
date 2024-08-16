@@ -35,7 +35,13 @@ public:
 
     Result<> authenticate(Callback&& callback);
     Result<> startChallenge(Callback&& callback);
+
+    std::string getLoginToken() const;
 };
+
+std::string AccountManager::Impl::getLoginToken() const {
+    return m_loginToken;
+}
 
 Result<> AccountManager::Impl::refreshCredentials() {
     if (GJAccountManager::get()->m_accountID == 0) {
@@ -169,7 +175,7 @@ void AccountManager::Impl::startChallengeCallback(web::WebTask::Event* event) {
     req.param("account_name", m_username);
     req.param("challenge", answer);
     
-    auto task = req.post(fmt::format("{}/auth/verify", WebManager::get()->getServerURL()));
+    auto task = req.post(WebManager::get()->getServerURL("auth/verify"));
 
     m_authListener.bind(this, &AccountManager::Impl::completeChallengeCallback);
     m_authListener.setFilter(task);
@@ -181,7 +187,13 @@ void AccountManager::Impl::loginCallback(web::WebTask::Event* event) {
     auto response = event->getValue();
     if (this->errorCallback(response)) return;
 
-    m_loginToken = response->string().unwrap();
+    auto token = response->string().unwrap();
+
+    auto header = fmt::format("{}.{}.{}", m_accountId, m_userId, token);
+    std::vector<uint8_t> headerBytes(header.begin(), header.end());
+    auto base64Token = crypto::base64Encode(headerBytes, crypto::Base64Flags::UrlSafe);
+
+    m_loginToken = base64Token;
 
     m_requestCallback(Ok());
 }
@@ -212,7 +224,7 @@ void AccountManager::Impl::serverTimeCallback(web::WebTask::Event* event) {
     req.param("account_name", m_username);
     req.param("auth_token", base64Token);
 
-    auto task = req.post(fmt::format("{}/auth/login", WebManager::get()->getServerURL()));
+    auto task = req.post(WebManager::get()->getServerURL("auth/login"));
 
     m_authListener.bind(this, &AccountManager::Impl::loginCallback);
     m_authListener.setFilter(task);
@@ -225,7 +237,7 @@ Result<> AccountManager::Impl::authenticate(Callback&& callback) {
 
     auto req = WebManager::get()->createRequest();
 
-    auto task = req.get(fmt::format("{}/auth/server_time", WebManager::get()->getServerURL()));
+    auto task = req.get(WebManager::get()->getServerURL("auth/server_time"));
 
     m_authListener.bind(this, &AccountManager::Impl::serverTimeCallback);
     m_authListener.setFilter(task);
@@ -244,7 +256,7 @@ Result<> AccountManager::Impl::startChallenge(Callback&& callback) {
     req.param("user_id", m_userId);
     req.param("account_name", m_username);
 
-    auto task = req.post(fmt::format("{}/auth/challenge", WebManager::get()->getServerURL()));
+    auto task = req.post(WebManager::get()->getServerURL("auth/challenge"));
 
     m_authListener.bind(this, &AccountManager::Impl::startChallengeCallback);
     m_authListener.setFilter(task);
@@ -273,4 +285,8 @@ void AccountManager::startChallenge(Callback&& callback) {
         callback(res);
         return;
     }
+}
+
+std::string AccountManager::getLoginToken() const {
+    return impl->getLoginToken();
 }

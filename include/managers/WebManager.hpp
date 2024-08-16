@@ -15,7 +15,9 @@ namespace tulip::editor {
         static WebManager* get();
 
         geode::utils::web::WebRequest createRequest() const;
+        geode::utils::web::WebRequest createAuthenticatedRequest() const;
 
         std::string getServerURL() const;
+        std::string getServerURL(std::string_view path) const;
     };
 }
