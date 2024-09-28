@@ -15,7 +15,7 @@ public:
     
     bool errorCallback(web::WebResponse* response);
 
-    Task<Result<std::pair<uint32_t, std::string>>, WebProgress> createLevel();
+    Task<Result<std::pair<uint32_t, std::string>>, WebProgress> createLevel(int slotId, int uniqueId);
     Task<Result<std::pair<uint32_t, std::vector<uint8_t>>>, WebProgress> joinLevel(std::string_view levelKey);
     Task<Result<>, WebProgress> leaveLevel();
     Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);
@@ -59,10 +59,12 @@ bool LevelManager::Impl::isInLevel() const {
 //     return false;
 // }
 
-Task<Result<std::pair<uint32_t, std::string>>, WebProgress> LevelManager::Impl::createLevel() {
+Task<Result<std::pair<uint32_t, std::string>>, WebProgress> LevelManager::Impl::createLevel(int slotId, int uniqueId) {
     log::debug("Creating level");
 
     auto req = WebManager::get()->createAuthenticatedRequest();
+    req.param("slot_id", slotId);
+    req.param("unique_id", uniqueId);
     auto task = req.post(WebManager::get()->getServerURL("level/create"));
     auto ret = task.map([=, this](auto response) -> Result<std::pair<uint32_t, std::string>> {
         if (response->ok()) {
@@ -184,8 +186,8 @@ LevelManager* LevelManager::get() {
 LevelManager::LevelManager() : impl(std::make_unique<Impl>()) {}
 LevelManager::~LevelManager() = default;
 
-Task<Result<std::pair<uint32_t, std::string>>, WebProgress> LevelManager::createLevel() {
-    return impl->createLevel();
+Task<Result<std::pair<uint32_t, std::string>>, WebProgress> LevelManager::createLevel(int slotId, int uniqueId) {
+    return impl->createLevel(slotId, uniqueId);
 }
 Task<Result<std::pair<uint32_t, std::vector<uint8_t>>>, WebProgress> LevelManager::joinLevel(std::string_view levelKey) {
     return impl->joinLevel(levelKey);

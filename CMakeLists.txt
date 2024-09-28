@@ -10,8 +10,11 @@ add_library(${PROJECT_NAME} SHARED
     src/main.cpp
     src/hooks/EditLevelLayer.cpp
     src/hooks/LevelBrowserLayer.cpp
+    src/hooks/ui/LevelBrowserLayer.cpp
     src/managers/AccountManager.cpp
+    src/managers/BrowserManager.cpp
     src/managers/ErrorManager.cpp
+    src/managers/FetchManager.cpp
     src/managers/LevelManager.cpp
     src/managers/WebManager.cpp
     src/ui/GenericForm.cpp

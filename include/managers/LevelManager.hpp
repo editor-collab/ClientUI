@@ -18,7 +18,7 @@ namespace tulip::editor {
     public:
         static LevelManager* get();
 
-        Task<Result<std::pair<uint32_t, std::string>>, WebProgress> createLevel();
+        Task<Result<std::pair<uint32_t, std::string>>, WebProgress> createLevel(int slotId, int uniqueId);
         Task<Result<std::pair<uint32_t, std::vector<uint8_t>>>, WebProgress> joinLevel(std::string_view levelKey);
         Task<Result<>, WebProgress> leaveLevel();
         Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);

@@ -37,10 +37,37 @@ public:
     Result<> startChallenge(Callback&& callback);
 
     std::string getLoginToken() const;
+
+    std::string getAuthToken() const;
+    void setAuthToken(std::string_view const token);
+
+    bool isAuthenticated() const;
+    bool isLoggedIn() const;
 };
+
+$on_mod(Loaded) {
+    log::debug("found token {}", Mod::get()->getSavedValue<std::string>("auth-token"));
+    AccountManager::get()->setAuthToken(Mod::get()->getSavedValue<std::string>("auth-token"));
+}
 
 std::string AccountManager::Impl::getLoginToken() const {
     return m_loginToken;
+}
+
+std::string AccountManager::Impl::getAuthToken() const {
+    return m_authToken;
+}
+
+void AccountManager::Impl::setAuthToken(std::string_view const token) {
+    m_authToken = token;
+}
+
+bool AccountManager::Impl::isAuthenticated() const {
+    return !m_authToken.empty();
+}
+
+bool AccountManager::Impl::isLoggedIn() const {
+    return !m_loginToken.empty();
 }
 
 Result<> AccountManager::Impl::refreshCredentials() {
@@ -102,6 +129,7 @@ void AccountManager::Impl::completeChallengeCallback(web::WebTask::Event* event)
 
     auto const encodedToken = res.substr(res.find(":") + 1);
     m_authToken = encodedToken;
+    Mod::get()->setSavedValue("auth-token", m_authToken);
 
     m_requestCallback(Ok());
 }
@@ -289,4 +317,19 @@ void AccountManager::startChallenge(Callback&& callback) {
 
 std::string AccountManager::getLoginToken() const {
     return impl->getLoginToken();
+}
+
+std::string AccountManager::getAuthToken() const {
+    return impl->getAuthToken();
+}
+
+void AccountManager::setAuthToken(std::string_view const token) {
+    return impl->setAuthToken(token);
+}
+
+bool AccountManager::isAuthenticated() const {
+    return impl->isAuthenticated();
+}
+bool AccountManager::isLoggedIn() const {
+    return impl->isLoggedIn();
 }

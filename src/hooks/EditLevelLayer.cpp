@@ -2,7 +2,7 @@
 #include <managers/LevelManager.hpp>
 #include <managers/AccountManager.hpp>
 #include <Geode/loader/Dispatch.hpp>
-
+#include <cvolton.level-id-api/include/EditorIDs.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;
@@ -64,7 +64,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 			auto sprite1 = CircleButtonSprite::create(CCLabelBMFont::create("Create", "bigFont.fnt"), CircleBaseColor::Cyan);
 
 			auto menuButton = CCMenuItemExt::createSpriteExtra(sprite1, [=, this](CCObject* sender) {
-				auto task = LevelManager::get()->createLevel();
+				auto task = LevelManager::get()->createLevel(0, EditorIDs::getID(level));
 				m_fields->createLevelListener.bind([=, this](auto* event) {
 					if (auto resultp = event->getValue(); resultp && resultp->isOk()) {
 						auto const clientId = resultp->unwrap().first;
