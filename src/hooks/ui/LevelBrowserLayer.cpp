@@ -1,6 +1,8 @@
 #include <hooks/ui/LevelBrowserLayer.hpp>
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
 #include <managers/BrowserManager.hpp>
+#include <managers/CellManager.hpp>
+#include <alk.lavender/include/lavender/Lavender.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;
@@ -88,6 +90,18 @@ void LevelBrowserLayerUIHook::setupLevelBrowser(cocos2d::CCArray* items) {
         tabMenu2->setID("tab-on-menu"_spr);
 
         m_list->addChild(tabMenu2, 15);
+    }
+
+    for (auto cell : CCArrayExt<LevelCell*>(m_list->m_listView->m_tableView->m_cellArray)) {
+        if (BrowserManager::get()->isMyLevel(cell->m_level)) {
+            CellManager::get()->applyMyLevel(cell, *BrowserManager::get()->getLevelEntry(cell->m_level).value());
+        }
+        else if (BrowserManager::get()->isSharedLevel(cell->m_level)) {
+            CellManager::get()->applySharedLevel(cell, *BrowserManager::get()->getLevelEntry(cell->m_level).value());
+        }
+        else if (BrowserManager::get()->isDiscoverLevel(cell->m_level)) {
+            CellManager::get()->applyDiscoverLevel(cell, *BrowserManager::get()->getLevelEntry(cell->m_level).value());
+        }
     }
 }
 

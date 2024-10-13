@@ -22,9 +22,16 @@ namespace tulip::editor {
         std::string title;
         std::string description;
 
-        DefaultSharingType defaultSharing;
-        bool copyable;
-        bool discoverable;
+        DefaultSharingType defaultSharing = DefaultSharingType::Restricted;
+        bool copyable = false;
+        bool discoverable = false;
+
+        static LevelSetting fromLevel(GJGameLevel* level) {
+            LevelSetting entry;
+            entry.title = level->m_levelName;
+            entry.description = level->m_levelDesc;
+            return entry;
+        }
     };
 }
 

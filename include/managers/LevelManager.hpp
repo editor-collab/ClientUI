@@ -1,6 +1,8 @@
 #pragma once
 #include <Geode/Geode.hpp>
 #include <memory>
+#include "../data/LevelSetting.hpp"
+#include "../data/CameraValue.hpp"
 #include <Geode/utils/web.hpp>
 
 namespace tulip::editor {
@@ -18,11 +20,24 @@ namespace tulip::editor {
     public:
         static LevelManager* get();
 
-        Task<Result<std::pair<uint32_t, std::string>>, WebProgress> createLevel(int slotId, int uniqueId);
-        Task<Result<std::pair<uint32_t, std::vector<uint8_t>>>, WebProgress> joinLevel(std::string_view levelKey);
-        Task<Result<>, WebProgress> leaveLevel();
+        struct CreateLevelResult {
+            uint32_t clientId;
+            std::string levelKey;
+        };
+
+        struct JoinLevelResult {
+            uint32_t clientId;
+            std::string snapshotHash;
+            std::vector<uint8_t> snapshot;
+            std::optional<CameraValue> camera;
+        };
+
+        Task<Result<CreateLevelResult>, WebProgress> createLevel(int slotId, int uniqueId, LevelSetting&& settings);
+        Task<Result<JoinLevelResult>, WebProgress> joinLevel(std::string_view levelKey);
+        Task<Result<>, WebProgress> leaveLevel(CameraValue const& camera);
         Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);
         Task<Result<std::vector<uint8_t>>, WebProgress> getSnapshot(std::string_view levelKey, std::string_view hash);
+        Task<Result<>, WebProgress> updateLevelSettings(std::string_view levelKey, LevelSetting&& settings);
 
         std::vector<std::string> getHostedLevels() const;
 

@@ -8,11 +8,11 @@
 namespace tulip::editor {
     struct LevelEntry {
         LevelSetting settings;
-        uint32_t hostAccountId;
+        uint32_t hostAccountId = 0;
         std::string key;
-        uint32_t userCount;
-        uint32_t slotId;
-        uint32_t uniqueId;
+        uint32_t userCount = 0;
+        uint32_t slotId = 0;
+        uint32_t uniqueId = 0;
     };
 }
 

@@ -1,5 +1,6 @@
 #include <managers/BrowserManager.hpp>
 #include <data/LevelEntry.hpp>
+#include <utils/CryptoHelper.hpp>
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
 
 using namespace tulip::editor;
@@ -16,7 +17,14 @@ public:
     cocos2d::CCArray* getSharedLevels();
     cocos2d::CCArray* getDiscoverLevels();
 
+    bool isMyLevel(GJGameLevel* level);
+    bool isSharedLevel(GJGameLevel* level);
+    bool isDiscoverLevel(GJGameLevel* level);
+
+    void setLevelValues(GJGameLevel* level, LevelEntry const& entry);
+
     std::optional<std::string> getLevelKey(GJGameLevel* level);
+    std::optional<LevelEntry*> getLevelEntry(GJGameLevel* level);
 
     void updateMyLevels(std::vector<LevelEntry>&& entries);
     void updateSharedLevels(std::vector<LevelEntry>&& entries);
@@ -25,10 +33,13 @@ public:
 
 cocos2d::CCArray* BrowserManager::Impl::getMyLevels(int folder) {
     auto arr = cocos2d::CCArray::create();
-    if (folder == 0) for (auto& level : m_myLevels) {
-        arr->addObject(level);
+    auto localLevels = CCArrayExt<GJGameLevel*>(LocalLevelManager::get()->m_localLevels);
+    if (folder == 0) {
+        for (auto& level : m_myLevels) {
+            if (std::find(localLevels.begin(), localLevels.end(), level) == localLevels.end()) arr->addObject(level);
+        }
     }
-    for (auto& level : CCArrayExt<GJGameLevel*>(LocalLevelManager::get()->m_localLevels)) {
+    for (auto& level : localLevels) {
         if (level->m_levelFolder == folder) arr->addObject(level);
     }
     return arr;
@@ -50,12 +61,39 @@ cocos2d::CCArray* BrowserManager::Impl::getDiscoverLevels() {
     return arr;
 }
 
+bool BrowserManager::Impl::isMyLevel(GJGameLevel* level) {
+    return std::find(m_myLevels.begin(), m_myLevels.end(), level) != m_myLevels.end();
+}
+
+bool BrowserManager::Impl::isSharedLevel(GJGameLevel* level) {
+    return std::find(m_sharedLevels.begin(), m_sharedLevels.end(), level) != m_sharedLevels.end();
+}
+
+bool BrowserManager::Impl::isDiscoverLevel(GJGameLevel* level) {
+    return std::find(m_discoverLevels.begin(), m_discoverLevels.end(), level) != m_discoverLevels.end();
+}
+
 std::optional<std::string> BrowserManager::Impl::getLevelKey(GJGameLevel* level) {
     auto it = m_levelEntries.find(level);
     if (it == m_levelEntries.end()) {
         return std::nullopt;
     }
     return it->second.key;
+}
+
+std::optional<LevelEntry*> BrowserManager::Impl::getLevelEntry(GJGameLevel* level) {
+    auto it = m_levelEntries.find(level);
+    if (it == m_levelEntries.end()) {
+        return std::nullopt;
+    }
+    return &it->second;
+}
+
+void BrowserManager::Impl::setLevelValues(GJGameLevel* level, LevelEntry const& entry) {
+    level->m_levelType = GJLevelType::Editor;
+    level->m_levelName = entry.settings.title;
+    std::vector<uint8_t> data(entry.settings.description.begin(), entry.settings.description.end());
+    level->m_levelDesc = crypto::base64Encode(data, crypto::Base64Flags::UrlSafe);
 }
 
 void BrowserManager::Impl::updateMyLevels(std::vector<LevelEntry>&& entries) {
@@ -75,9 +113,7 @@ void BrowserManager::Impl::updateMyLevels(std::vector<LevelEntry>&& entries) {
         }
         else {
             auto level = GJGameLevel::create();
-            level->m_levelType = GJLevelType::Editor;
-            level->m_levelName = entry.settings.title;
-            level->m_levelDesc = entry.settings.description;
+            this->setLevelValues(level, entry);
             m_myLevels.push_back(level);
             m_levelEntries[level] = std::move(entry);
         }
@@ -92,8 +128,7 @@ void BrowserManager::Impl::updateSharedLevels(std::vector<LevelEntry>&& entries)
 
     for (auto& entry : entries) {
         auto level = GJGameLevel::create();
-        level->m_levelName = entry.settings.title;
-        level->m_levelDesc = entry.settings.description;
+        this->setLevelValues(level, entry);
         m_sharedLevels.push_back(level);
         m_levelEntries[level] = std::move(entry);
     }
@@ -107,8 +142,7 @@ void BrowserManager::Impl::updateDiscoverLevels(std::vector<LevelEntry>&& entrie
 
     for (auto& entry : entries) {
         auto level = GJGameLevel::create();
-        level->m_levelName = entry.settings.title;
-        level->m_levelDesc = entry.settings.description;
+        this->setLevelValues(level, entry);
         m_discoverLevels.push_back(level);
         m_levelEntries[level] = std::move(entry);
     }
@@ -134,8 +168,24 @@ cocos2d::CCArray* BrowserManager::getDiscoverLevels() {
     return impl->getDiscoverLevels();
 }
 
+bool BrowserManager::isMyLevel(GJGameLevel* level) {
+    return impl->isMyLevel(level);
+}
+
+bool BrowserManager::isSharedLevel(GJGameLevel* level) {
+    return impl->isSharedLevel(level);
+}
+
+bool BrowserManager::isDiscoverLevel(GJGameLevel* level) {
+    return impl->isDiscoverLevel(level);
+}
+
 std::optional<std::string> BrowserManager::getLevelKey(GJGameLevel* level) {
     return impl->getLevelKey(level);
+}
+
+std::optional<LevelEntry*> BrowserManager::getLevelEntry(GJGameLevel* level) {
+    return impl->getLevelEntry(level);
 }
 
 void BrowserManager::updateMyLevels(std::vector<LevelEntry>&& entries) {

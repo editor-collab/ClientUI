@@ -54,31 +54,6 @@ bool LevelBrowserLayerHook::init(GJSearchObject* searchObject) {
 			this->onConnect();
 		});
 		menu->addChild(menuButton);
-
-		auto sprite3 = CircleButtonSprite::create(CCLabelBMFont::create("Join", "bigFont.fnt"), CircleBaseColor::DarkPurple);
-		auto menu3Button = CCMenuItemExt::createSpriteExtra(sprite3, [=, this](CCObject* sender) {
-			auto task = LevelManager::get()->joinLevel("testtest"/*levels.back()*/);
-			m_fields->joinLevelListener.bind([=, this](auto* event) {
-				if (auto resultp = event->getValue(); resultp && resultp->isOk()) {
-					auto const clientId = resultp->unwrap().first;
-					auto token = AccountManager::get()->getLoginToken();
-					DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*>(
-						"join-level"_spr, token, clientId, "testtest"/*hosted*/, &resultp->unwrap().second
-					).post();
-				}
-				else if (resultp) {
-					createQuickPopup(
-						"Error",
-						resultp->unwrapErr(),
-						"OK",
-						"Cancel",
-						[](auto, auto) {}
-					);
-				}
-			});
-			m_fields->joinLevelListener.setFilter(task);
-		});
-		menu->addChild(menu3Button);
 		
 		menu->updateLayout();
 	}

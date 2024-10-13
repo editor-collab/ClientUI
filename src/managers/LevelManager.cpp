@@ -15,11 +15,12 @@ public:
     
     bool errorCallback(web::WebResponse* response);
 
-    Task<Result<std::pair<uint32_t, std::string>>, WebProgress> createLevel(int slotId, int uniqueId);
-    Task<Result<std::pair<uint32_t, std::vector<uint8_t>>>, WebProgress> joinLevel(std::string_view levelKey);
-    Task<Result<>, WebProgress> leaveLevel();
+    Task<Result<LevelManager::CreateLevelResult>, WebProgress> createLevel(int slotId, int uniqueId, LevelSetting&& settings);
+    Task<Result<LevelManager::JoinLevelResult>, WebProgress> joinLevel(std::string_view levelKey);
+    Task<Result<>, WebProgress> leaveLevel(CameraValue const& camera);
     Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);
     Task<Result<std::vector<uint8_t>>, WebProgress> getSnapshot(std::string_view levelKey, std::string_view hash);
+    Task<Result<>, WebProgress> updateLevelSettings(std::string_view levelKey, LevelSetting&& settings);
 
     std::vector<std::string> getHostedLevels() const;
     uint32_t getClientId() const;
@@ -59,69 +60,80 @@ bool LevelManager::Impl::isInLevel() const {
 //     return false;
 // }
 
-Task<Result<std::pair<uint32_t, std::string>>, WebProgress> LevelManager::Impl::createLevel(int slotId, int uniqueId) {
+Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::createLevel(int slotId, int uniqueId, LevelSetting&& settings) {
     log::debug("Creating level");
+
+    auto const settingString = matjson::Value(settings).dump(matjson::NO_INDENTATION);
 
     auto req = WebManager::get()->createAuthenticatedRequest();
     req.param("slot_id", slotId);
     req.param("unique_id", uniqueId);
+    req.param("settings", settingString);
     auto task = req.post(WebManager::get()->getServerURL("level/create"));
-    auto ret = task.map([=, this](auto response) -> Result<std::pair<uint32_t, std::string>> {
+    auto ret = task.map([=, this](auto response) -> Result<LevelManager::CreateLevelResult> {
         if (response->ok()) {
-            auto const res = response->string().unwrap();
-
-            auto const values = string::split(res, ":");
-            if (values.size() != 2) {
-                return Err("Invalid response");
+            auto const res = response->json();
+            if (res.isErr()) {
+                return Err(res.unwrapErr());
             }
-            auto const levelKey = values[0];
-            if (auto const clientId = numFromString<uint32_t>(values[1]); clientId.isOk()) {
+            matjson::Value const values = res.unwrap();
+
+            if (values["level-key"].is<std::string>() && values["client-id"].is<uint32_t>()) {
+                auto const levelKey = values["level-key"].as<std::string>();
+                uint32_t const clientId = values["client-id"].as<uint32_t>();
                 m_hostedLevels.push_back(levelKey);
                 m_joinedLevel = levelKey;
-                return Ok(std::make_pair(clientId.unwrap(), levelKey));
+                return Ok(LevelManager::CreateLevelResult{clientId, levelKey});
             }
-            return Err("Invalid client ID");
+            return Err("Invalid response");
         }
         return Err(fmt::format("HTTP error: {}", response->code()));
     });
     return ret;
 }
-Task<Result<std::pair<uint32_t, std::vector<uint8_t>>>, WebProgress> LevelManager::Impl::joinLevel(std::string_view levelKey) {
+Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::Impl::joinLevel(std::string_view levelKey) {
     log::debug("Joining level {}", levelKey);
+    std::string levelKeyStr(levelKey);
 
-    auto ret = Task<Result<std::pair<uint32_t, std::vector<uint8_t>>>, WebProgress>::runWithCallback([=, this](auto finish, auto progressC, auto hasBeenCancelled) {
+    auto ret = Task<Result<LevelManager::JoinLevelResult>, WebProgress>::runWithCallback([=, this](auto finish, auto progressC, auto hasBeenCancelled) {
         auto req = WebManager::get()->createAuthenticatedRequest();
-        req.param("level_key", levelKey);
+        req.param("level_key", levelKeyStr);
         auto task = req.post(WebManager::get()->getServerURL("level/join"));
-        auto task2 = task.map([=, this](auto response) -> Result<std::pair<std::string, uint32_t>> {
+        auto task2 = task.map([=, this](auto response) -> Result<LevelManager::JoinLevelResult> {
             if (response->ok()) {
-                auto const res = response->string().unwrap();
+                auto const res = response->json();
+                if (res.isErr()) {
+                    return Err(res.unwrapErr());
+                }
+                matjson::Value const values = res.unwrap();
 
-                auto const values = string::split(res, ":");
-                if (values.size() != 2) {
-                    return Err("Invalid response");
-                }
-                auto const hash = values[0];
-                if (auto const clientId = numFromString<uint32_t>(values[1]); clientId.isOk()) {
-                    log::debug("Joined level {} with client ID {}", levelKey, clientId.unwrap());
+                if (values["snapshot-hash"].is<std::string>() && values["client-id"].is<uint32_t>()) {
+                    auto const hash = values["snapshot-hash"].as<std::string>();
+                    uint32_t const clientId = values["client-id"].as<uint32_t>();
+                    log::debug("Joined level {} with client ID {}", levelKeyStr, clientId);
                     log::debug("Snapshot hash: {}", hash);
-                    return Ok(std::make_pair(hash, clientId.unwrap()));
+                    CameraValue camera;
+                    if (values.contains("camera-value") && values["camera-value"].is<CameraValue>()) {
+                        log::debug("Camera value: {}", values["camera-value"].dump());
+                        camera = values["camera-value"].as<CameraValue>();
+                    }
+                    return Ok(LevelManager::JoinLevelResult{clientId, hash});
                 }
-                return Err("Invalid client ID");
+                return Err("Invalid response");
             }
             return Err(fmt::format("HTTP error: {}", response->code()));
         });
         task2.listen([=, this](auto* result) {
             if (result->isOk()) {
-                auto const clientId = result->unwrap().second;
-                auto task = this->getSnapshot(levelKey, result->unwrap().first);
-                task.listen([=, this](auto* result) {
-                    if (result->isOk()) {
-                        m_joinedLevel = levelKey;
-                        finish(Ok(std::make_pair(clientId, std::move(result->unwrap()))));
+                auto task = this->getSnapshot(levelKeyStr, result->unwrap().snapshotHash);
+                task.listen([=, this](auto* result2) {
+                    if (result2->isOk()) {
+                        m_joinedLevel = levelKeyStr;
+                        result->unwrap().snapshot = result2->unwrap();
+                        finish(Ok(std::move(result->unwrap())));
                     }
                     else {
-                        finish(Err(result->unwrapErr()));
+                        finish(Err(result2->unwrapErr()));
                     }
                 }, [=](auto* progress) {
                     progressC(*progress);
@@ -133,10 +145,13 @@ Task<Result<std::pair<uint32_t, std::vector<uint8_t>>>, WebProgress> LevelManage
     });
     return ret;
 }
-Task<Result<>, WebProgress> LevelManager::Impl::leaveLevel() {
+Task<Result<>, WebProgress> LevelManager::Impl::leaveLevel(CameraValue const& camera) {
     log::debug("Leaving level");
 
     auto req = WebManager::get()->createAuthenticatedRequest();
+    req.param("camera_x", numToString(camera.x));
+    req.param("camera_y", numToString(camera.y));
+    req.param("camera_zoom", numToString(camera.zoom));
     auto task = req.post(WebManager::get()->getServerURL("level/leave"));
     auto ret = task.map([=, this](auto response) -> Result<> {
         if (response->ok()) {
@@ -178,6 +193,24 @@ Task<Result<std::vector<uint8_t>>, WebProgress> LevelManager::Impl::getSnapshot(
     return ret;
 }
 
+Task<Result<>, WebProgress> LevelManager::Impl::updateLevelSettings(std::string_view levelKey, LevelSetting&& settings) {
+    log::debug("Updating level settings for level {}", levelKey);
+
+    auto const settingString = matjson::Value(settings).dump(matjson::NO_INDENTATION);
+
+    auto req = WebManager::get()->createAuthenticatedRequest();
+    req.param("level_key", levelKey);
+    req.param("settings", settingString);
+    auto task = req.post(WebManager::get()->getServerURL("level/edit_settings"));
+    auto ret = task.map([](web::WebResponse* response) -> Result<> {
+        if (response->ok()) {
+            return Ok();
+        }
+        return Err(fmt::format("HTTP error: {}", response->code()));
+    });
+    return ret;
+}
+
 LevelManager* LevelManager::get() {
     static LevelManager instance;
     return &instance;
@@ -186,20 +219,23 @@ LevelManager* LevelManager::get() {
 LevelManager::LevelManager() : impl(std::make_unique<Impl>()) {}
 LevelManager::~LevelManager() = default;
 
-Task<Result<std::pair<uint32_t, std::string>>, WebProgress> LevelManager::createLevel(int slotId, int uniqueId) {
-    return impl->createLevel(slotId, uniqueId);
+Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::createLevel(int slotId, int uniqueId, LevelSetting&& settings) {
+    return impl->createLevel(slotId, uniqueId, std::move(settings));
 }
-Task<Result<std::pair<uint32_t, std::vector<uint8_t>>>, WebProgress> LevelManager::joinLevel(std::string_view levelKey) {
+Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::joinLevel(std::string_view levelKey) {
     return impl->joinLevel(levelKey);
 }
-Task<Result<>, WebProgress> LevelManager::leaveLevel() {
-    return impl->leaveLevel();
+Task<Result<>, WebProgress> LevelManager::leaveLevel(CameraValue const& camera) {
+    return impl->leaveLevel(camera);
 }
 Task<Result<>, WebProgress> LevelManager::deleteLevel(std::string_view levelKey) {
     return impl->deleteLevel(levelKey);
 }
 Task<Result<std::vector<uint8_t>>, WebProgress> LevelManager::getSnapshot(std::string_view levelKey, std::string_view hash) {
     return impl->getSnapshot(levelKey, hash);
+}
+Task<Result<>, WebProgress> LevelManager::updateLevelSettings(std::string_view levelKey, LevelSetting&& settings) {
+    return impl->updateLevelSettings(levelKey, std::move(settings));
 }
 
 std::vector<std::string> LevelManager::getHostedLevels() const {
