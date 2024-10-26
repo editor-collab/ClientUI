@@ -2,6 +2,7 @@
 #include <managers/LevelManager.hpp>
 #include <managers/AccountManager.hpp>
 #include <managers/BrowserManager.hpp>
+#include <managers/WebManager.hpp>
 #include <Geode/loader/Dispatch.hpp>
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
 #include <alk.lavender/include/lavender/Lavender.hpp>
@@ -57,12 +58,23 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 	struct Fields {
 		bool m_textChanged = false;
 		bool m_levelDeleted = false;
+		
+		CCMenuItemSpriteExtra* m_joinButton = nullptr;
+		CCSprite* m_joinButtonSprite = nullptr;
+
+		struct Destructor {
+			~Destructor() {
+				WebManager::get()->clearSocketCallbacks();
+			}
+		} m_destructor;
 	};
 
 	$override
 	void textChanged(CCTextInputNode* input) {
 		EditLevelLayer::textChanged(input);
+		log::debug("levle {}", m_level);
 		if (BrowserManager::get()->isMyLevel(m_level)) {
+			log::debug("my levle {}", m_level);
 			m_fields->m_textChanged = true;
 			auto* entry = BrowserManager::get()->getLevelEntry(m_level).value();
 			if (input->getTag() == 1) {
@@ -137,6 +149,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 				}
 
 				children.push_back(new ui::MenuItemSpriteExtra {
+					.store = reinterpret_cast<CCNode**>(&m_fields->m_joinButton),
 					.callback = [=, this](auto) {
 						auto const levelKey = entry.value()->key;
 
@@ -148,12 +161,13 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 							}
 							auto const clientId = resultp->unwrap().clientId;
 							auto token = AccountManager::get()->getLoginToken();
-							DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*>(
-								"join-level"_spr, token, clientId, levelKey, &resultp->unwrap().snapshot
+							DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>>(
+								"join-level"_spr, token, clientId, levelKey, &resultp->unwrap().snapshot, resultp->unwrap().camera
 							).post();
 						});
 					},
 					.child = new ui::Sprite {
+						.store = reinterpret_cast<CCNode**>(&m_fields->m_joinButtonSprite),
 						.frameName = "EditServerButton.png"_spr,
 					},
 				});
@@ -172,6 +186,15 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 				node->setAnchorPoint(menu->getAnchorPoint());
 				node->setPosition(menu->getPosition());
 				this->addChild(node);
+
+				if (WebManager::get()->isSocketConnected()) {
+					m_fields->m_joinButton->setEnabled(false);
+					m_fields->m_joinButtonSprite->setColor(ccColor3B { 100, 100, 100 });
+					WebManager::get()->runOnSocketDisconnected([this] {
+						m_fields->m_joinButton->setEnabled(true);
+						m_fields->m_joinButtonSprite->setColor(ccColor3B { 255, 255, 255 });
+					});
+				}
 			}
 		}
 

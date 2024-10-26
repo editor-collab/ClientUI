@@ -13,11 +13,14 @@ namespace tulip::editor {
         Editor,
         Admin,
     };
+
+    struct SettingUserEntry {
+        std::string name;
+        DefaultSharingType role;
+    };
     
     struct LevelSetting {
-        std::vector<std::string> viewers;
-        std::vector<std::string> editors;
-        std::vector<std::string> admins;
+        std::vector<SettingUserEntry> users;
 
         std::string title;
         std::string description;
@@ -31,6 +34,32 @@ namespace tulip::editor {
             entry.title = level->m_levelName;
             entry.description = level->m_levelDesc;
             return entry;
+        }
+
+        DefaultSharingType getUserType(std::string_view name) const {
+            for (auto const& user : users) {
+                if (user.name == name) {
+                    return user.role;
+                }
+            }
+            return DefaultSharingType::Restricted;
+        }
+
+        bool hasUser(std::string_view name) const {
+            return std::any_of(users.begin(), users.end(), [name](auto const& user) {
+                return user.name == name;
+            });
+        }
+
+        void removeUser(std::string_view name) {
+            users.erase(std::remove_if(users.begin(), users.end(), [name](auto const& user) {
+                return user.name == name;
+            }), users.end());
+        }
+
+        void setUser(std::string_view name, DefaultSharingType type) {
+            this->removeUser(name);
+            users.push_back({std::string(name), type});
         }
     };
 }
@@ -59,14 +88,34 @@ struct matjson::Serialize<tulip::editor::DefaultSharingType> {
 };
 
 template <>
+struct matjson::Serialize<tulip::editor::SettingUserEntry> {
+    using SettingUserEntry = tulip::editor::SettingUserEntry;
+    using DefaultSharingType = tulip::editor::DefaultSharingType;
+    static matjson::Value to_json(SettingUserEntry const& entry) {
+        auto value = matjson::Value();
+        value.try_set("name", entry.name);
+        value.try_set("role", entry.role);
+        return value;
+    }
+    static SettingUserEntry from_json(matjson::Value const& value) {
+        SettingUserEntry entry;
+        entry.name = value.try_get<std::string>("name").value_or("");
+        entry.role = value.try_get<DefaultSharingType>("role").value_or(DefaultSharingType::Viewer);
+        return entry;
+    }
+    static bool is_json(matjson::Value const& json) {
+        return json.is_object();
+    }
+};
+
+template <>
 struct matjson::Serialize<tulip::editor::LevelSetting> {
     using LevelSetting = tulip::editor::LevelSetting;
     using DefaultSharingType = tulip::editor::DefaultSharingType;
+    using SettingUserEntry = tulip::editor::SettingUserEntry;
     static matjson::Value to_json(LevelSetting const& entry) {
         auto value = matjson::Value();
-        value.try_set("viewers", entry.viewers);
-        value.try_set("editors", entry.editors);
-        value.try_set("admins", entry.admins);
+        value.try_set("users", entry.users);
         value.try_set("title", entry.title);
         value.try_set("description", entry.description);
         value.try_set("default-sharing", entry.defaultSharing);
@@ -76,9 +125,7 @@ struct matjson::Serialize<tulip::editor::LevelSetting> {
     }
     static LevelSetting from_json(matjson::Value const& value) {
         LevelSetting entry;
-        entry.viewers = value.try_get<std::vector<std::string>>("viewers").value_or(std::vector<std::string>{});
-        entry.editors = value.try_get<std::vector<std::string>>("editors").value_or(std::vector<std::string>{});
-        entry.admins = value.try_get<std::vector<std::string>>("admins").value_or(std::vector<std::string>{});
+        entry.users = value.try_get<std::vector<SettingUserEntry>>("users").value_or(std::vector<SettingUserEntry>{});
         entry.title = value.try_get<std::string>("title").value_or("");
         entry.description = value.try_get<std::string>("description").value_or("");
         entry.defaultSharing = value.try_get<DefaultSharingType>("default-sharing").value_or(DefaultSharingType::Restricted);

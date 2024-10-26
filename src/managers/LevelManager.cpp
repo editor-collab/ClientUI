@@ -10,7 +10,7 @@ public:
     ~Impl() = default;
 
     std::vector<std::string> m_hostedLevels;
-    std::string m_joinedLevel;
+    std::optional<std::string> m_joinedLevel;
     uint32_t m_clientId = 0;
     
     bool errorCallback(web::WebResponse* response);
@@ -23,6 +23,7 @@ public:
     Task<Result<>, WebProgress> updateLevelSettings(std::string_view levelKey, LevelSetting&& settings);
 
     std::vector<std::string> getHostedLevels() const;
+    std::optional<std::string> getJoinedLevel() const;
     uint32_t getClientId() const;
     bool isInLevel() const;
 };
@@ -36,7 +37,11 @@ uint32_t LevelManager::Impl::getClientId() const {
 }
 
 bool LevelManager::Impl::isInLevel() const {
-    return !m_joinedLevel.empty();
+    return m_joinedLevel.has_value();
+}
+
+std::optional<std::string> LevelManager::Impl::getJoinedLevel() const {
+    return m_joinedLevel;
 }
 
 // bool LevelManager::Impl::errorCallback(web::WebResponse* response) {
@@ -117,7 +122,7 @@ Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::Impl::joi
                         log::debug("Camera value: {}", values["camera-value"].dump());
                         camera = values["camera-value"].as<CameraValue>();
                     }
-                    return Ok(LevelManager::JoinLevelResult{clientId, hash});
+                    return Ok(LevelManager::JoinLevelResult{clientId, hash, {}, camera});
                 }
                 return Err("Invalid response");
             }
@@ -155,7 +160,7 @@ Task<Result<>, WebProgress> LevelManager::Impl::leaveLevel(CameraValue const& ca
     auto task = req.post(WebManager::get()->getServerURL("level/leave"));
     auto ret = task.map([=, this](auto response) -> Result<> {
         if (response->ok()) {
-            m_joinedLevel.clear();
+            m_joinedLevel = std::nullopt;
             return Ok();
         }
         return Err(fmt::format("HTTP error: {}", response->code()));
@@ -248,4 +253,8 @@ uint32_t LevelManager::getClientId() const {
 
 bool LevelManager::isInLevel() const {
     return impl->isInLevel();
+}
+
+std::optional<std::string> LevelManager::getJoinedLevel() const {
+    return impl->getJoinedLevel();
 }

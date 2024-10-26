@@ -11,6 +11,7 @@ add_library(${PROJECT_NAME} SHARED
     src/hooks/EditLevelLayer.cpp
     src/hooks/LevelBrowserLayer.cpp
     src/hooks/ui/LevelBrowserLayer.cpp
+    src/hooks/ui/EditorUI.cpp
     src/managers/AccountManager.cpp
     src/managers/BrowserManager.cpp
     src/managers/CellManager.cpp
@@ -22,9 +23,16 @@ add_library(${PROJECT_NAME} SHARED
     src/ui/GenericList.cpp
     src/ui/MainScene.cpp
     src/ui/ExploreMenu.cpp
+    src/ui/ShareSettings.cpp
     src/utils/CryptoHelper.cpp
     src/utils/ThemeProvider.cpp
 )
+
+if (${CMAKE_CXX_COMPILER_ID} STREQUAL "Clang")
+    target_compile_options(${PROJECT_NAME} PRIVATE
+        -Wno-reorder-init-list
+    )
+endif()
 
 target_include_directories(${PROJECT_NAME} PRIVATE
     include

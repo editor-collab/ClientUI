@@ -41,6 +41,8 @@ namespace tulip::editor {
 
         std::vector<std::string> getHostedLevels() const;
 
+        std::optional<std::string> getJoinedLevel() const;
+
         uint32_t getClientId() const;
 
         bool isInLevel() const;

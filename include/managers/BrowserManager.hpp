@@ -25,6 +25,7 @@ namespace tulip::editor {
 
         std::optional<std::string> getLevelKey(GJGameLevel* level);
         std::optional<LevelEntry*> getLevelEntry(GJGameLevel* level);
+        std::optional<LevelEntry*> getLevelEntry(std::string_view key);
 
         void updateMyLevels(std::vector<LevelEntry>&& entries);
         void updateSharedLevels(std::vector<LevelEntry>&& entries);

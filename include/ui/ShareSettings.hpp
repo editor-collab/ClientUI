@@ -1,0 +1,41 @@
+#pragma once
+#include <Geode/Geode.hpp>
+#include "../data/LevelEntry.hpp"
+#include <deque>
+
+namespace ui {
+    struct Base;
+}
+
+namespace tulip::editor {
+    class ShareSettings : public cocos2d::CCNode {
+    public:
+        cocos2d::CCNode* m_center = nullptr;
+
+        LevelEntry* m_entry;
+        LevelSetting* m_setting;
+        cocos2d::CCNode* m_list = nullptr;
+        cocos2d::CCNode* m_popup = nullptr;
+        geode::SimpleTextArea* m_generalAccessText = nullptr;
+        geode::SimpleTextArea* m_generalAccessDescription = nullptr;
+        geode::SimpleTextArea* m_generalAccessTypeText = nullptr;
+        geode::TextInput* m_shareWithInput = nullptr;
+        cocos2d::CCNode* m_generalAccessTypeRow = nullptr;
+        geode::ScrollLayer* m_peopleScrollLayer = nullptr;
+
+        bool m_resetScroll = false;
+
+        static ShareSettings* create(LevelEntry* setting);
+
+        bool init(LevelEntry* setting);
+
+    private:
+        ui::Base* generatePersonEntry(std::string name, DefaultSharingType type);
+
+        std::string getSharingTypeString(DefaultSharingType type);
+
+        void updateValues();
+
+
+    };
+}

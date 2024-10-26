@@ -25,6 +25,7 @@ public:
 
     std::optional<std::string> getLevelKey(GJGameLevel* level);
     std::optional<LevelEntry*> getLevelEntry(GJGameLevel* level);
+    std::optional<LevelEntry*> getLevelEntry(std::string_view key);
 
     void updateMyLevels(std::vector<LevelEntry>&& entries);
     void updateSharedLevels(std::vector<LevelEntry>&& entries);
@@ -87,6 +88,15 @@ std::optional<LevelEntry*> BrowserManager::Impl::getLevelEntry(GJGameLevel* leve
         return std::nullopt;
     }
     return &it->second;
+}
+
+std::optional<LevelEntry*> BrowserManager::Impl::getLevelEntry(std::string_view key) {
+    for (auto& [level, entry] : m_levelEntries) {
+        if (entry.key == key) {
+            return &entry;
+        }
+    }
+    return std::nullopt;
 }
 
 void BrowserManager::Impl::setLevelValues(GJGameLevel* level, LevelEntry const& entry) {
@@ -186,6 +196,10 @@ std::optional<std::string> BrowserManager::getLevelKey(GJGameLevel* level) {
 
 std::optional<LevelEntry*> BrowserManager::getLevelEntry(GJGameLevel* level) {
     return impl->getLevelEntry(level);
+}
+
+std::optional<LevelEntry*> BrowserManager::getLevelEntry(std::string_view key) {
+    return impl->getLevelEntry(key);
 }
 
 void BrowserManager::updateMyLevels(std::vector<LevelEntry>&& entries) {

@@ -5,6 +5,7 @@
 #include <utils/CryptoHelper.hpp>
 #include <Geode/loader/Dispatch.hpp>
 #include <data/LevelEntry.hpp>
+#include <ui/ShareSettings.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;
@@ -50,8 +51,23 @@ bool LevelBrowserLayerHook::init(GJSearchObject* searchObject) {
 		);
 		menuSprite->setScale(0.9f);
 
+		static auto setting = [](){
+			LevelSetting setting;
+			setting.title = "Test Level";
+			setting.users = {
+				{"user1", DefaultSharingType::Viewer},
+				{"user2", DefaultSharingType::Editor},
+				{"user3", DefaultSharingType::Admin},
+				{"user4", DefaultSharingType::Viewer},
+				{"user5", DefaultSharingType::Editor},
+				{"user6", DefaultSharingType::Admin}
+			};
+			return setting;
+		}();
+
 		auto menuButton = CCMenuItemExt::createSpriteExtra(menuSprite, [this](CCObject* sender) {
 			this->onConnect();
+			// auto shareSettings = ShareSettings::create(&setting);
 		});
 		menu->addChild(menuButton);
 		
