@@ -12,7 +12,7 @@ namespace tulip::editor {
         int m_downIndex = -1;
         int m_upIndex = 0;
 
-        using GeneratorType = geode::utils::MiniFunction<cocos2d::CCNode*(int)>;
+        using GeneratorType = std::function<cocos2d::CCNode*(int)>;
         GeneratorType m_generator;
 
         static GenericList* create(const cocos2d::CCSize& size, GeneratorType generator);

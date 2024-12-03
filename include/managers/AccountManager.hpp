@@ -11,7 +11,7 @@ namespace tulip::editor {
         ~AccountManager();
 
     public:
-        using Callback = geode::utils::MiniFunction<void(geode::Result<>)>;
+        using Callback = std::function<void(geode::Result<>)>;
 
         static AccountManager* get();
 

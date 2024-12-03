@@ -13,8 +13,11 @@ bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
     auto gen = new ui::MenuItemSpriteExtra {
         .id = "share-button"_spr,
         .callback = [this](auto*){
+            log::debug("Share button clicked");
             if (auto key = LevelManager::get()->getJoinedLevel()) {
+                log::debug("joined level {}", *key);
                 if (auto entry = BrowserManager::get()->getLevelEntry(*key)) {
+                    log::debug("found entry");
                     auto shareSettings = ShareSettings::create(*entry);
                 }
             }

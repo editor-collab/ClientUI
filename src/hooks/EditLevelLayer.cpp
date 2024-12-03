@@ -155,15 +155,18 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 
 						auto task = LevelManager::get()->joinLevel(levelKey);
 						task.listen([=, this](auto* resultp) {
-							if (resultp->isErr()) {
-								createQuickPopup("Error", resultp->unwrapErr(), "OK", "Cancel", [](auto, auto) {});
-								return;
+							if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
+								log::debug("join level task succeed");
+
+								auto token = AccountManager::get()->getLoginToken();
+								DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>>(
+									"join-level"_spr, token, value.clientId, levelKey, &value.snapshot, value.camera
+								).post();
 							}
-							auto const clientId = resultp->unwrap().clientId;
-							auto token = AccountManager::get()->getLoginToken();
-							DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>>(
-								"join-level"_spr, token, clientId, levelKey, &resultp->unwrap().snapshot, resultp->unwrap().camera
-							).post();
+							else {
+								log::debug("join level task error");
+								createQuickPopup("Error", err, "OK", "Cancel", [](auto, auto) {});
+							}
 						});
 					},
 					.child = new ui::Sprite {
@@ -209,16 +212,15 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 				.callback = [=, this](auto) {
 					auto task = LevelManager::get()->createLevel(0, EditorIDs::getID(level), LevelSetting::fromLevel(level));
 					task.listen([=, this](auto* resultp) {
-						if (resultp->isErr()) {
-							createQuickPopup("Error", resultp->unwrapErr(), "OK", "Cancel", [](auto, auto) {});
-							return;
+						if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
+							auto token = AccountManager::get()->getLoginToken();
+							DispatchEvent<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
+								"create-level"_spr, token, value.clientId, level, value.levelKey
+							).post();
 						}
-						auto const clientId = resultp->unwrap().clientId;
-						auto token = AccountManager::get()->getLoginToken();
-						auto hosted = resultp->unwrap().levelKey;
-						DispatchEvent<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
-							"create-level"_spr, token, clientId, level, hosted
-						).post();
+						else {
+							createQuickPopup("Error", err, "OK", "Cancel", [](auto, auto) {});
+						}
 					});
 				},
 				.child = new ui::Node {

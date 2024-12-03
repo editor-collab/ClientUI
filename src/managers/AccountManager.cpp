@@ -107,20 +107,18 @@ void AccountManager::Impl::completeChallengeCallback(web::WebTask::Event* event)
     auto response = event->getValue();
     if (this->errorCallback(response)) return;
 
-    auto const res = response->string().unwrap();
+    auto const res = response->string().unwrapOrDefault();
 
     if (res.find(":") == std::string::npos) {
         m_requestCallback(Err("Invalid challenge response"));
         return;
     }
 
-    auto const messageIdRes = numFromString<int>(res.substr(0, res.find(":")));
-    if (messageIdRes.isErr()) {
+    GEODE_UNWRAP_OR_ELSE(messageId, numFromString<int>(res.substr(0, res.find(":")))) {
         m_requestCallback(Err("Invalid message response"));
         return;
     }
 
-    auto const messageId = messageIdRes.unwrap();
     if (messageId) {
         auto message = GJUserMessage::create();
         message->m_messageID = messageId;
@@ -140,15 +138,14 @@ void AccountManager::Impl::startChallengeCallback(web::WebTask::Event* event) {
     auto response = event->getValue();
     if (this->errorCallback(response)) return;
 
-    auto const res = response->string().unwrap();
+    auto const res = response->string().unwrapOrDefault();
 
     if (res.find(":") == std::string::npos) {
         m_requestCallback(Err("Invalid challenge response"));
         return;
     }
 
-    auto accountRes = numFromString<int>(res.substr(0, res.find(":")));
-    if (accountRes.isErr()) {
+    GEODE_UNWRAP_OR_ELSE(toSendId, numFromString<int>(res.substr(0, res.find(":")))) {
         m_requestCallback(Err("Invalid account response"));
         return;
     }
@@ -187,7 +184,6 @@ void AccountManager::Impl::startChallengeCallback(web::WebTask::Event* event) {
 
     auto const answer = std::string(decryptedAnswer.begin(), decryptedAnswer.end());
 
-    auto toSendId = accountRes.unwrap();
     if (toSendId) {
         log::debug("Sending message to: {}", toSendId);
         GameLevelManager::sharedState()->uploadUserMessage(
@@ -215,7 +211,7 @@ void AccountManager::Impl::loginCallback(web::WebTask::Event* event) {
     auto response = event->getValue();
     if (this->errorCallback(response)) return;
 
-    auto token = response->string().unwrap();
+    auto token = response->string().unwrapOrDefault();
 
     auto header = fmt::format("{}.{}.{}", m_accountId, m_userId, token);
     std::vector<uint8_t> headerBytes(header.begin(), header.end());
@@ -232,14 +228,13 @@ void AccountManager::Impl::serverTimeCallback(web::WebTask::Event* event) {
     auto const response = event->getValue();
     if (this->errorCallback(response)) return;
 
-    auto const res = response->string().unwrap();
+    auto const res = response->string().unwrapOrDefault();
 
-    auto const timeRes = numFromString<uint64_t>(res);
-    if (timeRes.isErr()) {
+    GEODE_UNWRAP_OR_ELSE(time, numFromString<uint64_t>(res)) {
         m_requestCallback(Err("Invalid time response"));
         return;
     }
-    auto const roundedTime = timeRes.unwrap() - timeRes.unwrap() % 30;
+    auto const roundedTime = time - time % 30;
     auto const timedToken = fmt::format("{}:{}", m_authToken, roundedTime);
     log::debug("timedToken: {}", timedToken);
     auto const hashedToken = crypto::blake2bEncrypt(std::vector<uint8_t>(timedToken.begin(), timedToken.end()));

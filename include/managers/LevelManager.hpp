@@ -7,7 +7,6 @@
 
 namespace tulip::editor {
     using geode::Result;
-    using geode::utils::MiniFunction;
     using geode::Task;
     using geode::utils::web::WebProgress;
     class LevelManager {

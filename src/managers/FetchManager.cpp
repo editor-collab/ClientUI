@@ -22,14 +22,11 @@ public:
 Result<std::vector<LevelEntry>> FetchManager::Impl::parseLevels(web::WebResponse* response) {
     if (!response->ok()) return Err(fmt::format("HTTP error: {}", response->code()));
 
-    auto res = response->json();
-    if (res.isErr()) return Err("Invalid JSON response");
+    auto json = GEODE_UNWRAP(response->json());
 
-    log::debug("Response: {}", res.unwrap().dump());
+    log::debug("Parsing levels: {}", json.dump());
 
-    auto json = res.unwrap();
-    if (json.is<std::vector<LevelEntry>>()) return Ok(json.as<std::vector<LevelEntry>>());
-    return Err("Invalid JSON response");
+    return json.as<std::vector<LevelEntry>>();
 }
 
 Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getMyLevels() {

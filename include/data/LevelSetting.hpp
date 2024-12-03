@@ -67,7 +67,7 @@ namespace tulip::editor {
 template <>
 struct matjson::Serialize<tulip::editor::DefaultSharingType> {
     using DefaultSharingType = tulip::editor::DefaultSharingType;
-    static matjson::Value to_json(DefaultSharingType const& sharing) {
+    static matjson::Value toJson(DefaultSharingType const& sharing) {
         switch (sharing) {
             case DefaultSharingType::Restricted: return "restricted";
             case DefaultSharingType::Viewer: return "viewer";
@@ -75,15 +75,13 @@ struct matjson::Serialize<tulip::editor::DefaultSharingType> {
             case DefaultSharingType::Admin: return "admin";
         }
     }
-    static DefaultSharingType from_json(matjson::Value const& value) {
-        if (value == "restricted") return DefaultSharingType::Restricted;
-        if (value == "viewer") return DefaultSharingType::Viewer;
-        if (value == "editor") return DefaultSharingType::Editor;
-        if (value == "admin") return DefaultSharingType::Admin;
-        return DefaultSharingType::Restricted;
-    }
-    static bool is_json(matjson::Value const& json) {
-        return json.is_string();
+    static geode::Result<DefaultSharingType> fromJson(matjson::Value const& value) {
+        auto str = value.asString().unwrapOrDefault();
+        if (str == "restricted") return geode::Ok(DefaultSharingType::Restricted);
+        if (str == "viewer") return geode::Ok(DefaultSharingType::Viewer);
+        if (str == "editor") return geode::Ok(DefaultSharingType::Editor);
+        if (str == "admin") return geode::Ok(DefaultSharingType::Admin);
+        return geode::Ok(DefaultSharingType::Restricted);
     }
 };
 
@@ -91,20 +89,17 @@ template <>
 struct matjson::Serialize<tulip::editor::SettingUserEntry> {
     using SettingUserEntry = tulip::editor::SettingUserEntry;
     using DefaultSharingType = tulip::editor::DefaultSharingType;
-    static matjson::Value to_json(SettingUserEntry const& entry) {
+    static matjson::Value toJson(SettingUserEntry const& entry) {
         auto value = matjson::Value();
-        value.try_set("name", entry.name);
-        value.try_set("role", entry.role);
+        value["name"] = entry.name;
+        value["role"] = entry.role;
         return value;
     }
-    static SettingUserEntry from_json(matjson::Value const& value) {
+    static geode::Result<SettingUserEntry> fromJson(matjson::Value const& value) {
         SettingUserEntry entry;
-        entry.name = value.try_get<std::string>("name").value_or("");
-        entry.role = value.try_get<DefaultSharingType>("role").value_or(DefaultSharingType::Viewer);
-        return entry;
-    }
-    static bool is_json(matjson::Value const& json) {
-        return json.is_object();
+        entry.name = value["name"].asString().unwrapOrDefault();
+        entry.role = value["role"].as<DefaultSharingType>().unwrapOr(DefaultSharingType::Viewer);
+        return geode::Ok(entry);
     }
 };
 
@@ -113,27 +108,24 @@ struct matjson::Serialize<tulip::editor::LevelSetting> {
     using LevelSetting = tulip::editor::LevelSetting;
     using DefaultSharingType = tulip::editor::DefaultSharingType;
     using SettingUserEntry = tulip::editor::SettingUserEntry;
-    static matjson::Value to_json(LevelSetting const& entry) {
+    static matjson::Value toJson(LevelSetting const& entry) {
         auto value = matjson::Value();
-        value.try_set("users", entry.users);
-        value.try_set("title", entry.title);
-        value.try_set("description", entry.description);
-        value.try_set("default-sharing", entry.defaultSharing);
-        value.try_set("copyable", entry.copyable);
-        value.try_set("discoverable", entry.discoverable);
+        value["users"] = entry.users;
+        value["title"] = entry.title;
+        value["description"] = entry.description;
+        value["default-sharing"] = entry.defaultSharing;
+        value["copyable"] = entry.copyable;
+        value["discoverable"] = entry.discoverable;
         return value;
     }
-    static LevelSetting from_json(matjson::Value const& value) {
+    static geode::Result<LevelSetting> fromJson(matjson::Value const& value) {
         LevelSetting entry;
-        entry.users = value.try_get<std::vector<SettingUserEntry>>("users").value_or(std::vector<SettingUserEntry>{});
-        entry.title = value.try_get<std::string>("title").value_or("");
-        entry.description = value.try_get<std::string>("description").value_or("");
-        entry.defaultSharing = value.try_get<DefaultSharingType>("default-sharing").value_or(DefaultSharingType::Restricted);
-        entry.copyable = value.try_get<bool>("copyable").value_or(false);
-        entry.discoverable = value.try_get<bool>("discoverable").value_or(false);
-        return entry;
-    }
-    static bool is_json(matjson::Value const& json) {
-        return json.is_object();
+        entry.users = value["users"].as<std::vector<SettingUserEntry>>().unwrapOrDefault();
+        entry.title = value["title"].asString().unwrapOrDefault();
+        entry.description = value["description"].asString().unwrapOrDefault();
+        entry.defaultSharing = value["default-sharing"].as<DefaultSharingType>().unwrapOr(DefaultSharingType::Restricted);
+        entry.copyable = value["copyable"].asBool().unwrapOr(false);
+        entry.discoverable = value["discoverable"].asBool().unwrapOr(false);
+        return geode::Ok(entry);
     }
 };

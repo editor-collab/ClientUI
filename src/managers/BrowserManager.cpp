@@ -91,7 +91,9 @@ std::optional<LevelEntry*> BrowserManager::Impl::getLevelEntry(GJGameLevel* leve
 }
 
 std::optional<LevelEntry*> BrowserManager::Impl::getLevelEntry(std::string_view key) {
+    log::debug("searching for entry with key {}", key);
     for (auto& [level, entry] : m_levelEntries) {
+        log::debug("checking entry {} against {}", entry.key, key);
         if (entry.key == key) {
             return &entry;
         }

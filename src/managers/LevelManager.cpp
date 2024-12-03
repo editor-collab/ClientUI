@@ -77,20 +77,14 @@ Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::c
     auto task = req.post(WebManager::get()->getServerURL("level/create"));
     auto ret = task.map([=, this](auto response) -> Result<LevelManager::CreateLevelResult> {
         if (response->ok()) {
-            auto const res = response->json();
-            if (res.isErr()) {
-                return Err(res.unwrapErr());
-            }
-            matjson::Value const values = res.unwrap();
+            matjson::Value const values = GEODE_UNWRAP(response->json());
 
-            if (values["level-key"].is<std::string>() && values["client-id"].is<uint32_t>()) {
-                auto const levelKey = values["level-key"].as<std::string>();
-                uint32_t const clientId = values["client-id"].as<uint32_t>();
-                m_hostedLevels.push_back(levelKey);
-                m_joinedLevel = levelKey;
-                return Ok(LevelManager::CreateLevelResult{clientId, levelKey});
-            }
-            return Err("Invalid response");
+            auto levelKey = GEODE_UNWRAP(values["level-key"].asString());
+            uint32_t const clientId = GEODE_UNWRAP(values["client-id"].asInt());
+
+            m_hostedLevels.push_back(levelKey);
+            m_joinedLevel = levelKey;
+            return Ok(LevelManager::CreateLevelResult{clientId, levelKey});
         }
         return Err(fmt::format("HTTP error: {}", response->code()));
     });
@@ -106,39 +100,35 @@ Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::Impl::joi
         auto task = req.post(WebManager::get()->getServerURL("level/join"));
         auto task2 = task.map([=, this](auto response) -> Result<LevelManager::JoinLevelResult> {
             if (response->ok()) {
-                auto const res = response->json();
-                if (res.isErr()) {
-                    return Err(res.unwrapErr());
-                }
-                matjson::Value const values = res.unwrap();
+                matjson::Value const values = GEODE_UNWRAP(response->json());
 
-                if (values["snapshot-hash"].is<std::string>() && values["client-id"].is<uint32_t>()) {
-                    auto const hash = values["snapshot-hash"].as<std::string>();
-                    uint32_t const clientId = values["client-id"].as<uint32_t>();
-                    log::debug("Joined level {} with client ID {}", levelKeyStr, clientId);
-                    log::debug("Snapshot hash: {}", hash);
-                    CameraValue camera;
-                    if (values.contains("camera-value") && values["camera-value"].is<CameraValue>()) {
-                        log::debug("Camera value: {}", values["camera-value"].dump());
-                        camera = values["camera-value"].as<CameraValue>();
-                    }
-                    return Ok(LevelManager::JoinLevelResult{clientId, hash, {}, camera});
-                }
-                return Err("Invalid response");
+                auto const hash = GEODE_UNWRAP(values["snapshot-hash"].asString());
+                uint32_t const clientId = GEODE_UNWRAP(values["client-id"].asInt());
+                auto camera = values["camera-value"].as<CameraValue>().unwrapOrDefault();
+
+                log::debug("Joined level {} with client ID {}", levelKeyStr, clientId);
+                log::debug("Snapshot hash: {}", hash);
+                
+                return Ok(LevelManager::JoinLevelResult{clientId, hash, {}, camera});
             }
             return Err(fmt::format("HTTP error: {}", response->code()));
         });
-        task2.listen([=, this](auto* result) {
-            if (result->isOk()) {
-                auto task = this->getSnapshot(levelKeyStr, result->unwrap().snapshotHash);
-                task.listen([=, this](auto* result2) {
-                    if (result2->isOk()) {
+        task2.listen([=, this](auto* resultp) {
+            if (GEODE_UNWRAP_IF_OK(values, *resultp)) {
+                auto task = this->getSnapshot(levelKeyStr, values.snapshotHash);
+                log::debug("task for snapshot created");
+                task.listen([=, this](auto* result2p) {
+                    log::debug("task for snapshot listened");
+                    if (GEODE_UNWRAP_EITHER(snapshot, err, *result2p)) {
+                        auto values2 = values;
+                        log::debug("snapshot okay");
                         m_joinedLevel = levelKeyStr;
-                        result->unwrap().snapshot = result2->unwrap();
-                        finish(Ok(std::move(result->unwrap())));
+                        values2.snapshot = std::move(snapshot);
+                        log::debug("snapshot set");
+                        finish(Ok(std::move(values2)));
                     }
                     else {
-                        finish(Err(result2->unwrapErr()));
+                        finish(Err(err));
                     }
                 }, [=](auto* progress) {
                     progressC(*progress);

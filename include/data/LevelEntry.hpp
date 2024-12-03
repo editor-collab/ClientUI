@@ -20,27 +20,24 @@ template <>
 struct matjson::Serialize<tulip::editor::LevelEntry> {
     using LevelEntry = tulip::editor::LevelEntry;
     using LevelSetting = tulip::editor::LevelSetting;
-    static matjson::Value to_json(LevelEntry const& entry) {
+    static matjson::Value toJson(LevelEntry const& entry) {
         auto value = matjson::Value();
-        value.try_set("settings", entry.settings);
-        value.try_set("host-account-id", entry.hostAccountId);
-        value.try_set("key", entry.key);
-        value.try_set("user-count", entry.userCount);
-        value.try_set("slot-id", entry.slotId);
-        value.try_set("unique-id", entry.uniqueId);
+        value["settings"] = entry.settings;
+        value["host-account-id"] = entry.hostAccountId;
+        value["key"] = entry.key;
+        value["user-count"] = entry.userCount;
+        value["slot-id"] = entry.slotId;
+        value["unique-id"] = entry.uniqueId;
         return value;
     }
-    static LevelEntry from_json(matjson::Value const& value) {
+    static geode::Result<LevelEntry> fromJson(matjson::Value const& value) {
         auto entry = LevelEntry();
-        entry.settings = value.try_get<LevelSetting>("settings").value_or(LevelSetting());
-        entry.hostAccountId = value.try_get<uint32_t>("host-account-id").value_or(0);
-        entry.key = value.try_get<std::string>("key").value_or("");
-        entry.userCount = value.try_get<uint32_t>("user-count").value_or(0);
-        entry.slotId = value.try_get<uint32_t>("slot-id").value_or(0);
-        entry.uniqueId = value.try_get<uint32_t>("unique-id").value_or(0);
-        return entry;
-    }
-    static bool is_json(matjson::Value const& json) {
-        return json.is_object();
+        entry.settings = value["settings"].as<LevelSetting>().unwrapOrDefault();
+        entry.hostAccountId = value["host-account-id"].asInt().unwrapOrDefault();
+        entry.key = value["key"].asString().unwrapOrDefault();
+        entry.userCount = value["user-count"].asInt().unwrapOrDefault();
+        entry.slotId = value["slot-id"].asInt().unwrapOrDefault();
+        entry.uniqueId = value["unique-id"].asInt().unwrapOrDefault();
+        return geode::Ok(entry);
     }
 };
