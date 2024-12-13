@@ -5,7 +5,7 @@
 #include <managers/WebManager.hpp>
 #include <Geode/loader/Dispatch.hpp>
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
-#include <alk.lavender/include/lavender/Lavender.hpp>
+#include <lavender/Lavender.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;

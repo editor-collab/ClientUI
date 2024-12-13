@@ -2,7 +2,7 @@
 #include <managers/BrowserManager.hpp>
 #include <managers/LevelManager.hpp>
 #include <ui/ShareSettings.hpp>
-#include <alk.lavender/include/lavender/Lavender.hpp>
+#include <lavender/Lavender.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;

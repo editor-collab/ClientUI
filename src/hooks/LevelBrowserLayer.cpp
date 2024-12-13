@@ -1,6 +1,8 @@
 #include <hooks/LevelBrowserLayer.hpp>
+#include <hooks/ui/LevelBrowserLayer.hpp>
 #include <ui/MainScene.hpp>
 #include <managers/AccountManager.hpp>
+#include <managers/FetchManager.hpp>
 #include <managers/LevelManager.hpp>
 #include <utils/CryptoHelper.hpp>
 #include <Geode/loader/Dispatch.hpp>
@@ -26,6 +28,7 @@ void LevelBrowserLayerHook::onLogin(Result<> result, bool challenge) {
 	}
 	else {
 		Notification::create("Logged in successfully!", nullptr)->show();
+		reinterpret_cast<LevelBrowserLayerUIHook*>(this)->onMyLevels(nullptr);
 	}
 }
 

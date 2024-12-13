@@ -25,6 +25,9 @@ namespace tulip::editor {
             EventListener<FetchManager::TaskType> myLevelsListener;
             EventListener<FetchManager::TaskType> sharedWithMeListener;
             EventListener<FetchManager::TaskType> discoverListener;
+
+            geode::Ref<cocos2d::CCMenu> offTabMenu;
+            geode::Ref<cocos2d::CCMenu> onTabMenu;
         };
 
         template <class Lambda>
@@ -32,7 +35,7 @@ namespace tulip::editor {
 
         CCSprite* generateTabSprite(std::string_view framename, std::string_view id, bool visible);
 
-        void revisualizeButtons(CCMenu* tabMenu, CCMenu* tabMenu2, CCNode* sender);
+        void revisualizeButtons(cocos2d::CCObject* sender);
 
         $override
         void setupLevelBrowser(cocos2d::CCArray* items);
@@ -42,6 +45,10 @@ namespace tulip::editor {
 
         $override
         bool init(GJSearchObject* searchObject);
+
+        void onMyLevels(cocos2d::CCObject* sender);
+        void onSharedWithMe(cocos2d::CCObject* sender);
+        void onDiscover(cocos2d::CCObject* sender);
 
         LevelBrowserLayerUIHook* from(LevelBrowserLayer* layer) {
             return static_cast<LevelBrowserLayerUIHook*>(layer);

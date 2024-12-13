@@ -32,11 +32,6 @@
 			"id": "cvolton.level-id-api",
 			"version": "1.0.0",
 			"importance": "required"
-		},
-		{
-			"id": "alk.lavender",
-			"version": "1.0.0",
-			"importance": "required"
 		}
 	]
 }

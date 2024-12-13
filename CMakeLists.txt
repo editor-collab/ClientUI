@@ -62,6 +62,8 @@ CPMAddPackage(
 
 CPMAddPackage("gh:tplgy/cppcodec#8019b8b")
 
+CPMAddPackage("gh:altalk23/lavender#v1.0.0")
+
 add_library(ChaCha20Poly1305 STATIC
     ${ChaCha20Poly1305_SOURCE_DIR}/ChaCha20-Poly1305.cpp
 )
@@ -76,6 +78,7 @@ target_link_libraries(${PROJECT_NAME}
     ChaCha20Poly1305
     BLAKE2
     cppcodec
+    Lavender
 )
 
 setup_geode_mod(${PROJECT_NAME})

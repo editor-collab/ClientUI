@@ -1,5 +1,5 @@
 #include <managers/CellManager.hpp>
-#include <alk.lavender/include/lavender/Lavender.hpp>
+#include <lavender/Lavender.hpp>
 
 using namespace tulip::editor;
 using namespace geode::prelude;

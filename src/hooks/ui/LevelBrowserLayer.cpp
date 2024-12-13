@@ -2,7 +2,7 @@
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
 #include <managers/BrowserManager.hpp>
 #include <managers/CellManager.hpp>
-#include <alk.lavender/include/lavender/Lavender.hpp>
+#include <lavender/Lavender.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;
@@ -24,14 +24,35 @@ CCSprite* LevelBrowserLayerUIHook::generateTabSprite(std::string_view framename,
     return button;
 }
 
-void LevelBrowserLayerUIHook::revisualizeButtons(CCMenu* tabMenu, CCMenu* tabMenu2, CCNode* sender) {
-    for (auto child : CCArrayExt<CCNode*>(tabMenu2->getChildren())) {
+void LevelBrowserLayerUIHook::revisualizeButtons(CCObject* sender) {
+    for (auto child : CCArrayExt<CCNode*>(m_fields->onTabMenu->getChildren())) {
         child->setVisible(false);
     }
-    for (auto child : CCArrayExt<CCNode*>(tabMenu->getChildren())) {
+    for (auto child : CCArrayExt<CCNode*>(m_fields->offTabMenu->getChildren())) {
         child->setVisible(true);
     }
-    sender->setVisible(false);
+    if (sender) {
+        static_cast<CCNode*>(sender)->setVisible(false);
+    }
+}
+
+void LevelBrowserLayerUIHook::onMyLevels(CCObject* sender) {
+    this->revisualizeButtons(sender);
+    m_fields->onTabMenu->getChildByID("my-levels-tab-on"_spr)->setVisible(true);
+    m_fields->currentTab = CurrentTab::MyLevels;
+    m_fields->myLevelsListener.setFilter(FetchManager::get()->getMyLevels());
+}
+void LevelBrowserLayerUIHook::onSharedWithMe(CCObject* sender) {
+    this->revisualizeButtons(sender);
+    m_fields->onTabMenu->getChildByID("shared-with-me-tab-on"_spr)->setVisible(true);
+    m_fields->currentTab = CurrentTab::SharedWithMe;
+    m_fields->sharedWithMeListener.setFilter(FetchManager::get()->getSharedWithMe());
+}
+void LevelBrowserLayerUIHook::onDiscover(CCObject* sender) {
+    this->revisualizeButtons(sender);
+    m_fields->onTabMenu->getChildByID("discover-tab-on"_spr)->setVisible(true);
+    m_fields->currentTab = CurrentTab::Discover;
+    m_fields->discoverListener.setFilter(FetchManager::get()->getDiscover());
 }
 
 $override
@@ -46,50 +67,41 @@ void LevelBrowserLayerUIHook::setupLevelBrowser(cocos2d::CCArray* items) {
         m_list->getChildByID("title")->setVisible(false);
         top->setDisplayFrame(CCSpriteFrameCache::get()->spriteFrameByName("GJ_table_top02_001.png"));
 
-        auto tabMenu = CCMenu::create();
-        tabMenu->setContentSize(top->getContentSize() - ccp(60, 0));
-        tabMenu->setAnchorPoint(top->getAnchorPoint());
-        tabMenu->setPosition(top->getPosition() + ccp(0, 11));
-        tabMenu->setLayout(RowLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Between));
+        m_fields->offTabMenu = CCMenu::create();
+        m_fields->offTabMenu->setContentSize(top->getContentSize() - ccp(60, 0));
+        m_fields->offTabMenu->setAnchorPoint(top->getAnchorPoint());
+        m_fields->offTabMenu->setPosition(top->getPosition() + ccp(0, 11));
+        m_fields->offTabMenu->setLayout(RowLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Between));
 
-        auto tabMenu2 = CCMenu::create();
-        tabMenu2->setContentSize(top->getContentSize() - ccp(60, 0));
-        tabMenu2->setAnchorPoint(top->getAnchorPoint());
-        tabMenu2->setPosition(top->getPosition() + ccp(0, 11));
-        tabMenu2->setLayout(RowLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Between));
+        m_fields->onTabMenu = CCMenu::create();
+        m_fields->onTabMenu->setContentSize(top->getContentSize() - ccp(60, 0));
+        m_fields->onTabMenu->setAnchorPoint(top->getAnchorPoint());
+        m_fields->onTabMenu->setPosition(top->getPosition() + ccp(0, 11));
+        m_fields->onTabMenu->setLayout(RowLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Between));
 
-        tabMenu->addChild(this->generateTabButton("MyLevelsTabOff.png"_spr, "my-levels-tab-off"_spr, [=, this](auto* sender) {
-            this->revisualizeButtons(tabMenu, tabMenu2, sender);
-            tabMenu2->getChildByID("my-levels-tab-on"_spr)->setVisible(true);
-            m_fields->currentTab = CurrentTab::MyLevels;
-            m_fields->myLevelsListener.setFilter(FetchManager::get()->getMyLevels());
+        m_fields->offTabMenu->addChild(this->generateTabButton("MyLevelsTabOff.png"_spr, "my-levels-tab-off"_spr, [=, this](auto* sender) {
+            this->onMyLevels(sender);
         }));
-        tabMenu->addChild(this->generateTabButton("SharedWithMeTabOff.png"_spr, "shared-with-me-tab-off"_spr, [=, this](auto* sender) {
-            this->revisualizeButtons(tabMenu, tabMenu2, sender);
-            tabMenu2->getChildByID("shared-with-me-tab-on"_spr)->setVisible(true);
-            m_fields->currentTab = CurrentTab::SharedWithMe;
-            m_fields->sharedWithMeListener.setFilter(FetchManager::get()->getSharedWithMe());
+        m_fields->offTabMenu->addChild(this->generateTabButton("SharedWithMeTabOff.png"_spr, "shared-with-me-tab-off"_spr, [=, this](auto* sender) {
+            this->onSharedWithMe(sender);
         }));
-        tabMenu->addChild(this->generateTabButton("DiscoverTabOff.png"_spr, "discover-tab-off"_spr, [=, this](auto* sender) {
-            this->revisualizeButtons(tabMenu, tabMenu2, sender);
-            tabMenu2->getChildByID("discover-tab-on"_spr)->setVisible(true);
-            m_fields->currentTab = CurrentTab::Discover;
-            m_fields->discoverListener.setFilter(FetchManager::get()->getDiscover());
+        m_fields->offTabMenu->addChild(this->generateTabButton("DiscoverTabOff.png"_spr, "discover-tab-off"_spr, [=, this](auto* sender) {
+            this->onDiscover(sender);
         }));
 
-        tabMenu2->addChild(this->generateTabSprite("MyLevelsTabOn.png"_spr, "my-levels-tab-on"_spr, m_fields->currentTab == CurrentTab::MyLevels));
-        tabMenu2->addChild(this->generateTabSprite("SharedWithMeTabOn.png"_spr, "shared-with-me-tab-on"_spr, m_fields->currentTab == CurrentTab::SharedWithMe));
-        tabMenu2->addChild(this->generateTabSprite("DiscoverTabOn.png"_spr, "discover-tab-on"_spr, m_fields->currentTab == CurrentTab::Discover));
+        m_fields->onTabMenu->addChild(this->generateTabSprite("MyLevelsTabOn.png"_spr, "my-levels-tab-on"_spr, m_fields->currentTab == CurrentTab::MyLevels));
+        m_fields->onTabMenu->addChild(this->generateTabSprite("SharedWithMeTabOn.png"_spr, "shared-with-me-tab-on"_spr, m_fields->currentTab == CurrentTab::SharedWithMe));
+        m_fields->onTabMenu->addChild(this->generateTabSprite("DiscoverTabOn.png"_spr, "discover-tab-on"_spr, m_fields->currentTab == CurrentTab::Discover));
 
-        tabMenu->updateLayout();
-        tabMenu->setID("tab-off-menu"_spr);
+        m_fields->offTabMenu->updateLayout();
+        m_fields->offTabMenu->setID("tab-off-menu"_spr);
 
-        m_list->addChild(tabMenu, -15);
+        m_list->addChild(m_fields->offTabMenu, -15);
 
-        tabMenu2->updateLayout();
-        tabMenu2->setID("tab-on-menu"_spr);
+        m_fields->onTabMenu->updateLayout();
+        m_fields->onTabMenu->setID("tab-on-menu"_spr);
 
-        m_list->addChild(tabMenu2, 15);
+        m_list->addChild(m_fields->onTabMenu, 15);
     }
 
     for (auto cell : CCArrayExt<LevelCell*>(m_list->m_listView->m_tableView->m_cellArray)) {

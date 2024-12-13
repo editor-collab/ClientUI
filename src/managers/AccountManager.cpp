@@ -114,7 +114,7 @@ void AccountManager::Impl::completeChallengeCallback(web::WebTask::Event* event)
         return;
     }
 
-    GEODE_UNWRAP_OR_ELSE(messageId, numFromString<int>(res.substr(0, res.find(":")))) {
+    GEODE_UNWRAP_OR_ELSE(messageId, err, numFromString<int>(res.substr(0, res.find(":")))) {
         m_requestCallback(Err("Invalid message response"));
         return;
     }
@@ -145,7 +145,7 @@ void AccountManager::Impl::startChallengeCallback(web::WebTask::Event* event) {
         return;
     }
 
-    GEODE_UNWRAP_OR_ELSE(toSendId, numFromString<int>(res.substr(0, res.find(":")))) {
+    GEODE_UNWRAP_OR_ELSE(toSendId, err, numFromString<int>(res.substr(0, res.find(":")))) {
         m_requestCallback(Err("Invalid account response"));
         return;
     }
@@ -230,7 +230,7 @@ void AccountManager::Impl::serverTimeCallback(web::WebTask::Event* event) {
 
     auto const res = response->string().unwrapOrDefault();
 
-    GEODE_UNWRAP_OR_ELSE(time, numFromString<uint64_t>(res)) {
+    GEODE_UNWRAP_OR_ELSE(time, err, numFromString<uint64_t>(res)) {
         m_requestCallback(Err("Invalid time response"));
         return;
     }

@@ -64,8 +64,8 @@ web::WebRequest WebManager::Impl::createAuthenticatedRequest() const {
 }
 
 std::string WebManager::Impl::getServerURL() const {
-    // return "localhost:9100";
-    return "https://tulipalk.me/editor-collab/testing";
+    return "localhost:9100";
+    // return "https://tulipalk.me/editor-collab/testing";
 }
 
 bool WebManager::Impl::isSocketConnected() const {
