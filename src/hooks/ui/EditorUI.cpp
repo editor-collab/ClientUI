@@ -2,6 +2,7 @@
 #include <managers/BrowserManager.hpp>
 #include <managers/LevelManager.hpp>
 #include <ui/ShareSettings.hpp>
+#include <ui/LevelUserList.hpp>
 #include <lavender/Lavender.hpp>
 
 using namespace geode::prelude;
@@ -18,7 +19,8 @@ bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
                 log::debug("joined level {}", *key);
                 if (auto entry = BrowserManager::get()->getLevelEntry(*key)) {
                     log::debug("found entry");
-                    auto shareSettings = ShareSettings::create(*entry);
+                    // auto shareSettings = ShareSettings::create(*entry);
+                    auto shareSettings = LevelUserList::create(*entry);
                 }
             }
         },

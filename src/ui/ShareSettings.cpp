@@ -70,8 +70,10 @@ bool ShareSettings::init(LevelEntry* entry) {
         },
     };
 
-    auto userList = new ui::LayerColor {
-        .color = ccc4(0x00, 0x00, 0x00, 0x3f),
+    auto userList = new ui::Scale9Sprite {
+        .fileName = "square02b_001.png",
+        .scale = .5f,
+        .color = ccc4(0x00, 0x00, 0x00, 0x5a),
         .size = CCSize{FLT_MAX, FLT_MAX},
         .child = new ui::Container {
             .child = new ui::ScrollLayer {
@@ -256,8 +258,10 @@ bool ShareSettings::init(LevelEntry* entry) {
                         },
                         new ui::Container {.height = 5},
                         new ui::Menu {
-                            .child = new ui::LayerColor {
-                                .color = ccc4(0x00, 0x00, 0x00, 0x3f),
+                            .child = new ui::Scale9Sprite {
+                                .fileName = "square02b_001.png",
+                                .scale = .5f,
+                                .color = ccc4(0x00, 0x00, 0x00, 0x5a),
                                 .child = new ui::Container {
                                     .padding = ui::EdgeInsets::All{5.f},
                                     .child = new ui::Row {

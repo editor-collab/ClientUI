@@ -15,7 +15,7 @@ using namespace tulip::editor;
 
 struct ExitHook : Modify<ExitHook, GameManager> {
 	struct Fields {
-		EventListener<Task<Result<>, WebProgress>> leaveLevelListener;
+		EventListener<Task<Result<>, WebProgress>> leaveLevelListener;		
 	};
 
 	void returnToLastScene(GJGameLevel* level) {
@@ -62,12 +62,8 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 		CCMenuItemSpriteExtra* m_joinButton = nullptr;
 		CCSprite* m_joinButtonSprite = nullptr;
 
-		struct Destructor {
-			~Destructor() {
-				WebManager::get()->clearSocketCallbacks();
-			}
-		} m_destructor;
-	};
+		EventListener<DispatchFilter<>> m_disconnectListener = DispatchFilter<>("alk.editorcollab/socket-disconnected");
+	};	
 
 	$override
 	void textChanged(CCTextInputNode* input) {
@@ -193,9 +189,11 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 				if (WebManager::get()->isSocketConnected()) {
 					m_fields->m_joinButton->setEnabled(false);
 					m_fields->m_joinButtonSprite->setColor(ccColor3B { 100, 100, 100 });
-					WebManager::get()->runOnSocketDisconnected([this] {
+					m_fields->m_disconnectListener.bind([=, this]() {
 						m_fields->m_joinButton->setEnabled(true);
 						m_fields->m_joinButtonSprite->setColor(ccColor3B { 255, 255, 255 });
+
+						return ListenerResult::Propagate;
 					});
 				}
 			}

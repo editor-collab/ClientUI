@@ -11,40 +11,39 @@ public:
     Impl() = default;
     ~Impl() = default;
 
-    std::vector<std::function<void()>> m_onSocketConnected;
-    std::vector<std::function<void()>> m_onSocketDisconnected;
     bool m_socketConnected = false;
 
     void init();
+
+    EventListener<DispatchFilter<>> m_socketConnectedListener = DispatchFilter<>("alk.editorcollab/socket-connected");
+    EventListener<DispatchFilter<>> m_socketDisconnectedListener = DispatchFilter<>("alk.editorcollab/socket-disconnected");
+    EventListener<DispatchFilter<>> m_socketAbnormallyDisconnectedListener = DispatchFilter<>("alk.editorcollab/socket-abnormally-disconnected");
 
     web::WebRequest createRequest() const;
     web::WebRequest createAuthenticatedRequest() const;
     std::string getServerURL() const;
 
     bool isSocketConnected() const;
-    void runOnSocketConnected(std::function<void()>&& callback);
-    void runOnSocketDisconnected(std::function<void()>&& callback);
-    void clearSocketCallbacks();
 };
 
 void WebManager::Impl::init() {
-    new EventListener([this]() {
+    m_socketConnectedListener.bind([this]() {
         m_socketConnected = true;
-		for (auto& callback : m_onSocketConnected) {
-            callback();
-        }
-        m_onSocketConnected.clear();
-		return ListenerResult::Propagate;
-    }, DispatchFilter<>("alk.editorcollab/socket-connected"));
 
-    new EventListener([this]() {
-        m_socketConnected = false;
-        for (auto& callback : m_onSocketDisconnected) {
-            callback();
-        }
-        m_onSocketDisconnected.clear();
         return ListenerResult::Propagate;
-    }, DispatchFilter<>("alk.editorcollab/socket-disconnected"));
+    });
+
+    m_socketDisconnectedListener.bind([this]() {
+        m_socketConnected = false;
+
+        return ListenerResult::Propagate;
+    });
+
+    m_socketAbnormallyDisconnectedListener.bind([this]() {
+        m_socketConnected = false;
+
+        return ListenerResult::Propagate;
+    });
 }
 
 web::WebRequest WebManager::Impl::createRequest() const {
@@ -70,19 +69,6 @@ std::string WebManager::Impl::getServerURL() const {
 
 bool WebManager::Impl::isSocketConnected() const {
     return m_socketConnected;
-}
-
-void WebManager::Impl::runOnSocketConnected(std::function<void()>&& callback) {
-    m_onSocketConnected.push_back(std::move(callback));
-}
-
-void WebManager::Impl::runOnSocketDisconnected(std::function<void()>&& callback) {
-    m_onSocketDisconnected.push_back(std::move(callback));
-}
-
-void WebManager::Impl::clearSocketCallbacks() {
-    m_onSocketConnected.clear();
-    m_onSocketDisconnected.clear();
 }
 
 WebManager* WebManager::get() {
@@ -116,16 +102,4 @@ web::WebRequest WebManager::createAuthenticatedRequest() const {
 
 bool WebManager::isSocketConnected() const {
     return impl->isSocketConnected();
-}
-
-void WebManager::runOnSocketConnected(std::function<void()>&& callback) {
-    impl->runOnSocketConnected(std::move(callback));
-}
-
-void WebManager::runOnSocketDisconnected(std::function<void()>&& callback) {
-    impl->runOnSocketDisconnected(std::move(callback));
-}
-
-void WebManager::clearSocketCallbacks() {
-    impl->clearSocketCallbacks();
 }

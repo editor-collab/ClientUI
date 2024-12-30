@@ -22,6 +22,7 @@ add_library(${PROJECT_NAME} SHARED
     src/ui/GenericForm.cpp
     src/ui/GenericList.cpp
     src/ui/MainScene.cpp
+    src/ui/LevelUserList.cpp
     src/ui/ExploreMenu.cpp
     src/ui/ShareSettings.cpp
     src/utils/CryptoHelper.cpp

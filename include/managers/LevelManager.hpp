@@ -37,6 +37,7 @@ namespace tulip::editor {
         Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);
         Task<Result<std::vector<uint8_t>>, WebProgress> getSnapshot(std::string_view levelKey, std::string_view hash);
         Task<Result<>, WebProgress> updateLevelSettings(std::string_view levelKey, LevelSetting&& settings);
+        Task<Result<>, WebProgress> kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason);
 
         std::vector<std::string> getHostedLevels() const;
 

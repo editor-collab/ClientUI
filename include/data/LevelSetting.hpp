@@ -3,6 +3,7 @@
 #include <vector>
 #include <string>
 #include <matjson.hpp>
+#include "User.hpp"
 #include <Geode/Geode.hpp>
 
 namespace tulip::editor {
@@ -18,9 +19,15 @@ namespace tulip::editor {
         std::string name;
         DefaultSharingType role;
     };
+
+    struct BannedUserEntry {
+        User user;
+        std::string reason;
+    };
     
     struct LevelSetting {
         std::vector<SettingUserEntry> users;
+        std::vector<BannedUserEntry> banned;
 
         std::string title;
         std::string description;
@@ -60,6 +67,23 @@ namespace tulip::editor {
         void setUser(std::string_view name, DefaultSharingType type) {
             this->removeUser(name);
             users.push_back({std::string(name), type});
+        }
+
+        bool hasBanned(uint32_t accountId) const {
+            return std::any_of(banned.begin(), banned.end(), [accountId](auto const& user) {
+                return user.user.accountId == accountId;
+            });
+        }
+
+        void setBanned(User user, std::string_view reason) {
+            this->removeBanned(user.accountId);
+            banned.push_back({user, std::string(reason)});
+        }
+
+        void removeBanned(uint32_t accountId) {
+            banned.erase(std::remove_if(banned.begin(), banned.end(), [accountId](auto const& user) {
+                return user.user.accountId == accountId;
+            }), banned.end());
         }
     };
 }
@@ -104,13 +128,33 @@ struct matjson::Serialize<tulip::editor::SettingUserEntry> {
 };
 
 template <>
+struct matjson::Serialize<tulip::editor::BannedUserEntry> {
+    using BannedUserEntry = tulip::editor::BannedUserEntry;
+    using User = tulip::editor::User;
+    static matjson::Value toJson(BannedUserEntry const& entry) {
+        auto value = matjson::Value();
+        value["user"] = entry.user;
+        value["reason"] = entry.reason;
+        return value;
+    }
+    static geode::Result<BannedUserEntry> fromJson(matjson::Value const& value) {
+        BannedUserEntry entry;
+        entry.user = value["user"].as<User>().unwrapOrDefault();
+        entry.reason = value["reason"].asString().unwrapOrDefault();
+        return geode::Ok(entry);
+    }
+};
+
+template <>
 struct matjson::Serialize<tulip::editor::LevelSetting> {
     using LevelSetting = tulip::editor::LevelSetting;
     using DefaultSharingType = tulip::editor::DefaultSharingType;
     using SettingUserEntry = tulip::editor::SettingUserEntry;
+    using BannedUserEntry = tulip::editor::BannedUserEntry;
     static matjson::Value toJson(LevelSetting const& entry) {
         auto value = matjson::Value();
         value["users"] = entry.users;
+        value["banned"] = entry.banned;
         value["title"] = entry.title;
         value["description"] = entry.description;
         value["default-sharing"] = entry.defaultSharing;
@@ -121,6 +165,7 @@ struct matjson::Serialize<tulip::editor::LevelSetting> {
     static geode::Result<LevelSetting> fromJson(matjson::Value const& value) {
         LevelSetting entry;
         entry.users = value["users"].as<std::vector<SettingUserEntry>>().unwrapOrDefault();
+        entry.banned = value["banned"].as<std::vector<BannedUserEntry>>().unwrapOrDefault();
         entry.title = value["title"].asString().unwrapOrDefault();
         entry.description = value["description"].asString().unwrapOrDefault();
         entry.defaultSharing = value["default-sharing"].as<DefaultSharingType>().unwrapOr(DefaultSharingType::Restricted);

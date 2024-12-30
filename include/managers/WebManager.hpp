@@ -21,8 +21,5 @@ namespace tulip::editor {
         std::string getServerURL(std::string_view path) const;
 
         bool isSocketConnected() const;
-        void runOnSocketConnected(std::function<void()>&& callback);
-        void runOnSocketDisconnected(std::function<void()>&& callback);
-        void clearSocketCallbacks();
     };
 }

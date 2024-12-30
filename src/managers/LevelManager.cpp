@@ -1,5 +1,6 @@
 #include <managers/LevelManager.hpp>
 #include <managers/WebManager.hpp>
+#include <Geode/loader/Dispatch.hpp>
 
 using namespace tulip::editor;
 using namespace geode::prelude;
@@ -12,6 +13,10 @@ public:
     std::vector<std::string> m_hostedLevels;
     std::optional<std::string> m_joinedLevel;
     uint32_t m_clientId = 0;
+
+    EventListener<DispatchFilter<std::string_view>> m_levelKickedListener = DispatchFilter<std::string_view>("alk.editorcollab/level-kicked");
+
+    void init();
     
     bool errorCallback(web::WebResponse* response);
 
@@ -21,12 +26,20 @@ public:
     Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);
     Task<Result<std::vector<uint8_t>>, WebProgress> getSnapshot(std::string_view levelKey, std::string_view hash);
     Task<Result<>, WebProgress> updateLevelSettings(std::string_view levelKey, LevelSetting&& settings);
+    Task<Result<>, WebProgress> kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason);
 
     std::vector<std::string> getHostedLevels() const;
     std::optional<std::string> getJoinedLevel() const;
     uint32_t getClientId() const;
     bool isInLevel() const;
 };
+
+void LevelManager::Impl::init() {
+    m_levelKickedListener.bind([this](std::string_view reason) {
+        m_joinedLevel = std::nullopt;
+        return ListenerResult::Propagate;
+    });
+}
 
 std::vector<std::string> LevelManager::Impl::getHostedLevels() const {
     return m_hostedLevels;
@@ -206,8 +219,30 @@ Task<Result<>, WebProgress> LevelManager::Impl::updateLevelSettings(std::string_
     return ret;
 }
 
+Task<Result<>, WebProgress> LevelManager::Impl::kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason) {
+    log::debug("Kicking user {} from level {}", accountId, levelKey);
+
+    auto req = WebManager::get()->createAuthenticatedRequest();
+    req.param("level_key", levelKey);
+    req.param("account_id", accountId);
+    req.param("reason", reason);
+    auto task = req.post(WebManager::get()->getServerURL("level/kick_user"));
+    auto ret = task.map([](web::WebResponse* response) -> Result<> {
+        if (response->ok()) {
+            return Ok();
+        }
+        return Err(fmt::format("HTTP error: {}", response->code()));
+    });
+    return ret;
+}
+
 LevelManager* LevelManager::get() {
     static LevelManager instance;
+    static bool initialized = false;
+    if (!initialized) {
+        instance.impl->init();
+        initialized = true;
+    }
     return &instance;
 }
 
@@ -231,6 +266,10 @@ Task<Result<std::vector<uint8_t>>, WebProgress> LevelManager::getSnapshot(std::s
 }
 Task<Result<>, WebProgress> LevelManager::updateLevelSettings(std::string_view levelKey, LevelSetting&& settings) {
     return impl->updateLevelSettings(levelKey, std::move(settings));
+}
+
+Task<Result<>, WebProgress> LevelManager::kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason) {
+    return impl->kickUser(levelKey, accountId, reason);
 }
 
 std::vector<std::string> LevelManager::getHostedLevels() const {
