@@ -12,6 +12,7 @@ add_library(${PROJECT_NAME} SHARED
     src/hooks/LevelBrowserLayer.cpp
     src/hooks/ui/LevelBrowserLayer.cpp
     src/hooks/ui/EditorUI.cpp
+    src/hooks/ui/EditorPauseLayer.cpp
     src/managers/AccountManager.cpp
     src/managers/BrowserManager.cpp
     src/managers/CellManager.cpp
