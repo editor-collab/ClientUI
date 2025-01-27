@@ -15,9 +15,22 @@ namespace tulip::editor {
         Admin,
     };
 
+    struct AllowedRange {
+        uint32_t min = 0;
+        uint32_t max = 0;
+    };
+
+    struct UserLimitsEntry {
+        std::vector<AllowedRange> layers;
+        std::vector<AllowedRange> groups;
+        std::vector<AllowedRange> colors;
+        std::vector<AllowedRange> items;
+    };
+
     struct SettingUserEntry {
         std::string name;
         DefaultSharingType role;
+        UserLimitsEntry limits;
     };
 
     struct BannedUserEntry {
@@ -50,6 +63,15 @@ namespace tulip::editor {
                 }
             }
             return DefaultSharingType::Restricted;
+        }
+
+        SettingUserEntry* getUserEntry(std::string_view name) {
+            for (auto& user : users) {
+                if (user.name == name) {
+                    return &user;
+                }
+            }
+            return nullptr;
         }
 
         bool hasUser(std::string_view name) const {
@@ -110,19 +132,61 @@ struct matjson::Serialize<tulip::editor::DefaultSharingType> {
 };
 
 template <>
+struct matjson::Serialize<tulip::editor::AllowedRange> {
+    using AllowedRange = tulip::editor::AllowedRange;
+    static matjson::Value toJson(AllowedRange const& range) {
+        auto value = matjson::Value();
+        value["min"] = range.min;
+        value["max"] = range.max;
+        return value;
+    }
+    static geode::Result<AllowedRange> fromJson(matjson::Value const& value) {
+        AllowedRange range;
+        range.min = value["min"].asInt().unwrapOrDefault();
+        range.max = value["max"].asInt().unwrapOrDefault();
+        return geode::Ok(range);
+    }
+};
+
+template <>
+struct matjson::Serialize<tulip::editor::UserLimitsEntry> {
+    using UserLimitsEntry = tulip::editor::UserLimitsEntry;
+    using AllowedRange = tulip::editor::AllowedRange;
+    static matjson::Value toJson(UserLimitsEntry const& entry) {
+        auto value = matjson::Value();
+        value["layers"] = entry.layers;
+        value["groups"] = entry.groups;
+        value["colors"] = entry.colors;
+        value["items"] = entry.items;
+        return value;
+    }
+    static geode::Result<UserLimitsEntry> fromJson(matjson::Value const& value) {
+        UserLimitsEntry entry;
+        entry.layers = value["layers"].as<std::vector<AllowedRange>>().unwrapOrDefault();
+        entry.groups = value["groups"].as<std::vector<AllowedRange>>().unwrapOrDefault();
+        entry.colors = value["colors"].as<std::vector<AllowedRange>>().unwrapOrDefault();
+        entry.items = value["items"].as<std::vector<AllowedRange>>().unwrapOrDefault();
+        return geode::Ok(entry);
+    }
+};
+
+template <>
 struct matjson::Serialize<tulip::editor::SettingUserEntry> {
     using SettingUserEntry = tulip::editor::SettingUserEntry;
     using DefaultSharingType = tulip::editor::DefaultSharingType;
+    using UserLimitsEntry = tulip::editor::UserLimitsEntry;
     static matjson::Value toJson(SettingUserEntry const& entry) {
         auto value = matjson::Value();
         value["name"] = entry.name;
         value["role"] = entry.role;
+        value["limits"] = entry.limits;
         return value;
     }
     static geode::Result<SettingUserEntry> fromJson(matjson::Value const& value) {
         SettingUserEntry entry;
         entry.name = value["name"].asString().unwrapOrDefault();
         entry.role = value["role"].as<DefaultSharingType>().unwrapOr(DefaultSharingType::Viewer);
+        entry.limits = value["limits"].as<UserLimitsEntry>().unwrapOrDefault();
         return geode::Ok(entry);
     }
 };

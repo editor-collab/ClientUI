@@ -26,6 +26,7 @@ add_library(${PROJECT_NAME} SHARED
     src/ui/LevelUserList.cpp
     src/ui/ExploreMenu.cpp
     src/ui/ShareSettings.cpp
+    src/ui/LimitsSettings.cpp
     src/utils/CryptoHelper.cpp
     src/utils/ThemeProvider.cpp
 )

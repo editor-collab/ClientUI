@@ -1,4 +1,5 @@
 #include <ui/ShareSettings.hpp>
+#include <ui/LimitsSettings.hpp>
 #include <managers/LevelManager.hpp>
 #include <lavender/Lavender.hpp>
 
@@ -444,6 +445,18 @@ ui::Base* ShareSettings::generatePersonEntry(std::string name, DefaultSharingTyp
                             .frameName = "GJ_arrow_01_001.png",
                             .scaleX = -0.45f,
                             .scaleY = 0.45f,
+                        },
+                    },
+                    new ui::MenuItemSpriteExtra {
+                        .id = name + "-limits-button"_spr,
+                        .callback = [this, name](auto*){
+                            if (auto entry = m_setting->getUserEntry(name)) {
+                                LimitsSettings::create(m_entry->key, m_setting, entry);
+                            }
+                        },
+                        .child = new ui::Sprite {
+                            .frameName = "GJ_deleteIcon_001.png",
+                            .scale = .6f,
                         },
                     },
                     new ui::Container {.width = 8},
