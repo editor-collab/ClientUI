@@ -24,14 +24,57 @@ bool ShareSettings::init(LevelEntry* entry) {
     m_entry = entry;
     m_setting = &entry->settings;
 
+    auto shareRow = new ui::Menu {
+        .child = new ui::Row {
+            .id = "share-row",
+            .children = {
+                new ui::Expanded {
+                    .child = new ui::Row {
+                        .children = {
+                            new ui::Flexible {
+                                .child = new ui::FittedBox {
+                                    .child = new ui::TextArea {
+                                        .store = reinterpret_cast<CCNode**>(&m_shareDescription),
+                                        .id = "share-description",
+                                        .alignment = ui::TextAlignment::Left,
+                                        .scale = 0.8f,
+                                        .text = "Share your level with others!",
+                                    },
+                                    .fit = ui::BoxFit::ScaleDown,
+                                },
+                            },
+                        },
+                    },
+                },
+                new ui::Container {.width = 10},
+                new ui::MenuItemSpriteExtra {
+                    .callback = [this](auto*) {
+
+                    },
+                    .child = new ui::Scale9Sprite {
+                        .fileName = "GJ_button_01.png",
+                        .child = new ui::Container {
+                            .padding = ui::EdgeInsets::All{7.f},
+                            .child = new ui::TextArea {
+                                .text = "Share",
+                                .font = "bigFont.fnt",
+                                .scale = 0.5f,
+                            },
+                        },
+                    },
+                },
+            },
+        },
+    };
+
     auto shareWith = new ui::Menu {
         .child = new ui::Row {
-            .id = "share-with-row"_spr,
+            .id = "share-with-row",
             .children = {
                 new ui::Expanded {
                     .child = new ui::TextInput {
                         .store = reinterpret_cast<CCNode**>(&m_shareWithInput),
-                        .id = "share-with-input"_spr,
+                        .id = "share-with-input",
                         .placeholder = "Share with...",
                     },
                 },
@@ -39,30 +82,16 @@ bool ShareSettings::init(LevelEntry* entry) {
                 new ui::MenuItemSpriteExtra {
                     // TODO: add ButtonSprite to Lavender
                     .callback = [this](auto*) {
-                        auto name = m_shareWithInput->getString();
-                        if (name.empty()) return;
-                        if (m_setting->hasUser(name)) return;
-                        m_setting->setUser(name, DefaultSharingType::Viewer);
-                        if (m_peopleScrollLayer) {
-                            m_peopleScrollLayer->m_contentLayer->addChild(this->generatePersonEntry(name, DefaultSharingType::Viewer)->get());
-                        }
-                        m_shareWithInput->setString("");
-                        m_resetScroll = true;
-                        this->updateValues();
-                        if (m_peopleScrollLayer) {
-                            m_peopleScrollLayer->m_contentLayer->setPositionY(0);
-                        }
+                        this->addSharedUser(nullptr);
                     },
-                    .child = new ui::Stack {
-                        .children = {
-                            new ui::Scale9Sprite {
-                                .fileName = "GJ_button_01.png",
-                                .size = CCSize{50.f, 30.f},
-                            },
-                            new ui::TextArea {
+                    .child = new ui::Scale9Sprite {
+                        .fileName = "GJ_button_01.png",
+                        .child = new ui::Container {
+                            .padding = ui::EdgeInsets::All{7.f},
+                            .child = new ui::TextArea {
                                 .text = "Add",
                                 .font = "bigFont.fnt",
-                                .scale = 0.6f,
+                                .scale = 0.5f,
                             },
                         },
                     },
@@ -79,7 +108,7 @@ bool ShareSettings::init(LevelEntry* entry) {
         .child = new ui::Container {
             .child = new ui::ScrollLayer {
                 .store = reinterpret_cast<CCNode**>(&m_peopleScrollLayer),
-                .id = "people-scroll-layer"_spr,
+                .id = "people-scroll-layer",
                 .count = m_setting->users.size(),
                 .builder = [=, this](auto idx) -> ui::Base* {
                     return this->generatePersonEntry(m_setting->users[idx].name, m_setting->users[idx].role);
@@ -90,10 +119,10 @@ bool ShareSettings::init(LevelEntry* entry) {
 
     auto generalAccessType = new ui::Row {
         .store = &m_generalAccessTypeRow,
-        .id = "general-access-type-row"_spr,
+        .id = "general-access-type-row",
         .children = {
             new ui::MenuItemSpriteExtra {
-                .id = "general-access-type-change-button-left"_spr,
+                .id = "general-access-type-change-button-left",
                 .callback = [this](auto*){
                     switch (m_setting->defaultSharing) {
                         // case DefaultSharingType::Viewer:
@@ -116,14 +145,14 @@ bool ShareSettings::init(LevelEntry* entry) {
             new ui::Container {.width = 4},
             new ui::TextArea {
                 .store = reinterpret_cast<CCNode**>(&m_generalAccessTypeText),
-                .id = "general-access-type-text"_spr,
+                .id = "general-access-type-text",
                 .text = "",
                 .font = "bigFont.fnt",
                 .scale = 0.45f,
             },
             new ui::Container {.width = 4},
             new ui::MenuItemSpriteExtra {
-                .id = "general-access-type-change-button-right"_spr,
+                .id = "general-access-type-change-button-right",
                 .callback = [this](auto*){
                     switch (m_setting->defaultSharing) {
                         // case DefaultSharingType::Viewer:
@@ -148,23 +177,16 @@ bool ShareSettings::init(LevelEntry* entry) {
     };
 
     auto generalAccessColumn = new ui::Column {
-        .id = "general-access-change-column"_spr,
+        .id = "general-access-change-column",
         .crossAxis = ui::CrossAxisAlignment::Start,
         .children = {
             new ui::Row {
-                .id = "general-access-change-row"_spr,
+                .id = "general-access-change-row",
                 .children = {
                     new ui::MenuItemSpriteExtra {
-                        .id = "general-access-change-button-left"_spr,
-                        .callback = [this](auto*){
-                            m_setting->discoverable = !m_setting->discoverable;
-                            if (m_setting->discoverable) {
-                                m_setting->defaultSharing = DefaultSharingType::Viewer;
-                            }
-                            else {
-                                m_setting->defaultSharing = DefaultSharingType::Restricted;
-                            }
-                            this->updateValues();
+                        .id = "general-access-change-button-left",
+                        .callback = [this](auto*) {
+                            this->changeGeneralAccess(nullptr);
                         },
                         .child = new ui::Sprite {
                             .frameName = "GJ_arrow_01_001.png",
@@ -174,23 +196,16 @@ bool ShareSettings::init(LevelEntry* entry) {
                     new ui::Container {.width = 4},
                     new ui::TextArea {
                         .store = reinterpret_cast<CCNode**>(&m_generalAccessText),
-                        .id = "general-access-text"_spr,
+                        .id = "general-access-text",
                         .text = "",
                         .font = "bigFont.fnt",
                         .scale = 0.35f,
                     },
                     new ui::Container {.width = 4},
                     new ui::MenuItemSpriteExtra {
-                        .id = "general-access-change-button-right"_spr,
-                        .callback = [this](auto*){
-                            m_setting->discoverable = !m_setting->discoverable;
-                            if (m_setting->discoverable) {
-                                m_setting->defaultSharing = DefaultSharingType::Viewer;
-                            }
-                            else {
-                                m_setting->defaultSharing = DefaultSharingType::Restricted;
-                            }
-                            this->updateValues();
+                        .id = "general-access-change-button-right",
+                        .callback = [this](auto*) {
+                            this->changeGeneralAccess(nullptr);
                         },
                         .child = new ui::Sprite {
                             .frameName = "GJ_arrow_01_001.png",
@@ -203,7 +218,7 @@ bool ShareSettings::init(LevelEntry* entry) {
             new ui::Container {.height = 4},
             new ui::TextArea {
                 .store = reinterpret_cast<CCNode**>(&m_generalAccessDescription),
-                .id = "general-access-description"_spr,
+                .id = "general-access-description",
                 .text = "",
                 .font = "chatFont.fnt",
                 .scale = 0.55f,
@@ -213,35 +228,37 @@ bool ShareSettings::init(LevelEntry* entry) {
 
     auto gen = new ui::Popup {
         .size = POPUP_SIZE,
-        .id = "share-settings-popup"_spr,
-        .bgId = "share-settings-bg"_spr,
-        .closeId = "share-settings-close"_spr,
+        .id = "share-settings-popup",
+        .bgId = "share-settings-bg",
+        .closeId = "share-settings-close",
         .child = new ui::Center {
             .store = reinterpret_cast<CCNode**>(&m_center),
-            .id = "share-settings-center"_spr,
+            .id = "share-settings-center",
             .child = new ui::Container {
-                .id = "share-settings-container"_spr,
+                .id = "share-settings-container",
                 .padding = ui::EdgeInsets::Symmetric{.horizontal = 20.f, .vertical = 10.f},
                 .child = new ui::Column {
-                    .id = "share-settings-column"_spr,
+                    .id = "share-settings-column",
                     .children = {
                         new ui::Row {
-                            .id = "share-settings-row"_spr,
+                            .id = "share-settings-row",
                             .mainAxis = ui::MainAxisAlignment::Center,
                             .children = {
                                 new ui::TextArea {
-                                    .id = "share-settings-title"_spr,
+                                    .id = "share-settings-title",
                                     .text = fmt::format("Share \"{}\"", m_setting->title),
                                     .font = "bigFont.fnt",
                                     .scale = 0.7f,
                                 },
                             },
                         },
+                        // new ui::Container {.height = 10},
+                        // shareRow,
                         new ui::Container {.height = 10},
                         shareWith,
                         new ui::Container {.height = 10},
                         new ui::TextArea {
-                            .id = "people-with-access-title"_spr,
+                            .id = "people-with-access-title",
                             .text = "People with access",
                             .font = "bigFont.fnt",
                             .scale = 0.55f,
@@ -252,7 +269,7 @@ bool ShareSettings::init(LevelEntry* entry) {
                         },
                         new ui::Container {.height = 10},
                         new ui::TextArea {
-                            .id = "general-access-title"_spr,
+                            .id = "general-access-title",
                             .text = "General access",
                             .font = "bigFont.fnt",
                             .scale = 0.55f,
@@ -266,10 +283,10 @@ bool ShareSettings::init(LevelEntry* entry) {
                                 .child = new ui::Container {
                                     .padding = ui::EdgeInsets::All{5.f},
                                     .child = new ui::Row {
-                                        .id = "general-access-row"_spr,
+                                        .id = "general-access-row",
                                         .children = {
                                             new ui::Sprite {
-                                                .id = "general-access-icon"_spr,
+                                                .id = "general-access-icon",
                                                 .frameName = "ViewIcon.png"_spr,
                                                 .scale = 1.f,
                                             },
@@ -369,21 +386,21 @@ std::string ShareSettings::getSharingTypeString(DefaultSharingType type) {
 ui::Base* ShareSettings::generatePersonEntry(std::string name, DefaultSharingType type) {
     return new ui::Container {
         .padding = ui::EdgeInsets::All{4.f},
-        .id = name + "-entry"_spr,
+        .id = name + "-entry",
         .child = new ui::Menu {
-            .id = name + "-menu"_spr,
+            .id = name + "-menu",
             .child = new ui::Row {
-                .id = name + "-row"_spr,
+                .id = name + "-row",
                 .children = {
                     new ui::TextArea {
-                        .id = name + "-access-text"_spr,
+                        .id = name + "-access-text",
                         .text = std::string(name),
                         .font = "bigFont.fnt",
                         .scale = 0.50f,
                     },
                     new ui::Expanded {},
                     new ui::MenuItemSpriteExtra {
-                        .id = name + "-change-button-left"_spr,
+                        .id = name + "-change-button-left",
                         .callback = [this, name](auto*){
                             auto type = m_setting->getUserType(name);
                             switch (type) {
@@ -400,7 +417,7 @@ ui::Base* ShareSettings::generatePersonEntry(std::string name, DefaultSharingTyp
                                     m_setting->setUser(name, DefaultSharingType::Viewer);
                                     break;
                             }
-                            if (auto label = static_cast<geode::SimpleTextArea*>(m_peopleScrollLayer->getChildByIDRecursive(name + "-sharing-text"_spr))) {
+                            if (auto label = static_cast<geode::SimpleTextArea*>(m_peopleScrollLayer->getChildByIDRecursive(name + "-sharing-text"))) {
                                 label->setText(this->getSharingTypeString(m_setting->getUserType(name)));
                             }
                             this->updateValues();
@@ -412,14 +429,14 @@ ui::Base* ShareSettings::generatePersonEntry(std::string name, DefaultSharingTyp
                     },
                     new ui::Container {.width = 4},
                     new ui::TextArea {
-                        .id = name + "-sharing-text"_spr,
+                        .id = name + "-sharing-text",
                         .text = this->getSharingTypeString(type),
                         .font = "bigFont.fnt",
                         .scale = 0.45f,
                     },
                     new ui::Container {.width = 4},
                     new ui::MenuItemSpriteExtra {
-                        .id = name + "-change-button-right"_spr,
+                        .id = name + "-change-button-right",
                         .callback = [this, name](auto*){
                             auto type = m_setting->getUserType(name);
                             switch (type) {
@@ -436,7 +453,7 @@ ui::Base* ShareSettings::generatePersonEntry(std::string name, DefaultSharingTyp
                                     m_setting->setUser(name, DefaultSharingType::Viewer);
                                     break;
                             }
-                            if (auto label = static_cast<geode::SimpleTextArea*>(m_peopleScrollLayer->getChildByIDRecursive(name + "-sharing-text"_spr))) {
+                            if (auto label = static_cast<geode::SimpleTextArea*>(m_peopleScrollLayer->getChildByIDRecursive(name + "-sharing-text"))) {
                                 label->setText(this->getSharingTypeString(m_setting->getUserType(name)));
                             }
                             this->updateValues();
@@ -447,24 +464,24 @@ ui::Base* ShareSettings::generatePersonEntry(std::string name, DefaultSharingTyp
                             .scaleY = 0.45f,
                         },
                     },
-                    new ui::MenuItemSpriteExtra {
-                        .id = name + "-limits-button"_spr,
-                        .callback = [this, name](auto*){
-                            if (auto entry = m_setting->getUserEntry(name)) {
-                                LimitsSettings::create(m_entry->key, m_setting, entry);
-                            }
-                        },
-                        .child = new ui::Sprite {
-                            .frameName = "GJ_deleteIcon_001.png",
-                            .scale = .6f,
-                        },
-                    },
+                    // new ui::MenuItemSpriteExtra {
+                    //     .id = name + "-limits-button",
+                    //     .callback = [this, name](auto*){
+                    //         if (auto entry = m_setting->getUserEntry(name)) {
+                    //             LimitsSettings::create(m_entry->key, m_setting, entry);
+                    //         }
+                    //     },
+                    //     .child = new ui::Sprite {
+                    //         .frameName = "GJ_deleteIcon_001.png",
+                    //         .scale = .6f,
+                    //     },
+                    // },
                     new ui::Container {.width = 8},
                     new ui::MenuItemSpriteExtra {
-                        .id = name + "-delete-button"_spr,
+                        .id = name + "-delete-button",
                         .callback = [this, name](auto*){
                             m_setting->removeUser(name);
-                            if (auto child = m_peopleScrollLayer->getChildByIDRecursive(name + "-entry"_spr)) {
+                            if (auto child = m_peopleScrollLayer->getChildByIDRecursive(name + "-entry")) {
                                 child->removeFromParent();
                             }   
                             this->updateValues();
@@ -480,45 +497,30 @@ ui::Base* ShareSettings::generatePersonEntry(std::string name, DefaultSharingTyp
     };
 }
 
-// ui::Base* ShareSettings::generateList() {
-//     std::vector<std::pair<std::string, DefaultSharingType>> userValues;
+void ShareSettings::addSharedUser(cocos2d::CCObject* sender) {
+    auto name = m_shareWithInput->getString();
+    if (name.empty()) return;
+    if (m_setting->hasUser(name)) return;
 
-//     for (auto& viewers : m_setting->viewers) {
-//         userValues.emplace_back(viewers, DefaultSharingType::Viewer);
-//     }
+    m_setting->setUser(name, DefaultSharingType::Viewer);
+    if (m_peopleScrollLayer) {
+        m_peopleScrollLayer->m_contentLayer->addChild(this->generatePersonEntry(name, DefaultSharingType::Viewer)->get());
+    }
+    m_shareWithInput->setString("");
+    m_resetScroll = true;
+    this->updateValues();
+    if (m_peopleScrollLayer) {
+        m_peopleScrollLayer->m_contentLayer->setPositionY(0);
+    }
+}
 
-//     for (auto& editors : m_setting->editors) {
-//         userValues.emplace_back(editors, DefaultSharingType::Editor);
-//     }
-
-//     for (auto& admins : m_setting->admins) {
-//         userValues.emplace_back(admins, DefaultSharingType::Admin);
-//     }
-
-//     return new ui::ScrollLayer {
-//         .store = reinterpret_cast<CCNode**>(&m_list),
-//         .count = userValues.size(),
-//         .builder = [=, this](auto idx) -> ui::Base* {
-//             return new ui::LayerColor {
-//                 .color = idx % 2 == 0 ? ccc3(0xa1, 0x58, 0x2c) : ccc3(0xc2, 0x72, 0x3e),
-//                 .height = 40.f,
-//                 .child = new ui::Container {
-//                     .padding = ui::EdgeInsets::All{4.f},
-//                     .child = new ui::Row {
-//                         .mainAxis = ui::MainAxisAlignment::Between,
-//                         .children = {
-//                             new ui::TextArea {
-//                                 .text = userValues[idx].first,
-//                                 .color = ccc3(0xff, 0xff, 0xff),
-//                             },
-//                             new ui::TextArea {
-//                                 .text = matjson::Value(userValues[idx].second).dump(),
-//                                 .color = ccc3(0xff, 0xff, 0xff),
-//                             },
-//                         },
-//                     },
-//                 },
-//             };
-//         },
-//     };
-// }
+void ShareSettings::changeGeneralAccess(cocos2d::CCObject* sender) {
+    m_setting->discoverable = !m_setting->discoverable;
+    if (m_setting->discoverable) {
+        m_setting->defaultSharing = DefaultSharingType::Viewer;
+    }
+    else {
+        m_setting->defaultSharing = DefaultSharingType::Restricted;
+    }
+    this->updateValues();
+}

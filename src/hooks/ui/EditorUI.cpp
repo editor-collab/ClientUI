@@ -11,18 +11,41 @@ using namespace tulip::editor;
 bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
     if (!EditorUI::init(editorLayer)) return false;
 
-    if (!LevelManager::get()->getJoinedLevel().has_value()) {
-        return true;
-    }
-    
     auto gen = new ui::MenuItemSpriteExtra {
         .id = "share-button"_spr,
         .callback = [this](auto*){
-            if (auto key = LevelManager::get()->getJoinedLevel()) {
+            auto const& lastMyLevels = FetchManager::get()->getLastMyLevels();
+            auto const hostableCount = FetchManager::get()->getHostableCount();
+            auto const key = LevelManager::get()->getJoinedLevel();
+
+            auto const inSharedLevel = std::count_if(lastMyLevels.begin(), lastMyLevels.end(), [&](auto const& level) {
+                return key.has_value() && level.key == *key;
+            }) > 0;
+
+            if (lastMyLevels.size() < hostableCount || inSharedLevel && key.has_value()) {
                 if (auto entry = BrowserManager::get()->getLevelEntry(*key)) {
-                    auto shareSettings = ShareSettings::create(*entry);
-                    // auto shareSettings = LevelUserList::create(*entry);
+                    (void)ShareSettings::create(*entry);
                 }
+            } else {
+                std::string desc;
+                if (hostableCount > 0) {
+                    std::vector<std::string> levelNames;
+                    for (auto const& level : lastMyLevels) {
+                        levelNames.push_back(level.settings.title);
+                    }
+                    desc = fmt::format(
+                        "You have filled up <cr>{}/{}</c> sharing slots with <cy>{}</c>. "
+                        "You can either stop sharing one or <cg>buy more slots</c>.",
+                        lastMyLevels.size(), hostableCount, fmt::join(levelNames, ", ")
+                    );
+                }
+                else {
+                    desc = "You dont have any available sharing slots. "
+                           "You can <cg>buy sharing slots</c> to share levels.";
+                }
+                createQuickPopup("Editor Collab", desc, "Buy", "Cancel", [this](auto*, bool) {
+                    AppDelegate::get()->openURL("https://buy.stripe.com/aEUbLb38R2Cw91K9AA");
+                }, true);   
             }
         },
         .child = new ui::Sprite {

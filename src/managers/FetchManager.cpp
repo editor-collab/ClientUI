@@ -12,11 +12,19 @@ public:
     
     bool errorCallback(web::WebResponse* response);
 
+    size_t m_hostableCount = 0;
+    std::vector<LevelEntry> m_myLevels;
+
     Result<std::vector<LevelEntry>> parseLevels(web::WebResponse* response);
 
     Task<Result<std::vector<LevelEntry>>, WebProgress> getMyLevels();
+    std::vector<LevelEntry> const& getLastMyLevels();
     Task<Result<std::vector<LevelEntry>>, WebProgress> getSharedWithMe();
     Task<Result<std::vector<LevelEntry>>, WebProgress> getDiscover();
+
+    size_t getHostableCount() const {
+        return m_hostableCount;
+    }
 };
 
 Result<std::vector<LevelEntry>> FetchManager::Impl::parseLevels(web::WebResponse* response) {
@@ -24,9 +32,11 @@ Result<std::vector<LevelEntry>> FetchManager::Impl::parseLevels(web::WebResponse
 
     auto json = GEODE_UNWRAP(response->json());
 
+    if (!json.contains("levels")) return Err("Invalid response");
+
     log::debug("Parsing levels: {}", json.dump());
 
-    return json.as<std::vector<LevelEntry>>();
+    return json["levels"].as<std::vector<LevelEntry>>();
 }
 
 Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getMyLevels() {
@@ -35,9 +45,19 @@ Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getMyLeve
     auto req = WebManager::get()->createAuthenticatedRequest();
     auto task = req.get(WebManager::get()->getServerURL("fetch/my_levels"));
     auto ret = task.map([=, this](auto response) -> Result<std::vector<LevelEntry>> {
-        return this->parseLevels(response);
+        auto levels = this->parseLevels(response);
+        if (levels.isOk()) {
+            matjson::Value json = GEODE_UNWRAP(response->json());
+            m_hostableCount = json["hostable-count"].as<size_t>().unwrapOr(0);
+            m_myLevels = levels.unwrap();
+        }
+        return levels;
     });
     return ret;
+}
+
+std::vector<LevelEntry> const& FetchManager::Impl::getLastMyLevels() {
+    return m_myLevels;
 }
 
 Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getSharedWithMe() {
@@ -75,10 +95,18 @@ Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::getMyLevels() {
     return impl->getMyLevels();
 }
 
+std::vector<LevelEntry> const& FetchManager::getLastMyLevels() {
+    return impl->getLastMyLevels();
+}
+
 Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::getSharedWithMe() {
     return impl->getSharedWithMe();
 }
 
 Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::getDiscover() {
     return impl->getDiscover();
+}
+
+size_t FetchManager::getHostableCount() const {
+    return impl->getHostableCount();
 }

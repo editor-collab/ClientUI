@@ -22,6 +22,7 @@ namespace tulip::editor {
         geode::TextInput* m_shareWithInput = nullptr;
         cocos2d::CCNode* m_generalAccessTypeRow = nullptr;
         geode::ScrollLayer* m_peopleScrollLayer = nullptr;
+        geode::SimpleTextArea* m_shareDescription = nullptr;
 
         bool m_resetScroll = false;
 
@@ -35,6 +36,13 @@ namespace tulip::editor {
         std::string getSharingTypeString(DefaultSharingType type);
 
         void updateValues();
+
+        void addSharedUser(cocos2d::CCObject* sender);
+
+        void changeGeneralAccess(cocos2d::CCObject* sender);
+
+        void changePersonEntryLeft(cocos2d::CCObject* sender);
+        void changePersonEntryRight(cocos2d::CCObject* sender);
 
 
     };
