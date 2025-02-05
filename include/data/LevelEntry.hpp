@@ -13,6 +13,10 @@ namespace tulip::editor {
         uint32_t userCount = 0;
         uint32_t slotId = 0;
         uint32_t uniqueId = 0;
+
+        bool isShared() const {
+            return !key.empty();
+        }
     };
 }
 

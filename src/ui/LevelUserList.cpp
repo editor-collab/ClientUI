@@ -1,4 +1,5 @@
 #include <ui/LevelUserList.hpp>
+#include <managers/BrowserManager.hpp>
 #include <managers/LevelManager.hpp>
 #include <lavender/Lavender.hpp>
 #include <Geode/utils/cocos.hpp>
@@ -192,6 +193,7 @@ void LevelUserList::updateUsers() {
                         );
 
                         task.listen([=](auto* result) {});
+                        BrowserManager::get()->saveLevelEntry(*m_entry);
 
                         this->updateUsers();
                     });
@@ -273,6 +275,7 @@ void LevelUserList::updateUsers() {
                                     );
 
                                     task.listen([=](auto* result) {});
+                                    BrowserManager::get()->saveLevelEntry(*m_entry);
 
                                     this->updateUsers();
                                 },

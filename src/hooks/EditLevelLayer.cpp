@@ -57,7 +57,6 @@ struct ExitHook : Modify<ExitHook, GameManager> {
 struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 	struct Fields {
 		bool m_textChanged = false;
-		bool m_levelDeleted = false;
 		
 		CCMenuItemSpriteExtra* m_joinButton = nullptr;
 		CCSprite* m_joinButtonSprite = nullptr;
@@ -68,11 +67,9 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 	$override
 	void textChanged(CCTextInputNode* input) {
 		EditLevelLayer::textChanged(input);
-		log::debug("levle {}", m_level);
 		if (BrowserManager::get()->isMyLevel(m_level)) {
-			log::debug("my levle {}", m_level);
 			m_fields->m_textChanged = true;
-			auto* entry = BrowserManager::get()->getLevelEntry(m_level).value();
+			auto* entry = BrowserManager::get()->getLevelEntry(m_level);
 			if (input->getTag() == 1) {
 				entry->settings.title = input->getString();
 			}
@@ -84,20 +81,17 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 
 	$override
 	void onBack(CCObject* sender) {
-		if (!m_fields->m_levelDeleted && m_fields->m_textChanged) {
-			auto const* entry = BrowserManager::get()->getLevelEntry(m_level).value();
-			auto task = LevelManager::get()->updateLevelSettings(
-				BrowserManager::get()->getLevelKey(m_level).value(),
-				LevelSetting(entry->settings)
-			);
-			task.listen([=](auto* result) {
-				// if (result->isOk()) {
-				// 	createQuickPopup("Success", "Level settings updated", "OK", "Cancel", [](auto, auto) {});
-				// }
-				// else {
-				// 	createQuickPopup("Error", result->unwrapErr(), "OK", "Cancel", [](auto, auto) {});
-				// }
-			});
+		if (m_fields->m_textChanged) {
+			auto const* entry = BrowserManager::get()->getLevelEntry(m_level);
+			BrowserManager::get()->saveLevelEntry(*entry);
+
+			if (entry->isShared()) {
+				auto task = LevelManager::get()->updateLevelSettings(
+					BrowserManager::get()->getLevelKey(m_level).value(),
+					LevelSetting(entry->settings)
+				);
+				task.listen([=](auto* result) {});
+			}
 		}
 		EditLevelLayer::onBack(sender);
 	}
@@ -110,44 +104,17 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 
 		if (auto menu = static_cast<CCMenu*>(this->getChildByIDRecursive("level-edit-menu"))) {
 			auto entry = BrowserManager::get()->getLevelEntry(m_level);
-			if (entry.has_value()) {
+			if (entry && entry->isShared()) {
 				for (auto child : CCArrayExt<CCNode*>(menu->getChildren())) {
 					child->setVisible(false);
 				}
 
 				std::vector<ui::Base*> children;
-				if (BrowserManager::get()->isMyLevel(m_level)) {
-					children.push_back(new ui::MenuItemSpriteExtra {
-						.callback = [=, this](auto) {
-							auto const levelKey = entry.value()->key;
-
-							auto task = LevelManager::get()->deleteLevel(levelKey);
-							task.listen([=, this](Result<>* resultp) {
-								if (resultp->isErr()) {
-									createQuickPopup("Error", resultp->unwrapErr(), "OK", "Cancel", [](auto, auto) {});
-									return;
-								}
-								m_fields->m_levelDeleted = true;
-								auto token = AccountManager::get()->getLoginToken();
-								DispatchEvent<std::string_view, uint32_t>(
-									"delete-level"_spr, token, LevelManager::get()->getClientId()
-								).post();
-								createQuickPopup("Success", "Level deleted", "OK", "Cancel", [](auto, auto) {});
-							});
-						},
-						.child = new ui::Node {
-							.node = CircleButtonSprite::create(CCLabelBMFont::create("Delete", "bigFont.fnt"), CircleBaseColor::DarkPurple),
-						},
-					});
-					children.push_back(new ui::Container {
-						.width = 10,
-					});
-				}
 
 				children.push_back(new ui::MenuItemSpriteExtra {
 					.store = reinterpret_cast<CCNode**>(&m_fields->m_joinButton),
 					.callback = [=, this](auto) {
-						auto const levelKey = entry.value()->key;
+						auto const levelKey = entry->key;
 
 						auto task = LevelManager::get()->joinLevel(levelKey);
 						task.listen([=, this](auto* resultp) {
@@ -199,36 +166,6 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 			}
 		}
 
-        if (auto menu = static_cast<CCMenu*>(this->getChildByIDRecursive("folder-menu"))) {
-			auto alternate = Mod::get()->getSettingValue<bool>("alt-button");
-			auto menuSprite = CCSprite::createWithSpriteFrameName(
-				alternate ? "AlternateMenuButton.png"_spr : "MenuButton.png"_spr
-			);
-			menuSprite->setScale(0.9f);
-
-			auto gen = new ui::MenuItemSpriteExtra {
-				.callback = [=, this](auto) {
-					auto task = LevelManager::get()->createLevel(0, EditorIDs::getID(level), LevelSetting::fromLevel(level));
-					task.listen([=, this](auto* resultp) {
-						if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
-							auto token = AccountManager::get()->getLoginToken();
-							DispatchEvent<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
-								"create-level"_spr, token, value.clientId, level, value.levelKey
-							).post();
-						}
-						else {
-							createQuickPopup("Error", err, "OK", "Cancel", [](auto, auto) {});
-						}
-					});
-				},
-				.child = new ui::Node {
-					.node = CircleButtonSprite::create(CCLabelBMFont::create("Create", "bigFont.fnt"), CircleBaseColor::Cyan),
-				},
-			};
-
-			menu->addChild(gen->get());
-			menu->updateLayout();
-		}
 		return true;
 	}
 };

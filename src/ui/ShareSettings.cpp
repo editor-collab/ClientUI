@@ -1,7 +1,11 @@
 #include <ui/ShareSettings.hpp>
 #include <ui/LimitsSettings.hpp>
+#include <managers/AccountManager.hpp>
+#include <managers/BrowserManager.hpp>
 #include <managers/LevelManager.hpp>
 #include <lavender/Lavender.hpp>
+#include <Geode/loader/Dispatch.hpp>
+#include <cvolton.level-id-api/include/EditorIDs.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;
@@ -87,7 +91,7 @@ bool ShareSettings::init(LevelEntry* entry) {
                     .child = new ui::Scale9Sprite {
                         .fileName = "GJ_button_01.png",
                         .child = new ui::Container {
-                            .padding = ui::EdgeInsets::All{7.f},
+                            .padding = ui::EdgeInsets::All{5.f},
                             .child = new ui::TextArea {
                                 .text = "Add",
                                 .font = "bigFont.fnt",
@@ -117,111 +121,157 @@ bool ShareSettings::init(LevelEntry* entry) {
         },
     };
 
-    auto generalAccessType = new ui::Row {
-        .store = &m_generalAccessTypeRow,
-        .id = "general-access-type-row",
-        .children = {
-            new ui::MenuItemSpriteExtra {
-                .id = "general-access-type-change-button-left",
-                .callback = [this](auto*){
-                    switch (m_setting->defaultSharing) {
-                        // case DefaultSharingType::Viewer:
-                        //     m_setting->defaultSharing = DefaultSharingType::Editor;
-                        //     break;
-                        // case DefaultSharingType::Editor:
-                        //     m_setting->defaultSharing = DefaultSharingType::Viewer;
-                        //     break;
-                        default:
-                            m_setting->defaultSharing = DefaultSharingType::Viewer;
-                            break;
-                    }
-                    this->updateValues();
-                },
-                .child = new ui::Sprite {
-                    .frameName = "GJ_arrow_01_001.png",
-                    .scale = 0.45f
-                },
-            },
-            new ui::Container {.width = 4},
-            new ui::TextArea {
-                .store = reinterpret_cast<CCNode**>(&m_generalAccessTypeText),
-                .id = "general-access-type-text",
-                .text = "",
-                .font = "bigFont.fnt",
-                .scale = 0.45f,
-            },
-            new ui::Container {.width = 4},
-            new ui::MenuItemSpriteExtra {
-                .id = "general-access-type-change-button-right",
-                .callback = [this](auto*){
-                    switch (m_setting->defaultSharing) {
-                        // case DefaultSharingType::Viewer:
-                        //     m_setting->defaultSharing = DefaultSharingType::Editor;
-                        //     break;
-                        // case DefaultSharingType::Editor:
-                        //     m_setting->defaultSharing = DefaultSharingType::Viewer;
-                        //     break;
-                        default:
-                            m_setting->defaultSharing = DefaultSharingType::Viewer;
-                            break;
-                    }
-                    this->updateValues();
-                },
-                .child = new ui::Sprite {
-                    .frameName = "GJ_arrow_01_001.png",
-                    .scaleX = -0.45f,
-                    .scaleY = 0.45f,
-                },
-            },
-        },
-    };
+    // auto generalAccessType = new ui::Row {
+    //     .store = &m_generalAccessTypeRow,
+    //     .id = "general-access-type-row",
+    //     .children = {
+    //         new ui::MenuItemSpriteExtra {
+    //             .id = "general-access-type-change-button-left",
+    //             .callback = [this](auto*){
+    //                 switch (m_setting->defaultSharing) {
+    //                     // case DefaultSharingType::Viewer:
+    //                     //     m_setting->defaultSharing = DefaultSharingType::Editor;
+    //                     //     break;
+    //                     // case DefaultSharingType::Editor:
+    //                     //     m_setting->defaultSharing = DefaultSharingType::Viewer;
+    //                     //     break;
+    //                     default:
+    //                         m_setting->defaultSharing = DefaultSharingType::Viewer;
+    //                         break;
+    //                 }
+    //                 this->updateValues();
+    //             },
+    //             .child = new ui::Sprite {
+    //                 .frameName = "GJ_arrow_01_001.png",
+    //                 .scale = 0.45f
+    //             },
+    //         },
+    //         new ui::Container {.width = 4},
+    //         new ui::TextArea {
+    //             .store = reinterpret_cast<CCNode**>(&m_generalAccessTypeText),
+    //             .id = "general-access-type-text",
+    //             .text = "",
+    //             .font = "bigFont.fnt",
+    //             .scale = 0.45f,
+    //         },
+    //         new ui::Container {.width = 4},
+    //         new ui::MenuItemSpriteExtra {
+    //             .id = "general-access-type-change-button-right",
+    //             .callback = [this](auto*){
+    //                 switch (m_setting->defaultSharing) {
+    //                     // case DefaultSharingType::Viewer:
+    //                     //     m_setting->defaultSharing = DefaultSharingType::Editor;
+    //                     //     break;
+    //                     // case DefaultSharingType::Editor:
+    //                     //     m_setting->defaultSharing = DefaultSharingType::Viewer;
+    //                     //     break;
+    //                     default:
+    //                         m_setting->defaultSharing = DefaultSharingType::Viewer;
+    //                         break;
+    //                 }
+    //                 this->updateValues();
+    //             },
+    //             .child = new ui::Sprite {
+    //                 .frameName = "GJ_arrow_01_001.png",
+    //                 .scaleX = -0.45f,
+    //                 .scaleY = 0.45f,
+    //             },
+    //         },
+    //     },
+    // };
 
-    auto generalAccessColumn = new ui::Column {
-        .id = "general-access-change-column",
-        .crossAxis = ui::CrossAxisAlignment::Start,
+    // auto generalAccessColumn = new ui::Column {
+    //     .id = "general-access-change-column",
+    //     .crossAxis = ui::CrossAxisAlignment::Start,
+    //     .children = {
+    //         new ui::Row {
+    //             .id = "general-access-change-row",
+    //             .children = {
+    //                 new ui::MenuItemSpriteExtra {
+    //                     .id = "general-access-change-button-left",
+    //                     .callback = [this](auto*) {
+                            
+    //                     },
+    //                     .child = new ui::Sprite {
+    //                         .frameName = "GJ_arrow_01_001.png",
+    //                         .scale = 0.35f
+    //                     },
+    //                 },
+    //                 new ui::Container {.width = 4},
+    //                 new ui::TextArea {
+    //                     .store = reinterpret_cast<CCNode**>(&m_generalAccessText),
+    //                     .id = "general-access-text",
+    //                     .text = "",
+    //                     .font = "bigFont.fnt",
+    //                     .scale = 0.35f,
+    //                 },
+    //                 new ui::Container {.width = 4},
+    //                 new ui::MenuItemSpriteExtra {
+    //                     .id = "general-access-change-button-right",
+    //                     .callback = [this](auto*) {
+    //                         this->changeGeneralAccess(nullptr);
+    //                     },
+    //                     .child = new ui::Sprite {
+    //                         .frameName = "GJ_arrow_01_001.png",
+    //                         .scaleX = -0.35f,
+    //                         .scaleY = 0.35f,
+    //                     },
+    //                 },
+    //             },
+    //         },
+            
+    //     },
+    // };
+
+    auto generalAccessRow = new ui::Row {
         .children = {
-            new ui::Row {
-                .id = "general-access-change-row",
+            new ui::Column {
+                .crossAxis = ui::CrossAxisAlignment::Start,
                 .children = {
-                    new ui::MenuItemSpriteExtra {
-                        .id = "general-access-change-button-left",
-                        .callback = [this](auto*) {
-                            this->changeGeneralAccess(nullptr);
-                        },
-                        .child = new ui::Sprite {
-                            .frameName = "GJ_arrow_01_001.png",
-                            .scale = 0.35f
+                    new ui::Row {
+                        .children = {
+                            new ui::MenuItemToggler {
+                                .toggled = m_setting->discoverable,
+                                .standardScale = 0.5f,
+                                .callback = [this](auto* sender) {
+                                    this->changeGeneralAccess(nullptr);
+                                },
+                            },
+                            new ui::Container {.width = 4},
+                            new ui::TextArea {
+                                .text = "Public",
+                                .font = "bigFont.fnt",
+                                .scale = 0.5f,
+                            },
                         },
                     },
-                    new ui::Container {.width = 4},
+                    new ui::Container {.height = 4},
                     new ui::TextArea {
-                        .store = reinterpret_cast<CCNode**>(&m_generalAccessText),
-                        .id = "general-access-text",
+                        .store = reinterpret_cast<CCNode**>(&m_generalAccessDescription),
+                        .id = "general-access-description",
                         .text = "",
-                        .font = "bigFont.fnt",
-                        .scale = 0.35f,
-                    },
-                    new ui::Container {.width = 4},
-                    new ui::MenuItemSpriteExtra {
-                        .id = "general-access-change-button-right",
-                        .callback = [this](auto*) {
-                            this->changeGeneralAccess(nullptr);
-                        },
-                        .child = new ui::Sprite {
-                            .frameName = "GJ_arrow_01_001.png",
-                            .scaleX = -0.35f,
-                            .scaleY = 0.35f,
-                        },
+                        .font = "chatFont.fnt",
+                        .scale = 0.55f,
                     },
                 },
             },
-            new ui::Container {.height = 4},
-            new ui::TextArea {
-                .store = reinterpret_cast<CCNode**>(&m_generalAccessDescription),
-                .id = "general-access-description",
-                .text = "",
-                .font = "chatFont.fnt",
-                .scale = 0.55f,
+            new ui::Expanded {},
+            new ui::MenuItemSpriteExtra {
+                .callback = [=, this](auto*) {
+                    if (m_entry->isShared()) this->stopSharing(nullptr);
+                    else this->startSharing(nullptr);
+                },
+                .child = new ui::Scale9Sprite {
+                    .fileName = m_entry->isShared() ? "GJ_button_06.png" : "GJ_button_01.png",
+                    .child = new ui::Container {
+                        .padding = ui::EdgeInsets::All{5.f},
+                        .child = new ui::TextArea {
+                            .text = m_entry->isShared() ? "Stop Sharing" : "Start Sharing",
+                            .font = "bigFont.fnt",
+                            .scale = 0.5f,
+                        },
+                    },
+                },
             },
         },
     };
@@ -282,20 +332,7 @@ bool ShareSettings::init(LevelEntry* entry) {
                                 .color = ccc4(0x00, 0x00, 0x00, 0x5a),
                                 .child = new ui::Container {
                                     .padding = ui::EdgeInsets::All{5.f},
-                                    .child = new ui::Row {
-                                        .id = "general-access-row",
-                                        .children = {
-                                            new ui::Sprite {
-                                                .id = "general-access-icon",
-                                                .frameName = "ViewIcon.png"_spr,
-                                                .scale = 1.f,
-                                            },
-                                            new ui::Container {.width = 8},
-                                            generalAccessColumn,
-                                            new ui::Expanded {},
-                                            generalAccessType,
-                                        },
-                                    },
+                                    .child = generalAccessRow,
                                 },
                             },
                         },
@@ -314,13 +351,13 @@ bool ShareSettings::init(LevelEntry* entry) {
 }
 
 void ShareSettings::updateValues() {
-    if (m_generalAccessText) {
-        if (m_setting->discoverable) {
-            m_generalAccessText->setText("Anyone from Discover");
-        } else {
-            m_generalAccessText->setText("Restricted");
-        }
-    }
+    // if (m_generalAccessText) {
+    //     if (m_setting->discoverable) {
+    //         m_generalAccessText->setText("Anyone from Discover");
+    //     } else {
+    //         m_generalAccessText->setText("Restricted");
+    //     }
+    // }
 
     if (m_generalAccessTypeRow) {
         if (m_setting->discoverable) {
@@ -356,18 +393,14 @@ void ShareSettings::updateValues() {
         m_resetScroll = false;
     }
 
-    auto task = LevelManager::get()->updateLevelSettings(
-        m_entry->key,
-        LevelSetting(*m_setting)
-    );
-    task.listen([=](auto* result) {
-        // if (result->isOk()) {
-        // 	createQuickPopup("Success", "Level settings updated", "OK", "Cancel", [](auto, auto) {});
-        // }
-        // else {
-        // 	createQuickPopup("Error", result->unwrapErr(), "OK", "Cancel", [](auto, auto) {});
-        // }
-    });
+    if (m_entry->isShared()) {
+        auto task = LevelManager::get()->updateLevelSettings(
+            m_entry->key,
+            LevelSetting(*m_setting)
+        );
+        task.listen([=](auto* result) {});
+    }
+    BrowserManager::get()->saveLevelEntry(*m_entry);
 }
 
 std::string ShareSettings::getSharingTypeString(DefaultSharingType type) {
@@ -464,6 +497,7 @@ ui::Base* ShareSettings::generatePersonEntry(std::string name, DefaultSharingTyp
                             .scaleY = 0.45f,
                         },
                     },
+                    // TODO: probably on another update honestly
                     // new ui::MenuItemSpriteExtra {
                     //     .id = name + "-limits-button",
                     //     .callback = [this, name](auto*){
@@ -523,4 +557,44 @@ void ShareSettings::changeGeneralAccess(cocos2d::CCObject* sender) {
         m_setting->defaultSharing = DefaultSharingType::Restricted;
     }
     this->updateValues();
+}
+
+void ShareSettings::startSharing(cocos2d::CCObject* sender) {
+    auto level = EditorIDs::getLevelByID(m_entry->uniqueId);
+    if (!level) return;
+    
+    auto task = LevelManager::get()->createLevel(0, EditorIDs::getID(level), LevelSetting::fromLevel(level));
+    task.listen([=, this](auto* resultp) {
+        if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
+            m_entry->key = value.levelKey;
+            auto token = AccountManager::get()->getLoginToken();
+            DispatchEvent<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
+                "create-level"_spr, token, value.clientId, level, value.levelKey
+            ).post();
+            Notification::create("Level started sharing", NotificationIcon::Success, 1.5f)->show();
+        }
+        else {
+            Notification::create("Failed to start sharing the level", NotificationIcon::Error, 1.5f)->show();
+        }
+    });
+}
+
+void ShareSettings::stopSharing(cocos2d::CCObject* sender) {
+    auto const levelKey = m_entry->key;
+
+    auto task = LevelManager::get()->deleteLevel(levelKey);
+    task.listen([=, this](Result<>* resultp) {
+        if (resultp->isErr()) {
+            Notification::create("Failed to stop sharing the level", NotificationIcon::Error, 1.5f)->show();
+            return;
+        }
+        m_entry->key.clear();
+        BrowserManager::get()->saveLevelEntry(*m_entry);
+
+        auto token = AccountManager::get()->getLoginToken();
+        DispatchEvent<std::string_view, uint32_t>(
+            "delete-level"_spr, token, LevelManager::get()->getClientId()
+        ).post();
+        Notification::create("Level stopped sharing", NotificationIcon::Success, 1.5f)->show();
+    });
 }

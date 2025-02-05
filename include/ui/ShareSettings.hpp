@@ -44,6 +44,7 @@ namespace tulip::editor {
         void changePersonEntryLeft(cocos2d::CCObject* sender);
         void changePersonEntryRight(cocos2d::CCObject* sender);
 
-
+        void startSharing(cocos2d::CCObject* sender);
+        void stopSharing(cocos2d::CCObject* sender);
     };
 }

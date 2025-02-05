@@ -1,4 +1,5 @@
 #include <ui/LimitsSettings.hpp>
+#include <managers/BrowserManager.hpp>
 #include <managers/LevelManager.hpp>
 #include <lavender/Lavender.hpp>
 
@@ -208,14 +209,7 @@ void LimitsSettings::updateValues() {
         m_key,
         LevelSetting(*m_setting)
     );
-    task.listen([=](auto* result) {
-        // if (result->isOk()) {
-        // 	createQuickPopup("Success", "Level settings updated", "OK", "Cancel", [](auto, auto) {});
-        // }
-        // else {
-        // 	createQuickPopup("Error", result->unwrapErr(), "OK", "Cancel", [](auto, auto) {});
-        // }
-    });
+    task.listen([=](auto* result) {});
 }
 
 ui::Base* LimitsSettings::generateItem(size_t idx, std::string id, std::vector<AllowedRange>* range) {

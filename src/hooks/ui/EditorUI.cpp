@@ -13,37 +13,46 @@ bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
 
     auto gen = new ui::MenuItemSpriteExtra {
         .id = "share-button"_spr,
-        .callback = [this](auto*){
-            auto const& lastMyLevels = FetchManager::get()->getLastMyLevels();
+        .callback = [=, this](auto*){
+            auto const sharedLevels = BrowserManager::get()->getMySharedLevels();
             auto const hostableCount = FetchManager::get()->getHostableCount();
             auto const key = LevelManager::get()->getJoinedLevel();
+            LevelEntry* entry = nullptr;
+            if (key) {
+                entry = BrowserManager::get()->getLevelEntry(*key);
+            }
+            else {
+                entry = BrowserManager::get()->getLevelEntry(editorLayer->m_level);
+            }
+            if (entry == nullptr) {
+                BrowserManager::get()->addLevelEntry(editorLayer->m_level, LevelEntry {});
+                entry = BrowserManager::get()->getLevelEntry(editorLayer->m_level);
+            }
 
-            auto const inSharedLevel = std::count_if(lastMyLevels.begin(), lastMyLevels.end(), [&](auto const& level) {
-                return key.has_value() && level.key == *key;
-            }) > 0;
 
-            if (lastMyLevels.size() < hostableCount || inSharedLevel && key.has_value()) {
-                if (auto entry = BrowserManager::get()->getLevelEntry(*key)) {
-                    (void)ShareSettings::create(*entry);
-                }
-            } else {
+            // TODO: cleanup
+            if (key && BrowserManager::get()->isMyLevel(*key) || sharedLevels->count() < hostableCount) {
+                (void)ShareSettings::create(entry);
+            }
+            else {
                 std::string desc;
                 if (hostableCount > 0) {
                     std::vector<std::string> levelNames;
-                    for (auto const& level : lastMyLevels) {
-                        levelNames.push_back(level.settings.title);
+                    for (auto const& level : CCArrayExt<GJGameLevel*>(sharedLevels)) {
+                        levelNames.push_back(level->m_levelName);
                     }
                     desc = fmt::format(
                         "You have filled up <cr>{}/{}</c> sharing slots with <cy>{}</c>. "
                         "You can either stop sharing one or <cg>buy more slots</c>.",
-                        lastMyLevels.size(), hostableCount, fmt::join(levelNames, ", ")
+                        sharedLevels->count(), hostableCount, fmt::join(levelNames, ", ")
                     );
                 }
                 else {
                     desc = "You dont have any available sharing slots. "
                            "You can <cg>buy sharing slots</c> to share levels.";
                 }
-                createQuickPopup("Editor Collab", desc, "Buy", "Cancel", [this](auto*, bool) {
+                createQuickPopup("Editor Collab", desc, "Buy", "Cancel", [this](auto*, bool isBtn2) {
+                    if (isBtn2) return;
                     AppDelegate::get()->openURL("https://buy.stripe.com/aEUbLb38R2Cw91K9AA");
                 }, true);   
             }

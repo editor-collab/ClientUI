@@ -1,4 +1,5 @@
 #include <managers/FetchManager.hpp>
+#include <managers/LocalManager.hpp>
 #include <managers/WebManager.hpp>
 #include <data/LevelEntry.hpp>
 
@@ -13,7 +14,6 @@ public:
     bool errorCallback(web::WebResponse* response);
 
     size_t m_hostableCount = 0;
-    std::vector<LevelEntry> m_myLevels;
 
     Result<std::vector<LevelEntry>> parseLevels(web::WebResponse* response);
 
@@ -34,8 +34,6 @@ Result<std::vector<LevelEntry>> FetchManager::Impl::parseLevels(web::WebResponse
 
     if (!json.contains("levels")) return Err("Invalid response");
 
-    log::debug("Parsing levels: {}", json.dump());
-
     return json["levels"].as<std::vector<LevelEntry>>();
 }
 
@@ -49,15 +47,10 @@ Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getMyLeve
         if (levels.isOk()) {
             matjson::Value json = GEODE_UNWRAP(response->json());
             m_hostableCount = json["hostable-count"].as<size_t>().unwrapOr(0);
-            m_myLevels = levels.unwrap();
         }
         return levels;
     });
     return ret;
-}
-
-std::vector<LevelEntry> const& FetchManager::Impl::getLastMyLevels() {
-    return m_myLevels;
 }
 
 Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getSharedWithMe() {
@@ -93,10 +86,6 @@ FetchManager::~FetchManager() = default;
 
 Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::getMyLevels() {
     return impl->getMyLevels();
-}
-
-std::vector<LevelEntry> const& FetchManager::getLastMyLevels() {
-    return impl->getLastMyLevels();
 }
 
 Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::getSharedWithMe() {

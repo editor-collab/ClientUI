@@ -19,6 +19,7 @@ add_library(${PROJECT_NAME} SHARED
     src/managers/ErrorManager.cpp
     src/managers/FetchManager.cpp
     src/managers/LevelManager.cpp
+    src/managers/LocalManager.cpp
     src/managers/WebManager.cpp
     src/ui/GenericForm.cpp
     src/ui/GenericList.cpp

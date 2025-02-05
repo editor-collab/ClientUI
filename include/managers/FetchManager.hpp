@@ -22,7 +22,6 @@ namespace tulip::editor {
         using TaskType = Task<Result<std::vector<LevelEntry>>, WebProgress>;
 
         Task<Result<std::vector<LevelEntry>>, WebProgress> getMyLevels();
-        std::vector<LevelEntry> const& getLastMyLevels();
         Task<Result<std::vector<LevelEntry>>, WebProgress> getSharedWithMe();
         Task<Result<std::vector<LevelEntry>>, WebProgress> getDiscover();
         size_t getHostableCount() const;

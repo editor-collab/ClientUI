@@ -46,7 +46,6 @@ public:
 };
 
 $on_mod(Loaded) {
-    log::debug("found token {}", Mod::get()->getSavedValue<std::string>("auth-token"));
     AccountManager::get()->setAuthToken(Mod::get()->getSavedValue<std::string>("auth-token"));
 }
 

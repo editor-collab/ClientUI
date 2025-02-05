@@ -1,7 +1,7 @@
 #pragma once
 #include <Geode/Geode.hpp>
 #include <memory>
-#include "../data/LevelSetting.hpp"
+#include "../data/LevelEntry.hpp"
 #include "../data/CameraValue.hpp"
 #include <Geode/utils/web.hpp>
 
@@ -36,7 +36,7 @@ namespace tulip::editor {
         Task<Result<>, WebProgress> leaveLevel(CameraValue const& camera);
         Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);
         Task<Result<std::vector<uint8_t>>, WebProgress> getSnapshot(std::string_view levelKey, std::string_view hash);
-        Task<Result<>, WebProgress> updateLevelSettings(std::string_view levelKey, LevelSetting&& settings);
+        Task<Result<LevelEntry>, WebProgress> updateLevelSettings(std::string_view levelKey, LevelSetting&& settings);
         Task<Result<>, WebProgress> kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason);
 
         std::vector<std::string> getHostedLevels() const;

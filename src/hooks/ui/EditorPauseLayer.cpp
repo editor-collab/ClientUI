@@ -24,8 +24,8 @@ void EditorPauseLayerUIHook::setupGuidelinesMenu() {
         .id = "user-list-button"_spr,
         .callback = [this](auto*){
             if (auto key = LevelManager::get()->getJoinedLevel()) {
-                if (auto entry = BrowserManager::get()->getLevelEntry(*key)) {
-                    auto userList = LevelUserList::create(*entry);
+                if (auto entry = BrowserManager::get()->getLevelEntry(*key); entry->isShared()) {
+                    auto userList = LevelUserList::create(entry);
                 }
             }
         },
@@ -54,18 +54,18 @@ void EditorPauseLayerUIHook::setupInfoMenu() {
     CCLabelBMFont* label = nullptr;
     if (auto key = LevelManager::get()->getJoinedLevel()) {
         if (auto entry = BrowserManager::get()->getLevelEntry(*key)) {
-            auto sharingType = entry.value()->settings.defaultSharing;
+            auto sharingType = entry->settings.defaultSharing;
             std::string username = GJAccountManager::get()->m_username;
             auto accountId = GJAccountManager::get()->m_accountID;
 
-            for (auto& userEntry : entry.value()->settings.users) {
+            for (auto& userEntry : entry->settings.users) {
                 if (userEntry.name == username) {
                     sharingType = userEntry.role;
                     break;
                 }
             }
 
-            if (accountId == entry.value()->hostAccountId) {
+            if (accountId == entry->hostAccountId) {
                 label = CCLabelBMFont::create("Editor Collab Status: Host", "goldFont.fnt");
             }
             else {

@@ -25,7 +25,7 @@ public:
     Task<Result<>, WebProgress> leaveLevel(CameraValue const& camera);
     Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);
     Task<Result<std::vector<uint8_t>>, WebProgress> getSnapshot(std::string_view levelKey, std::string_view hash);
-    Task<Result<>, WebProgress> updateLevelSettings(std::string_view levelKey, LevelSetting&& settings);
+    Task<Result<LevelEntry>, WebProgress> updateLevelSettings(std::string_view levelKey, LevelSetting&& settings);
     Task<Result<>, WebProgress> kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason);
 
     std::vector<std::string> getHostedLevels() const;
@@ -201,7 +201,7 @@ Task<Result<std::vector<uint8_t>>, WebProgress> LevelManager::Impl::getSnapshot(
     return ret;
 }
 
-Task<Result<>, WebProgress> LevelManager::Impl::updateLevelSettings(std::string_view levelKey, LevelSetting&& settings) {
+Task<Result<LevelEntry>, WebProgress> LevelManager::Impl::updateLevelSettings(std::string_view levelKey, LevelSetting&& settings) {
     log::debug("Updating level settings for level {}", levelKey);
 
     auto const settingString = matjson::Value(settings).dump(matjson::NO_INDENTATION);
@@ -210,9 +210,10 @@ Task<Result<>, WebProgress> LevelManager::Impl::updateLevelSettings(std::string_
     req.param("level_key", levelKey);
     req.param("settings", settingString);
     auto task = req.post(WebManager::get()->getServerURL("level/edit_settings"));
-    auto ret = task.map([](web::WebResponse* response) -> Result<> {
+    auto ret = task.map([](web::WebResponse* response) -> Result<LevelEntry> {
         if (response->ok()) {
-            return Ok();
+            matjson::Value const values = GEODE_UNWRAP(response->json());
+            return Ok(GEODE_UNWRAP(values["entry"].as<LevelEntry>()));
         }
         return Err(fmt::format("HTTP error: {}", response->code()));
     });
@@ -264,7 +265,7 @@ Task<Result<>, WebProgress> LevelManager::deleteLevel(std::string_view levelKey)
 Task<Result<std::vector<uint8_t>>, WebProgress> LevelManager::getSnapshot(std::string_view levelKey, std::string_view hash) {
     return impl->getSnapshot(levelKey, hash);
 }
-Task<Result<>, WebProgress> LevelManager::updateLevelSettings(std::string_view levelKey, LevelSetting&& settings) {
+Task<Result<LevelEntry>, WebProgress> LevelManager::updateLevelSettings(std::string_view levelKey, LevelSetting&& settings) {
     return impl->updateLevelSettings(levelKey, std::move(settings));
 }
 
