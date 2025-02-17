@@ -207,7 +207,7 @@ void LimitsSettings::updateValues() {
 
     auto task = LevelManager::get()->updateLevelSettings(
         m_key,
-        LevelSetting(*m_setting)
+        *m_setting
     );
     task.listen([=](auto* result) {});
 }

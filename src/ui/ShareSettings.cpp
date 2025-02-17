@@ -12,9 +12,9 @@ using namespace tulip::editor;
 
 static constexpr auto POPUP_SIZE = CCSize{400.f, 290.f};
 
-ShareSettings* ShareSettings::create(LevelEntry* entry) {
+ShareSettings* ShareSettings::create(LevelEntry* entry, LevelEditorLayer* editorLayer) {
     auto ret = new (std::nothrow) ShareSettings();
-    if (ret && ret->init(entry)) {
+    if (ret && ret->init(entry, editorLayer)) {
         ret->autorelease();
         return ret;
     }
@@ -22,11 +22,20 @@ ShareSettings* ShareSettings::create(LevelEntry* entry) {
     return nullptr;
 }
 
-bool ShareSettings::init(LevelEntry* entry) {
+bool ShareSettings::init(LevelEntry* entry, LevelEditorLayer* editorLayer) {
     if (!CCNode::init()) return false;
 
     m_entry = entry;
     m_setting = &entry->settings;
+    m_editorLayer = editorLayer;
+    m_realLevel = editorLayer->m_level;
+    if (BrowserManager::get()->isShadowLevel(m_realLevel)) {
+        m_realLevel = BrowserManager::get()->getReflectedLevel(m_realLevel);
+        log::debug("On a shadow level, using real level {}", m_realLevel);
+    }
+    else {
+        log::debug("On a real level {}", m_realLevel);
+    }
 
     auto shareRow = new ui::Menu {
         .child = new ui::Row {
@@ -396,7 +405,7 @@ void ShareSettings::updateValues() {
     if (m_entry->isShared()) {
         auto task = LevelManager::get()->updateLevelSettings(
             m_entry->key,
-            LevelSetting(*m_setting)
+            *m_setting
         );
         task.listen([=](auto* result) {});
     }
@@ -560,16 +569,15 @@ void ShareSettings::changeGeneralAccess(cocos2d::CCObject* sender) {
 }
 
 void ShareSettings::startSharing(cocos2d::CCObject* sender) {
-    auto level = EditorIDs::getLevelByID(m_entry->uniqueId);
-    if (!level) return;
-    
-    auto task = LevelManager::get()->createLevel(0, EditorIDs::getID(level), LevelSetting::fromLevel(level));
+    auto task = LevelManager::get()->createLevel(0, EditorIDs::getID(m_realLevel), *m_setting);
     task.listen([=, this](auto* resultp) {
         if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
+            BrowserManager::get()->createShadowLevel(m_realLevel);
+
             m_entry->key = value.levelKey;
             auto token = AccountManager::get()->getLoginToken();
             DispatchEvent<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
-                "create-level"_spr, token, value.clientId, level, value.levelKey
+                "create-level"_spr, token, value.clientId, m_realLevel, value.levelKey
             ).post();
             Notification::create("Level started sharing", NotificationIcon::Success, 1.5f)->show();
         }
@@ -588,6 +596,8 @@ void ShareSettings::stopSharing(cocos2d::CCObject* sender) {
             Notification::create("Failed to stop sharing the level", NotificationIcon::Error, 1.5f)->show();
             return;
         }
+        BrowserManager::get()->removeShadowLevel(m_realLevel);
+
         m_entry->key.clear();
         BrowserManager::get()->saveLevelEntry(*m_entry);
 

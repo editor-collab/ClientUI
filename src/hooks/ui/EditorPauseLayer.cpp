@@ -10,12 +10,13 @@ using namespace tulip::editor;
 bool EditorPauseLayerUIHook::init(LevelEditorLayer* editorLayer) {
     if (!EditorPauseLayer::init(editorLayer)) return false;
 
-    if (!LevelManager::get()->getJoinedLevel().has_value()) {
+    if (!LevelManager::get()->getJoinedLevelKey().has_value()) {
         return true;
     }
     
     this->setupGuidelinesMenu();
     this->setupInfoMenu();
+    this->setupResumeMenu();
 
     return true;
 }
@@ -23,7 +24,7 @@ void EditorPauseLayerUIHook::setupGuidelinesMenu() {
     auto gen = new ui::MenuItemSpriteExtra {
         .id = "user-list-button"_spr,
         .callback = [this](auto*){
-            if (auto key = LevelManager::get()->getJoinedLevel()) {
+            if (auto key = LevelManager::get()->getJoinedLevelKey()) {
                 if (auto entry = BrowserManager::get()->getLevelEntry(*key); entry->isShared()) {
                     auto userList = LevelUserList::create(entry);
                 }
@@ -52,7 +53,7 @@ void EditorPauseLayerUIHook::setupInfoMenu() {
     }
     
     CCLabelBMFont* label = nullptr;
-    if (auto key = LevelManager::get()->getJoinedLevel()) {
+    if (auto key = LevelManager::get()->getJoinedLevelKey()) {
         if (auto entry = BrowserManager::get()->getLevelEntry(*key)) {
             auto sharingType = entry->settings.defaultSharing;
             std::string username = GJAccountManager::get()->m_username;
@@ -102,4 +103,97 @@ void EditorPauseLayerUIHook::setupInfoMenu() {
         menu->addChild(label);
         menu->updateLayout();
     }
+}
+
+void EditorPauseLayerUIHook::setupResumeMenu() {
+    auto saveAndPlay = static_cast<CCMenuItemSpriteExtra*>(this->querySelector("save-and-play-button"));
+    auto saveAndExit = static_cast<CCMenuItemSpriteExtra*>(this->querySelector("save-and-exit-button"));
+    auto save = static_cast<CCMenuItemSpriteExtra*>(this->querySelector("save-button"));
+    auto exit = static_cast<CCMenuItemSpriteExtra*>(this->querySelector("exit-button"));
+
+    auto playSprite = ButtonSprite::create("Play", 180, true, "goldFont.fnt", "GJ_button_01.png", 28.0f, 0.8f);
+    auto saveToLocalSprite = ButtonSprite::create("Save To Local", 180, true, "goldFont.fnt", "GJ_button_01.png", 28.0f, 0.8f);
+    auto playInLDMSprite = ButtonSprite::create("Play in LDM", 180, true, "goldFont.fnt", "GJ_button_01.png", 28.0f, 0.8f);
+
+    saveAndPlay->setNormalImage(playSprite);
+	saveAndPlay->setTarget(this, menu_selector(EditorPauseLayerUIHook::onPlay));
+
+    saveAndExit->setNormalImage(playInLDMSprite);
+    saveAndExit->setTarget(this, menu_selector(EditorPauseLayerUIHook::onPlayInLDM));
+
+    save->setNormalImage(saveToLocalSprite);
+
+    exit->setTarget(this, menu_selector(EditorPauseLayerUIHook::onExitWithoutPrompt));
+}
+
+void EditorPauseLayerUIHook::onPlay(cocos2d::CCObject* sender) {
+    if (m_fields->playLock) return;
+    m_fields->playLock = true;
+
+    auto currentLevel = m_editorLayer->m_level;
+    if (!BrowserManager::get()->isShadowLevel(currentLevel)) {
+        m_editorLayer->m_level = BrowserManager::get()->getReflectedLevel(currentLevel);
+        log::debug("Found a real level while playing, shadowing to shadow level {}", m_editorLayer->m_level);
+    }
+    m_editorLayer->m_level->m_lowDetailMode = false;
+	m_editorLayer->m_level->m_lowDetailModeToggled = false;
+
+    EditorPauseLayer::onSaveAndPlay(sender);
+
+    m_editorLayer->m_level = currentLevel;
+    m_fields->playLock = false;
+}
+void EditorPauseLayerUIHook::onPlayInLDM(cocos2d::CCObject* sender) {
+    if (m_fields->playLock) return;
+    m_fields->playLock = true;
+
+    auto currentLevel = m_editorLayer->m_level;
+    if (!BrowserManager::get()->isShadowLevel(currentLevel)) {
+        m_editorLayer->m_level = BrowserManager::get()->getReflectedLevel(currentLevel);
+        log::debug("Found a real level while playing, shadowing to shadow level {}", m_editorLayer->m_level);
+    }
+    m_editorLayer->m_level->m_lowDetailMode = true;
+	m_editorLayer->m_level->m_lowDetailModeToggled = true;
+
+    EditorPauseLayer::onSaveAndPlay(sender);
+
+    m_editorLayer->m_level = currentLevel;
+    m_fields->playLock = false;
+}
+void EditorPauseLayerUIHook::onExitWithoutPrompt(cocos2d::CCObject* sender) {
+    auto currentLevel = m_editorLayer->m_level;
+
+    if (BrowserManager::get()->isShadowLevel(currentLevel)) {
+        m_editorLayer->m_level = BrowserManager::get()->getReflectedLevel(currentLevel);
+        log::debug("Found a shadow level while exiting, reflecting to real level {}", m_editorLayer->m_level);
+    }
+
+    GameManager::get()->m_sceneEnum = 3;
+    
+    EditorPauseLayer::onExitEditor(sender);
+
+    m_editorLayer->m_level = currentLevel;
+}
+
+void EditorPauseLayerUIHook::saveLevel() {
+    auto currentLevel = m_editorLayer->m_level;
+
+    if (BrowserManager::get()->isShadowLevel(currentLevel)) {
+        m_editorLayer->m_level = BrowserManager::get()->getReflectedLevel(currentLevel);
+        log::debug("Found a shadow level while saving, reflecting to real level {}", m_editorLayer->m_level);
+    }
+
+    auto realLevel = m_editorLayer->m_level;
+
+    auto localLevels = CCArrayExt<GJGameLevel*>(LocalLevelManager::get()->m_localLevels);
+    if (std::find(localLevels.begin(), localLevels.end(), realLevel) == localLevels.end()) {
+        log::debug("Level not found in local levels, adding level {}", realLevel);
+
+        LocalLevelManager::get()->m_localLevels->insertObject(realLevel, 0);
+    }
+
+    EditorPauseLayer::saveLevel();
+
+    // revert level back to shadow level
+    m_editorLayer->m_level = currentLevel;
 }

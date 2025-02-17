@@ -14,6 +14,8 @@ namespace tulip::editor {
 
         LevelEntry* m_entry;
         LevelSetting* m_setting;
+        GJGameLevel* m_realLevel;
+        LevelEditorLayer* m_editorLayer;
         cocos2d::CCNode* m_list = nullptr;
         cocos2d::CCNode* m_popup = nullptr;
         geode::SimpleTextArea* m_generalAccessText = nullptr;
@@ -26,9 +28,9 @@ namespace tulip::editor {
 
         bool m_resetScroll = false;
 
-        static ShareSettings* create(LevelEntry* setting);
+        static ShareSettings* create(LevelEntry* setting, LevelEditorLayer* editorLayer);
 
-        bool init(LevelEntry* setting);
+        bool init(LevelEntry* setting, LevelEditorLayer* editorLayer);
 
     private:
         ui::Base* generatePersonEntry(std::string name, DefaultSharingType type);

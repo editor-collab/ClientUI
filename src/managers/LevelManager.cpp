@@ -20,16 +20,16 @@ public:
     
     bool errorCallback(web::WebResponse* response);
 
-    Task<Result<LevelManager::CreateLevelResult>, WebProgress> createLevel(int slotId, int uniqueId, LevelSetting&& settings);
+    Task<Result<LevelManager::CreateLevelResult>, WebProgress> createLevel(int slotId, int uniqueId, LevelSetting const& settings);
     Task<Result<LevelManager::JoinLevelResult>, WebProgress> joinLevel(std::string_view levelKey);
     Task<Result<>, WebProgress> leaveLevel(CameraValue const& camera);
     Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);
     Task<Result<std::vector<uint8_t>>, WebProgress> getSnapshot(std::string_view levelKey, std::string_view hash);
-    Task<Result<LevelEntry>, WebProgress> updateLevelSettings(std::string_view levelKey, LevelSetting&& settings);
+    Task<Result<LevelEntry>, WebProgress> updateLevelSettings(std::string_view levelKey, LevelSetting const& settings);
     Task<Result<>, WebProgress> kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason);
 
     std::vector<std::string> getHostedLevels() const;
-    std::optional<std::string> getJoinedLevel() const;
+    std::optional<std::string> getJoinedLevelKey() const;
     uint32_t getClientId() const;
     bool isInLevel() const;
 };
@@ -50,10 +50,10 @@ uint32_t LevelManager::Impl::getClientId() const {
 }
 
 bool LevelManager::Impl::isInLevel() const {
-    return m_joinedLevel.has_value();
+    return m_joinedLevel.has_value() && GJBaseGameLayer::get() != nullptr;
 }
 
-std::optional<std::string> LevelManager::Impl::getJoinedLevel() const {
+std::optional<std::string> LevelManager::Impl::getJoinedLevelKey() const {
     return m_joinedLevel;
 }
 
@@ -78,7 +78,7 @@ std::optional<std::string> LevelManager::Impl::getJoinedLevel() const {
 //     return false;
 // }
 
-Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::createLevel(int slotId, int uniqueId, LevelSetting&& settings) {
+Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::createLevel(int slotId, int uniqueId, LevelSetting const& settings) {
     log::debug("Creating level");
 
     auto const settingString = matjson::Value(settings).dump(matjson::NO_INDENTATION);
@@ -178,6 +178,7 @@ Task<Result<>, WebProgress> LevelManager::Impl::deleteLevel(std::string_view lev
     auto task = req.post(WebManager::get()->getServerURL("level/delete"));
     auto ret = task.map([=, this](auto response) -> Result<> {
         if (response->ok()) {
+            m_joinedLevel = std::nullopt;
             m_hostedLevels.erase(std::remove(m_hostedLevels.begin(), m_hostedLevels.end(), levelKey), m_hostedLevels.end());
             return Ok();
         }
@@ -201,7 +202,7 @@ Task<Result<std::vector<uint8_t>>, WebProgress> LevelManager::Impl::getSnapshot(
     return ret;
 }
 
-Task<Result<LevelEntry>, WebProgress> LevelManager::Impl::updateLevelSettings(std::string_view levelKey, LevelSetting&& settings) {
+Task<Result<LevelEntry>, WebProgress> LevelManager::Impl::updateLevelSettings(std::string_view levelKey, LevelSetting const& settings) {
     log::debug("Updating level settings for level {}", levelKey);
 
     auto const settingString = matjson::Value(settings).dump(matjson::NO_INDENTATION);
@@ -250,7 +251,7 @@ LevelManager* LevelManager::get() {
 LevelManager::LevelManager() : impl(std::make_unique<Impl>()) {}
 LevelManager::~LevelManager() = default;
 
-Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::createLevel(int slotId, int uniqueId, LevelSetting&& settings) {
+Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::createLevel(int slotId, int uniqueId, LevelSetting const& settings) {
     return impl->createLevel(slotId, uniqueId, std::move(settings));
 }
 Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::joinLevel(std::string_view levelKey) {
@@ -265,8 +266,8 @@ Task<Result<>, WebProgress> LevelManager::deleteLevel(std::string_view levelKey)
 Task<Result<std::vector<uint8_t>>, WebProgress> LevelManager::getSnapshot(std::string_view levelKey, std::string_view hash) {
     return impl->getSnapshot(levelKey, hash);
 }
-Task<Result<LevelEntry>, WebProgress> LevelManager::updateLevelSettings(std::string_view levelKey, LevelSetting&& settings) {
-    return impl->updateLevelSettings(levelKey, std::move(settings));
+Task<Result<LevelEntry>, WebProgress> LevelManager::updateLevelSettings(std::string_view levelKey, LevelSetting const& settings) {
+    return impl->updateLevelSettings(levelKey, settings);
 }
 
 Task<Result<>, WebProgress> LevelManager::kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason) {
@@ -285,6 +286,6 @@ bool LevelManager::isInLevel() const {
     return impl->isInLevel();
 }
 
-std::optional<std::string> LevelManager::getJoinedLevel() const {
-    return impl->getJoinedLevel();
+std::optional<std::string> LevelManager::getJoinedLevelKey() const {
+    return impl->getJoinedLevelKey();
 }

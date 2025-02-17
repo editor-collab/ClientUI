@@ -189,7 +189,7 @@ void LevelUserList::updateUsers() {
 
                         auto task = LevelManager::get()->updateLevelSettings(
                             m_entry->key,
-                            LevelSetting(*m_setting)
+                            *m_setting
                         );
 
                         task.listen([=](auto* result) {});
@@ -271,7 +271,7 @@ void LevelUserList::updateUsers() {
 
                                     auto task = LevelManager::get()->updateLevelSettings(
                                         m_entry->key,
-                                        LevelSetting(*m_setting)
+                                        *m_setting
                                     );
 
                                     task.listen([=](auto* result) {});

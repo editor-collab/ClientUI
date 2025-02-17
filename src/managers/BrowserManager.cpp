@@ -10,14 +10,17 @@ using namespace geode::prelude;
 class BrowserManager::Impl {
 public:
     std::unordered_map<GJGameLevel*, LevelEntry> m_levelEntries;
+    std::unordered_map<GJGameLevel*, GJGameLevel*> m_shadowEntries;
     std::vector<Ref<GJGameLevel>> m_myLevels;
+    std::vector<Ref<GJGameLevel>> m_shadowMyLevels;
     std::vector<Ref<GJGameLevel>> m_sharedLevels;
     std::vector<Ref<GJGameLevel>> m_discoverLevels;
 
     void init();
 
-    cocos2d::CCArray* getMySharedLevels();
-    cocos2d::CCArray* getMyLevels(int folder);
+    cocos2d::CCArray* getShadowMyLevels();
+    cocos2d::CCArray* getLocalLevels(int folder);
+    cocos2d::CCArray* getMyLevels();
     cocos2d::CCArray* getSharedLevels();
     cocos2d::CCArray* getDiscoverLevels();
 
@@ -27,10 +30,15 @@ public:
     bool isDiscoverLevel(GJGameLevel* level);
 
     void setLevelValues(GJGameLevel* level, LevelEntry const& entry);
+    void setLevelValues(LevelSetting* settings, GJGameLevel* level);
 
     std::optional<std::string> getLevelKey(GJGameLevel* level);
     LevelEntry* getLevelEntry(GJGameLevel* level);
     LevelEntry* getLevelEntry(std::string_view key);
+
+    GJGameLevel* getShadowLevel(GJGameLevel* level);
+    GJGameLevel* getReflectedLevel(GJGameLevel* level);
+    bool isShadowLevel(GJGameLevel* level);
 
     void updateMyLevels(std::vector<LevelEntry>&& entries);
     void updateSharedLevels(std::vector<LevelEntry>&& entries);
@@ -38,6 +46,9 @@ public:
 
     void addLevelEntry(GJGameLevel* level, LevelEntry entry);
     void saveLevelEntry(LevelEntry const& entry);
+
+    void createShadowLevel(GJGameLevel* level);
+    void removeShadowLevel(GJGameLevel* level);
 };
 
 $on_mod(Loaded) {
@@ -57,7 +68,45 @@ void BrowserManager::Impl::init() {
     }
 }
 
-cocos2d::CCArray* BrowserManager::Impl::getMySharedLevels() {
+GJGameLevel* BrowserManager::Impl::getShadowLevel(GJGameLevel* level) {
+    auto it = m_shadowEntries.find(level);
+    if (it != m_shadowEntries.end()) {
+        return it->second;
+    }
+    return level;
+}
+
+GJGameLevel* BrowserManager::Impl::getReflectedLevel(GJGameLevel* level) {
+    for (auto& [real, shadow] : m_shadowEntries) {
+        if (shadow == level) {
+            return real;
+        }
+    }
+    return level;
+}
+
+bool BrowserManager::Impl::isShadowLevel(GJGameLevel* level) {
+    for (auto& [real, shadow] : m_shadowEntries) {
+        if (shadow == level) {
+            return true;
+        }
+    }
+    return false;
+}
+
+void BrowserManager::Impl::createShadowLevel(GJGameLevel* level) {
+    auto shadowLevel = GJGameLevel::create();
+    this->setLevelValues(shadowLevel, m_levelEntries[level]);
+    m_shadowEntries[level] = shadowLevel;
+    m_shadowMyLevels.push_back(shadowLevel);
+}
+
+void BrowserManager::Impl::removeShadowLevel(GJGameLevel* level) {
+    m_shadowEntries.erase(level);
+    std::erase(m_shadowMyLevels, level);
+}
+
+cocos2d::CCArray* BrowserManager::Impl::getShadowMyLevels() {
     auto arr = cocos2d::CCArray::create();
     for (auto& level : m_myLevels) {
         arr->addObject(level);
@@ -65,7 +114,7 @@ cocos2d::CCArray* BrowserManager::Impl::getMySharedLevels() {
     return arr;
 }
 
-cocos2d::CCArray* BrowserManager::Impl::getMyLevels(int folder) {
+cocos2d::CCArray* BrowserManager::Impl::getLocalLevels(int folder) {
     auto arr = cocos2d::CCArray::create();
     auto localLevels = CCArrayExt<GJGameLevel*>(LocalLevelManager::get()->m_localLevels);
     if (folder == 0) {
@@ -75,6 +124,14 @@ cocos2d::CCArray* BrowserManager::Impl::getMyLevels(int folder) {
     }
     for (auto& level : localLevels) {
         if (level->m_levelFolder == folder) arr->addObject(level);
+    }
+    return arr;
+}
+
+cocos2d::CCArray* BrowserManager::Impl::getMyLevels() {
+    auto arr = cocos2d::CCArray::create();
+    for (auto& level : m_myLevels) {
+        arr->addObject(level);
     }
     return arr;
 }
@@ -148,11 +205,19 @@ void BrowserManager::Impl::setLevelValues(GJGameLevel* level, LevelEntry const& 
     level->m_levelDesc = crypto::base64Encode(data, crypto::Base64Flags::UrlSafe);
 }
 
+void BrowserManager::Impl::setLevelValues(LevelSetting* settings, GJGameLevel* level) {
+    settings->title = level->m_levelName;
+    auto data = crypto::base64Decode(level->m_levelDesc, crypto::Base64Flags::UrlSafe);
+    settings->description = std::string(data.begin(), data.end());
+}
+
 void BrowserManager::Impl::updateMyLevels(std::vector<LevelEntry>&& entries) {
     for (auto const& level : m_myLevels) {
         m_levelEntries.erase(level);
+        m_shadowEntries.erase(level);
     }
     m_myLevels.clear();
+    m_shadowMyLevels.clear();
 
     for (auto& entry : entries) {
         auto localLevels = CCArrayExt<GJGameLevel*>(LocalLevelManager::get()->m_localLevels);
@@ -161,6 +226,12 @@ void BrowserManager::Impl::updateMyLevels(std::vector<LevelEntry>&& entries) {
             return EditorIDs::getID(localLevel) == entry.uniqueId;
         }); it != localLevels.end()) {
             log::debug("found local level with name {} level {}", entry.settings.title, *it);
+            
+            auto shadowLevel = GJGameLevel::create();
+            this->setLevelValues(shadowLevel, entry);
+            m_shadowMyLevels.push_back(shadowLevel);
+            m_shadowEntries[*it] = shadowLevel;
+
             m_myLevels.push_back(*it);
             m_levelEntries[*it] = std::move(entry);
         }
@@ -168,6 +239,12 @@ void BrowserManager::Impl::updateMyLevels(std::vector<LevelEntry>&& entries) {
             auto level = GJGameLevel::create();
             this->setLevelValues(level, entry);
             log::debug("adding level with name {} level {}", entry.settings.title, level);
+
+            auto shadowLevel = GJGameLevel::create();
+            this->setLevelValues(shadowLevel, entry);
+            m_shadowMyLevels.push_back(shadowLevel);
+            m_shadowEntries[level] = shadowLevel;
+
             m_myLevels.push_back(level);
             BrowserManager::get()->saveLevelEntry(entry);
             m_levelEntries[level] = std::move(entry);
@@ -205,7 +282,8 @@ void BrowserManager::Impl::updateDiscoverLevels(std::vector<LevelEntry>&& entrie
 
 void BrowserManager::Impl::addLevelEntry(GJGameLevel* level, LevelEntry entry) {
     entry.uniqueId = EditorIDs::getID(level);
-    entry.settings = LevelSetting::fromLevel(level);
+    entry.hostAccountId = GJAccountManager::get()->m_accountID;
+    this->setLevelValues(&entry.settings, level);
 
     log::debug("Adding level entry with level id {}, level {}", entry.uniqueId, level);
 
@@ -229,12 +307,16 @@ BrowserManager* BrowserManager::get() {
 BrowserManager::BrowserManager() : impl(std::make_unique<Impl>()) {}
 BrowserManager::~BrowserManager() = default;
 
-cocos2d::CCArray* BrowserManager::getMySharedLevels() {
-    return impl->getMySharedLevels();
+cocos2d::CCArray* BrowserManager::getShadowMyLevels() {
+    return impl->getShadowMyLevels();
 }
 
-cocos2d::CCArray* BrowserManager::getMyLevels(int folder) {
-    return impl->getMyLevels(folder);
+cocos2d::CCArray* BrowserManager::getLocalLevels(int folder) {
+    return impl->getLocalLevels(folder);
+}
+
+cocos2d::CCArray* BrowserManager::getMyLevels() {
+    return impl->getMyLevels();
 }
 
 cocos2d::CCArray* BrowserManager::getSharedLevels() {
@@ -273,6 +355,18 @@ LevelEntry* BrowserManager::getLevelEntry(std::string_view key) {
     return impl->getLevelEntry(key);
 }
 
+GJGameLevel* BrowserManager::getShadowLevel(GJGameLevel* level) {
+    return impl->getShadowLevel(level);
+}
+
+GJGameLevel* BrowserManager::getReflectedLevel(GJGameLevel* level) {
+    return impl->getReflectedLevel(level);
+}
+
+bool BrowserManager::isShadowLevel(GJGameLevel* level) {
+    return impl->isShadowLevel(level);
+}
+
 void BrowserManager::updateMyLevels(std::vector<LevelEntry>&& entries) {
     impl->updateMyLevels(std::move(entries));
 }
@@ -295,4 +389,16 @@ void BrowserManager::addLevelEntry(GJGameLevel* level, LevelEntry entry) {
 
 void BrowserManager::saveLevelEntry(LevelEntry const& entry) {
     impl->saveLevelEntry(entry);
+}
+
+void BrowserManager::setLevelValues(GJGameLevel* level, LevelEntry const& entry) {
+    impl->setLevelValues(level, entry);
+}
+
+void BrowserManager::createShadowLevel(GJGameLevel* level) {
+    impl->createShadowLevel(level);
+}
+
+void BrowserManager::removeShadowLevel(GJGameLevel* level) {
+    impl->removeShadowLevel(level);
 }

@@ -76,6 +76,10 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 			else if (input->getTag() == 2) {
 				entry->settings.description = input->getString();
 			}
+			auto shadowLevel = BrowserManager::get()->getShadowLevel(m_level);
+			if (BrowserManager::get()->isShadowLevel(shadowLevel)) {
+				BrowserManager::get()->setLevelValues(shadowLevel, *entry);
+			}
 		}
 	}
 
@@ -88,7 +92,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 			if (entry->isShared()) {
 				auto task = LevelManager::get()->updateLevelSettings(
 					BrowserManager::get()->getLevelKey(m_level).value(),
-					LevelSetting(entry->settings)
+					entry->settings
 				);
 				task.listen([=](auto* result) {});
 			}
@@ -116,14 +120,17 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 					.callback = [=, this](auto) {
 						auto const levelKey = entry->key;
 
+						auto shadowLevel = BrowserManager::get()->getShadowLevel(m_level);
+						log::debug("shadow of {} is {}", m_level, shadowLevel);
+
 						auto task = LevelManager::get()->joinLevel(levelKey);
 						task.listen([=, this](auto* resultp) {
 							if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
 								log::debug("join level task succeed");
 
 								auto token = AccountManager::get()->getLoginToken();
-								DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>>(
-									"join-level"_spr, token, value.clientId, levelKey, &value.snapshot, value.camera
+								DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>, GJGameLevel*>(
+									"join-level"_spr, token, value.clientId, levelKey, &value.snapshot, value.camera, shadowLevel
 								).post();
 							}
 							else {

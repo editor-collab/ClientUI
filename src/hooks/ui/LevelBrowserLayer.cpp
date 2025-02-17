@@ -129,7 +129,7 @@ void LevelBrowserLayerUIHook::loadLevelsFinished(CCArray* levels, char const* id
 
     switch (m_fields->currentTab) {
         case CurrentTab::MyLevels:
-            fullLevels = BrowserManager::get()->getMyLevels(m_searchObject->m_folder);
+            fullLevels = BrowserManager::get()->getLocalLevels(m_searchObject->m_folder);
             break;
         case CurrentTab::SharedWithMe:
             fullLevels = BrowserManager::get()->getSharedLevels();
