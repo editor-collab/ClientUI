@@ -8,6 +8,7 @@
 #include <Geode/loader/Dispatch.hpp>
 #include <data/LevelEntry.hpp>
 #include <ui/ShareSettings.hpp>
+#include <ui/ClubstepBackground.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;
@@ -70,6 +71,9 @@ bool LevelBrowserLayerHook::init(GJSearchObject* searchObject) {
 
 		auto menuButton = CCMenuItemExt::createSpriteExtra(menuSprite, [this](CCObject* sender) {
 			this->onConnect();
+			// auto bg = ClubstepBackground::create();
+			// bg->setPosition(0, 0);
+			// this->addChild(bg, 10);
 			// auto shareSettings = ShareSettings::create(&setting);
 		});
 		menu->addChild(menuButton);

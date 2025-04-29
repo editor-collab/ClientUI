@@ -21,6 +21,7 @@ add_library(${PROJECT_NAME} SHARED
     src/managers/LevelManager.cpp
     src/managers/LocalManager.cpp
     src/managers/WebManager.cpp
+    src/ui/BuyPopup.cpp
     src/ui/GenericForm.cpp
     src/ui/GenericList.cpp
     src/ui/MainScene.cpp

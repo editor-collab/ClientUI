@@ -575,6 +575,8 @@ void ShareSettings::startSharing(cocos2d::CCObject* sender) {
             BrowserManager::get()->createShadowLevel(m_realLevel);
 
             m_entry->key = value.levelKey;
+            BrowserManager::get()->saveLevelEntry(*m_entry);
+            
             auto token = AccountManager::get()->getLoginToken();
             DispatchEvent<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
                 "create-level"_spr, token, value.clientId, m_realLevel, value.levelKey
@@ -596,7 +598,7 @@ void ShareSettings::stopSharing(cocos2d::CCObject* sender) {
             Notification::create("Failed to stop sharing the level", NotificationIcon::Error, 1.5f)->show();
             return;
         }
-        BrowserManager::get()->removeShadowLevel(m_realLevel);
+        // removing the shadow level on exit
 
         m_entry->key.clear();
         BrowserManager::get()->saveLevelEntry(*m_entry);

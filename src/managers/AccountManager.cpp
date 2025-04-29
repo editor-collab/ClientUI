@@ -41,6 +41,8 @@ public:
     std::string getAuthToken() const;
     void setAuthToken(std::string_view const token);
 
+    Task<Result<uint32_t>, WebProgress> claimKey(std::string_view key);
+
     bool isAuthenticated() const;
     bool isLoggedIn() const;
 };
@@ -286,6 +288,22 @@ Result<> AccountManager::Impl::startChallenge(Callback&& callback) {
     return Ok();
 }
 
+Task<Result<uint32_t>, WebProgress> AccountManager::Impl::claimKey(std::string_view key) {
+    auto req = WebManager::get()->createAuthenticatedRequest();
+
+    req.param("activation_key", key);
+
+    auto task = req.post(WebManager::get()->getServerURL("auth/claim_key"));
+    auto ret = task.map([=, this](auto response) -> Result<uint32_t> {
+        if (!response->ok()) return Err(fmt::format("HTTP error: {}", response->code()));
+        auto count = response->string().map([](auto str) {
+            return numFromString<uint32_t>(str).unwrapOrDefault();
+        });
+        return count;
+    });
+    return ret;
+}
+
 AccountManager* AccountManager::get() {
     static AccountManager instance;
     return &instance;
@@ -319,6 +337,10 @@ std::string AccountManager::getAuthToken() const {
 
 void AccountManager::setAuthToken(std::string_view const token) {
     return impl->setAuthToken(token);
+}
+
+Task<Result<uint32_t>, WebProgress> AccountManager::claimKey(std::string_view key) {
+    return impl->claimKey(key);
 }
 
 bool AccountManager::isAuthenticated() const {

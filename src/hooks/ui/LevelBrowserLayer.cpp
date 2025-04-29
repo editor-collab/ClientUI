@@ -1,5 +1,6 @@
 #include <hooks/ui/LevelBrowserLayer.hpp>
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
+#include <managers/AccountManager.hpp>
 #include <managers/BrowserManager.hpp>
 #include <managers/CellManager.hpp>
 #include <lavender/Lavender.hpp>
@@ -255,5 +256,9 @@ bool LevelBrowserLayerUIHook::init(GJSearchObject* searchObject) {
             }
         }
     });
+
+    if (!AccountManager::get()->getLoginToken().empty()) {
+        this->onMyLevels(nullptr);
+    }
 	return true;
 }

@@ -2,6 +2,7 @@
 #include <managers/BrowserManager.hpp>
 #include <managers/LevelManager.hpp>
 #include <ui/ShareSettings.hpp>
+#include <ui/BuyPopup.hpp>
 #include <ui/LevelUserList.hpp>
 #include <lavender/Lavender.hpp>
 
@@ -55,15 +56,15 @@ bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
                         "You can either stop sharing one or <cg>buy more slots</c>.",
                         sharedLevels->count(), hostableCount, fmt::join(levelNames, ", ")
                     );
+                    createQuickPopup("Editor Collab", desc, "Cancel", "Buy", [this](auto*, bool isBtn2) {
+                        if (isBtn2)  {
+                            (void)BuyPopup::create();
+                        }
+                    }, true);   
                 }
                 else {
-                    desc = "You dont have any available sharing slots. "
-                           "You can <cg>buy sharing slots</c> to share levels.";
+                    (void)BuyPopup::create();
                 }
-                createQuickPopup("Editor Collab", desc, "Buy", "Cancel", [this](auto*, bool isBtn2) {
-                    if (isBtn2) return;
-                    AppDelegate::get()->openURL("https://buy.stripe.com/aEUbLb38R2Cw91K9AA");
-                }, true);   
             }
         },
         .child = new ui::Sprite {

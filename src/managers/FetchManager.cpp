@@ -25,6 +25,9 @@ public:
     size_t getHostableCount() const {
         return m_hostableCount;
     }
+    void addHostableCount(size_t count) {
+        m_hostableCount += count;
+    }
 };
 
 Result<std::vector<LevelEntry>> FetchManager::Impl::parseLevels(web::WebResponse* response) {
@@ -98,4 +101,8 @@ Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::getDiscover() {
 
 size_t FetchManager::getHostableCount() const {
     return impl->getHostableCount();
+}
+
+void FetchManager::addHostableCount(size_t count) {
+    impl->addHostableCount(count);
 }

@@ -39,8 +39,8 @@ struct ExitHook : Modify<ExitHook, GameManager> {
 					createQuickPopup(
 						"Error",
 						resultp->unwrapErr(),
-						"OK",
 						"Cancel",
+						"OK",
 						[](auto, auto) {}
 					);
 				}
@@ -48,6 +48,15 @@ struct ExitHook : Modify<ExitHook, GameManager> {
 			m_fields->leaveLevelListener.setFilter(task);
 		}
 
+		auto realLevel = level;
+		if (BrowserManager::get()->isShadowLevel(level)) {
+			realLevel = BrowserManager::get()->getReflectedLevel(level);
+		}
+		auto const& entry = BrowserManager::get()->getLevelEntry(realLevel);
+		if (entry && !entry->isShared()) {
+			BrowserManager::get()->removeShadowLevel(level);
+		}
+			
 		GameManager::returnToLastScene(level);
 	}
 };
@@ -135,7 +144,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 							}
 							else {
 								log::debug("join level task error");
-								createQuickPopup("Error", err, "OK", "Cancel", [](auto, auto) {});
+								createQuickPopup("Error", err, "Cancel", "OK", [](auto, auto) {});
 							}
 						});
 					},
