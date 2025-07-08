@@ -86,4 +86,4 @@ target_link_libraries(${PROJECT_NAME}
     Lavender
 )
 
-setup_geode_mod(${PROJECT_NAME})
+setup_geode_mod(${PROJECT_NAME} EXTERNALS alk.editor-collab cvolton.level-id-api geode.node-ids)

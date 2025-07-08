@@ -15,9 +15,9 @@ public:
 
     void init();
 
-    EventListener<DispatchFilter<>> m_socketConnectedListener = DispatchFilter<>("alk.editorcollab/socket-connected");
-    EventListener<DispatchFilter<>> m_socketDisconnectedListener = DispatchFilter<>("alk.editorcollab/socket-disconnected");
-    EventListener<DispatchFilter<>> m_socketAbnormallyDisconnectedListener = DispatchFilter<>("alk.editorcollab/socket-abnormally-disconnected");
+    EventListener<DispatchFilter<>> m_socketConnectedListener = DispatchFilter<>("alk.editor-collab/socket-connected");
+    EventListener<DispatchFilter<>> m_socketDisconnectedListener = DispatchFilter<>("alk.editor-collab/socket-disconnected");
+    EventListener<DispatchFilter<>> m_socketAbnormallyDisconnectedListener = DispatchFilter<>("alk.editor-collab/socket-abnormally-disconnected");
 
     web::WebRequest createRequest() const;
     web::WebRequest createAuthenticatedRequest() const;
@@ -63,8 +63,10 @@ web::WebRequest WebManager::Impl::createAuthenticatedRequest() const {
 }
 
 std::string WebManager::Impl::getServerURL() const {
-    return "localhost:9100";
-    // return "https://tulipalk.me/editor-collab/testing";
+    if (Mod::get()->getSettingValue<bool>("use-local-server")) {
+        return "http://localhost:9100";
+    }
+    return "https://tulipalk.me/editor-collab/testing";
 }
 
 bool WebManager::Impl::isSocketConnected() const {

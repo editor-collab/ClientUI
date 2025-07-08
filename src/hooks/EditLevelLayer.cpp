@@ -70,7 +70,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 		CCMenuItemSpriteExtra* m_joinButton = nullptr;
 		CCSprite* m_joinButtonSprite = nullptr;
 
-		EventListener<DispatchFilter<>> m_disconnectListener = DispatchFilter<>("alk.editorcollab/socket-disconnected");
+		EventListener<DispatchFilter<>> m_disconnectListener = DispatchFilter<>("alk.editor-collab/socket-disconnected");
 	};	
 
 	$override

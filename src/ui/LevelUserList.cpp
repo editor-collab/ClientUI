@@ -26,14 +26,14 @@ bool LevelUserList::init(LevelEntry* entry) {
     m_entry = entry;
     m_setting = &entry->settings;
 
-    DispatchEvent<ConnectedUserList*>("alk.editorcollab/get-user-list", &m_userList).post();
+    DispatchEvent<ConnectedUserList*>("alk.editor-collab/get-user-list", &m_userList).post();
 
     m_userListListener = EventListenerNode<DispatchFilter<ConnectedUserList>>::create(
         EventListener([this](ConnectedUserList userList) {
             m_userList = userList;
             this->updateUsers();
             return ListenerResult::Propagate;
-        }, DispatchFilter<ConnectedUserList>("alk.editorcollab/update-user-list"))
+        }, DispatchFilter<ConnectedUserList>("alk.editor-collab/update-user-list"))
     );
 
     std::vector<ConnectedUserEntry> users;

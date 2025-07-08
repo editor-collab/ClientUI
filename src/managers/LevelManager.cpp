@@ -14,7 +14,9 @@ public:
     std::optional<std::string> m_joinedLevel;
     uint32_t m_clientId = 0;
 
-    EventListener<DispatchFilter<std::string_view>> m_levelKickedListener = DispatchFilter<std::string_view>("alk.editorcollab/level-kicked");
+    EventListener<DispatchFilter<std::string_view>> m_levelKickedListener = DispatchFilter<std::string_view>("alk.editor-collab/level-kicked");
+    EventListener<DispatchFilter<std::string_view, std::string_view, std::span<uint8_t>>> m_updateSnapshotListener = 
+        DispatchFilter<std::string_view, std::string_view, std::span<uint8_t>>("alk.editor-collab-ui/update-level-snapshot");
 
     void init();
     
@@ -26,6 +28,7 @@ public:
     Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);
     Task<Result<std::vector<uint8_t>>, WebProgress> getSnapshot(std::string_view levelKey, std::string_view hash);
     Task<Result<LevelEntry>, WebProgress> updateLevelSettings(std::string_view levelKey, LevelSetting const& settings);
+    Task<Result<>, WebProgress> updateLevelSnapshot(std::string_view levelKey, std::string_view token, std::span<uint8_t> snapshot);
     Task<Result<>, WebProgress> kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason);
 
     std::vector<std::string> getHostedLevels() const;
@@ -37,6 +40,11 @@ public:
 void LevelManager::Impl::init() {
     m_levelKickedListener.bind([this](std::string_view reason) {
         m_joinedLevel = std::nullopt;
+        return ListenerResult::Propagate;
+    });
+
+    m_updateSnapshotListener.bind([this](std::string_view levelKey, std::string_view token, std::span<uint8_t> snapshot) {
+        (void)LevelManager::get()->updateLevelSnapshot(levelKey, token, snapshot);
         return ListenerResult::Propagate;
     });
 }
@@ -221,6 +229,23 @@ Task<Result<LevelEntry>, WebProgress> LevelManager::Impl::updateLevelSettings(st
     return ret;
 }
 
+Task<Result<>, WebProgress> LevelManager::Impl::updateLevelSnapshot(std::string_view levelKey, std::string_view token, std::span<uint8_t> snapshot) {
+    log::debug("Updating level snapshot for level {}", levelKey);
+
+    auto req =  WebManager::get()->createAuthenticatedRequest();
+    req.param("level_key", levelKey);
+    req.param("request_token", token);
+    req.body(ByteVector(snapshot.begin(), snapshot.end()));
+    auto task = req.post(WebManager::get()->getServerURL("level/update_level_snapshot"));
+    auto ret = task.map([](web::WebResponse* response) -> Result<> {
+        if (response->ok()) {
+            return Ok();
+        }
+        return Err(fmt::format("HTTP error: {}", response->code()));
+    });
+    return ret;
+}
+
 Task<Result<>, WebProgress> LevelManager::Impl::kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason) {
     log::debug("Kicking user {} from level {}", accountId, levelKey);
 
@@ -268,6 +293,10 @@ Task<Result<std::vector<uint8_t>>, WebProgress> LevelManager::getSnapshot(std::s
 }
 Task<Result<LevelEntry>, WebProgress> LevelManager::updateLevelSettings(std::string_view levelKey, LevelSetting const& settings) {
     return impl->updateLevelSettings(levelKey, settings);
+}
+
+Task<Result<>, WebProgress> LevelManager::updateLevelSnapshot(std::string_view levelKey, std::string_view token, std::span<uint8_t> snapshot) {
+    return impl->updateLevelSnapshot(levelKey, token, snapshot);
 }
 
 Task<Result<>, WebProgress> LevelManager::kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason) {

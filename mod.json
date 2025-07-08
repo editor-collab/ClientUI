@@ -1,5 +1,5 @@
 {
-	"geode": "4.3.1",
+	"geode": "4.6.1",
 	"gd": {
 		"win": "2.2074",
 		"android": "2.2074",
@@ -7,7 +7,7 @@
 	},
 	"id": "alk.editor-collab-ui",
 	"name": "Editor Collab UI",
-	"version": "v1.0.0",
+	"version": "0.1.0-alpha",
 	"developer": "alk",
 	"description": "UI for the Editor Collab mod",
 	"resources": {
@@ -27,11 +27,26 @@
 		"enhancement",
 		"utility"
     ],
-	"dependencies": [
-		{
-			"id": "cvolton.level-id-api",
+	"dependencies": {
+		"cvolton.level-id-api": {
 			"version": "1.0.0",
 			"importance": "required"
+		},
+		"geode.node-ids": {
+            "version": ">=1.11.0",
+            "importance": "required"
+        },
+		"alk.editor-collab": {
+			"version": "0.1.0-alpha",
+			"importance": "required"
 		}
-	]
+	},
+	"settings": {
+		"use-local-server": {
+			"type": "bool",
+			"name": "Use local server",
+			"description": "This is for me testing. Lol",
+			"default": false
+		}
+	}
 }

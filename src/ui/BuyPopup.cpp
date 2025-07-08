@@ -2,6 +2,7 @@
 #include <managers/BrowserManager.hpp>
 #include <managers/LevelManager.hpp>
 #include <managers/AccountManager.hpp>
+#include <managers/FetchManager.hpp>
 #include <lavender/Lavender.hpp>
 
 using namespace geode::prelude;

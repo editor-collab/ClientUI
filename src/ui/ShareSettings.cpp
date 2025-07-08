@@ -569,6 +569,14 @@ void ShareSettings::changeGeneralAccess(cocos2d::CCObject* sender) {
 }
 
 void ShareSettings::startSharing(cocos2d::CCObject* sender) {
+    if (LevelEditorLayer::get()->m_objects->count() > 5000) {
+		createQuickPopup(
+		    "Error", "There is a 5000 object limit right now (testing)", "Cancel", "OK",
+		    [](auto, auto) {}
+		);
+		return;
+	}
+
     auto task = LevelManager::get()->createLevel(0, EditorIDs::getID(m_realLevel), *m_setting);
     task.listen([=, this](auto* resultp) {
         if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
