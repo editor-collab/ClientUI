@@ -24,6 +24,7 @@ public:
         CCArray* getMyLevels();
         CCArray* getSharedLevels();
         CCArray* getDiscoverLevels();
+        CCArray* getOnlineLevels();
 
         bool isMyLevel(ShadowLevel* level);
         bool isSharedLevel(ShadowLevel* level);
@@ -63,6 +64,8 @@ public:
 
         std::vector<Ref<ReflectedLevel>> m_myLevels;
 
+        std::unordered_map<int, std::string> m_levelIdKeys;
+
         ShadowLevel* getShadowLevel(ReflectedLevel* level);
         ReflectedLevel* getReflectedLevel(ShadowLevel* level);
 
@@ -77,8 +80,8 @@ public:
         ShadowLevel* createShadowLevel(ReflectedLevel* level);
         ShadowLevel* removeShadowLevel(ReflectedLevel* level);
 
-        ReflectedLevel* createReflectedLevel(ShadowLevel* level);
-        ReflectedLevel* removeReflectedLevel(ShadowLevel* level);
+        ReflectedLevel* createReflectedLevel(ShadowLevel* level, LevelEntry& entry);
+        ReflectedLevel* removeReflectedLevel(ShadowLevel* level, LevelEntry& entry);
 
         void saveLevel(ReflectedLevel* level, bool insert);
 
@@ -117,6 +120,8 @@ public:
     void saveLevel(GJGameLevel* level, bool insert);
 
     void replaceWithShadowLevel(GJGameLevel*& level);
+
+    void detachReflectedLevel(GJGameLevel* level);
 };
 
 $on_mod(Loaded) {
@@ -124,7 +129,14 @@ $on_mod(Loaded) {
 }
 
 void BrowserManager::Impl::init() {
-    // auto& container = Mod::get()->getSaveContainer();
+    auto& container = Mod::get()->getSaveContainer();
+    if (container.contains("level-keys")) {
+        for (auto& [id, value] : container["level-keys"]) {
+            if (GEODE_UNWRAP_IF_OK(levelId, numFromString<int>(id))) {
+                this->reflected.m_levelIdKeys[levelId] = value.asString().unwrapOrDefault();
+            }
+        }
+    }
     // auto accountId = GJAccountManager::get()->m_accountID;
     // if (container.contains("level-entries")) {
     //     for (auto& [uniqueId, value] : container["level-entries"]) {
@@ -178,6 +190,20 @@ CCArray* BrowserManager::Impl::Shadow::getDiscoverLevels() {
     return arr;
 }
 
+CCArray* BrowserManager::Impl::Shadow::getOnlineLevels() {
+    auto arr = CCArray::create();
+    for (auto& level : m_myLevels) {
+        arr->addObject(level);
+    }
+    for (auto& level : m_sharedLevels) {
+        arr->addObject(level);
+    }
+    for (auto& level : m_discoverLevels) {
+        arr->addObject(level);
+    }
+    return arr;
+}
+
 bool BrowserManager::Impl::Shadow::isMyLevel(ShadowLevel* level) {
     return std::find(m_myLevels.begin(), m_myLevels.end(), level) != m_myLevels.end();
 }
@@ -213,17 +239,20 @@ void BrowserManager::Impl::Shadow::clearDiscoverLevels() {
 
 void BrowserManager::Impl::Shadow::addMyLevel(ShadowLevel* level, LevelEntry&& entry) {
     m_myLevels.push_back(level);
-    this->addLevelEntry(level, std::move(entry));
+    this->setLevelValues(level, entry);
+    m_levelEntries[level] = std::move(entry);
 }
 
 void BrowserManager::Impl::Shadow::addSharedLevel(ShadowLevel* level, LevelEntry&& entry) {
     m_sharedLevels.push_back(level);
-    this->addLevelEntry(level, std::move(entry));
+    this->setLevelValues(level, entry);
+    m_levelEntries[level] = std::move(entry);
 }
 
 void BrowserManager::Impl::Shadow::addDiscoverLevel(ShadowLevel* level, LevelEntry&& entry) {
     m_discoverLevels.push_back(level);
-    this->addLevelEntry(level, std::move(entry));
+    this->setLevelValues(level, entry);
+    m_levelEntries[level] = std::move(entry);
 }
 
 void BrowserManager::Impl::Shadow::setLevelValues(ShadowLevel* level, LevelEntry const& entry) {
@@ -239,17 +268,12 @@ void BrowserManager::Impl::Shadow::setLevelValues(LevelSetting* settings, Shadow
 
 void BrowserManager::Impl::Shadow::addLevelEntry(ShadowLevel* level, LevelEntry&& entry) {
     this->setLevelValues(&entry.settings, level);
-
-    log::debug("Adding level entry with level id {}, level {}", entry.uniqueId, level);
-
     m_levelEntries[level] = std::move(entry);
-    Mod::get()->getSaveContainer()["level-entries"][fmt::format("{}", entry.uniqueId)] = entry;
 }
 
 void BrowserManager::Impl::Shadow::updateLevelEntry(ShadowLevel* level) {
     auto entry = this->getLevelEntry(level);
     this->setLevelValues(&entry->settings, level);
-    Mod::get()->getSaveContainer()["level-entries"][fmt::format("{}", entry->uniqueId)] = *entry;
 }
 
 LevelEntry* BrowserManager::Impl::Shadow::getLevelEntry(ShadowLevel* level) {
@@ -281,7 +305,9 @@ void BrowserManager::Impl::Shadow::updateMyLevels(std::vector<LevelEntry>&& entr
         auto localLevels = CCArrayExt<GJGameLevel*>(LocalLevelManager::get()->m_localLevels);
 
         if (auto it = std::find_if(localLevels.begin(), localLevels.end(), [&](auto& localLevel) {
-            return EditorIDs::getID(localLevel) == entry.uniqueId;
+            auto id = EditorIDs::getID(localLevel);
+            auto& keys = this->reflected->m_levelIdKeys;
+            return keys.contains(id) && keys[id] == entry.key;
         }); it != localLevels.end()) {
             log::debug("found reflected level with name {}", entry.settings.title);
             auto reflectedLevel = static_cast<ReflectedLevel*>(*it);
@@ -289,7 +315,9 @@ void BrowserManager::Impl::Shadow::updateMyLevels(std::vector<LevelEntry>&& entr
             if (this->reflected->isMyLevel(reflectedLevel)) {
                 auto shadowLevel = this->reflected->getShadowLevel(reflectedLevel);
                 log::debug("shadow level {} already exists for reflected level {}", shadowLevel, reflectedLevel);
-                this->addLevelEntry(shadowLevel, std::move(entry));
+                
+                this->setLevelValues(shadowLevel, entry);
+                m_levelEntries[shadowLevel] = std::move(entry);
             }
             else {
                 auto shadowLevel = this->reflected->createShadowLevel(reflectedLevel);
@@ -384,9 +412,15 @@ ShadowLevel* BrowserManager::Impl::Reflected::removeShadowLevel(ReflectedLevel* 
     return nullptr;
 }
 
-ReflectedLevel* BrowserManager::Impl::Reflected::createReflectedLevel(ShadowLevel* level) {
+ReflectedLevel* BrowserManager::Impl::Reflected::createReflectedLevel(ShadowLevel* level, LevelEntry& entry) {
     auto reflectedLevel = ReflectedLevel::create();
+
+    auto id = EditorIDs::getID(level);
+    m_levelIdKeys[id] = entry.key;
+    Mod::get()->getSaveContainer()["level-keys"][fmt::format("{}", id)] = entry.key;
+
     m_shadowMapping[reflectedLevel] = level;
+
     reflectedLevel->m_levelName = level->m_levelName;
     reflectedLevel->m_levelDesc = level->m_levelDesc;
     reflectedLevel->m_songID = level->m_songID;
@@ -395,11 +429,15 @@ ReflectedLevel* BrowserManager::Impl::Reflected::createReflectedLevel(ShadowLeve
     return reflectedLevel;
 }
 
-ReflectedLevel* BrowserManager::Impl::Reflected::removeReflectedLevel(ShadowLevel* level) {
+ReflectedLevel* BrowserManager::Impl::Reflected::removeReflectedLevel(ShadowLevel* level, LevelEntry& entry) {
     for (auto it = m_shadowMapping.begin(); it != m_shadowMapping.end(); ++it) {
         if (it->second == level) {
             auto reflectedLevel = it->first;
             m_shadowMapping.erase(it);
+
+            auto id = EditorIDs::getID(level);
+            m_levelIdKeys.erase(id);
+            Mod::get()->getSaveContainer()["level-keys"].erase(fmt::format("{}", id));
             return reflectedLevel;
         }
     }
@@ -433,24 +471,26 @@ std::variant<ReflectedLevel*, ShadowLevel*, GJGameLevel*> BrowserManager::Impl::
 }
 
 cocos2d::CCArray* BrowserManager::Impl::getLocalLevels(int folder) {
-    auto arr = shadow.getMyLevels();
+    auto array = shadow.getMyLevels();
+
     for (auto level : CCArrayExt<GJGameLevel*>(LocalLevelManager::get()->m_localLevels)) {
         if (level->m_levelFolder == folder) {
-            auto variant = reflected.convertLevel(level);
-            std::visit(makeVisitor {
-                [&](ShadowLevel* shadowLevel) {
-                    if (!shadow.isMyLevel(shadowLevel)) arr->addObject(level);
-                },
-                [&](ReflectedLevel* reflectedLevel) {
-                    if (!reflected.isMyLevel(reflectedLevel)) arr->addObject(level);
-                },
-                [&](GJGameLevel* gjLevel) {
-                    arr->addObject(gjLevel);
-                }
-            }, variant);
+            array->addObject(level);
+            // auto variant = reflected.convertLevel(level);
+            // std::visit(makeVisitor {
+            //     [&](ShadowLevel* shadowLevel) {
+            //         if (!shadow.isMyLevel(shadowLevel)) array->addObject(level);
+            //     },
+            //     [&](ReflectedLevel* reflectedLevel) {
+            //         if (!reflected.isMyLevel(reflectedLevel)) array->addObject(level);
+            //     },
+            //     [&](GJGameLevel* gjLevel) {
+            //         array->addObject(level);
+            //     }
+            // }, variant);
         }
     }
-    return arr;
+    return array;
 }
 cocos2d::CCArray* BrowserManager::Impl::getMyLevels() {
     return shadow.getMyLevels();
@@ -598,19 +638,18 @@ void BrowserManager::Impl::saveLevel(GJGameLevel* level, bool insert) {
         [&](ShadowLevel* shadowLevel) { 
             auto reflectedLevel = reflected.getReflectedLevel(shadowLevel);
             if (!reflectedLevel) {
-                reflectedLevel = reflected.createReflectedLevel(shadowLevel);
-                reflectedLevel->m_levelString = shadowLevel->m_levelString;
-                reflected.saveLevel(reflectedLevel, insert);
+                auto entry = shadow.getLevelEntry(shadowLevel);
+                reflectedLevel = reflected.createReflectedLevel(shadowLevel, *entry);
             }
-            else {
-                reflectedLevel->m_levelString = shadowLevel->m_levelString;
-                reflected.saveLevel(reflectedLevel, insert);
-            }
+            reflectedLevel->m_levelString = shadowLevel->m_levelString;
+            reflected.saveLevel(reflectedLevel, insert);
         },
         [&](ReflectedLevel* reflectedLevel) {
             reflected.saveLevel(reflectedLevel, insert);
         },
-        [&](GJGameLevel* gjLevel) { }
+        [&](GJGameLevel* gjLevel) {
+            log::debug("This should only be reached for offline levels");
+        }
     }, variant);
 }
 
@@ -627,6 +666,25 @@ void BrowserManager::Impl::replaceWithShadowLevel(GJGameLevel*& level) {
             auto shadowLevel = reflected.createShadowLevel(reflectedLevel);
             level = shadowLevel;
         }
+    }, variant);
+}
+
+void BrowserManager::Impl::detachReflectedLevel(GJGameLevel* level) {
+    auto variant = reflected.convertLevel(level);
+    std::visit(makeVisitor {
+        [&](ShadowLevel* shadowLevel) {
+            if (auto reflectedLevel = reflected.getReflectedLevel(shadowLevel)) {
+                auto entry = shadow.getLevelEntry(shadowLevel);
+                reflected.removeReflectedLevel(shadowLevel, *entry);
+            }
+        },
+        [&](ReflectedLevel* reflectedLevel) {
+            if (auto shadowLevel = reflected.getShadowLevel(reflectedLevel)) {
+                auto entry = shadow.getLevelEntry(shadowLevel);
+                reflected.removeReflectedLevel(shadowLevel, *entry);
+            }
+        },
+        [&](GJGameLevel* gjLevel) { }
     }, variant);
 }
 
@@ -707,4 +765,8 @@ void BrowserManager::saveLevel(GJGameLevel* level, bool insert) {
 
 void BrowserManager::replaceWithShadowLevel(GJGameLevel*& level) {
     impl->replaceWithShadowLevel(level);
+}
+
+void BrowserManager::detachReflectedLevel(GJGameLevel* level) {
+    impl->detachReflectedLevel(level);
 }

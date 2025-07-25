@@ -29,7 +29,7 @@ void LevelBrowserLayerHook::onLogin(Result<> result, bool challenge) {
 	}
 	else {
 		Notification::create("Logged in successfully!", nullptr)->show();
-		reinterpret_cast<LevelBrowserLayerUIHook*>(this)->onMyLevels(nullptr);
+		reinterpret_cast<LevelBrowserLayerUIHook*>(this)->onLocalLevels(nullptr);
 	}
 }
 

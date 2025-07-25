@@ -37,6 +37,12 @@ void LevelBrowserLayerUIHook::revisualizeButtons(CCObject* sender) {
     }
 }
 
+void LevelBrowserLayerUIHook::onLocalLevels(CCObject* sender) {
+    this->revisualizeButtons(sender);
+    m_fields->onTabMenu->getChildByID("local-levels-tab-on"_spr)->setVisible(true);
+    m_fields->currentTab = CurrentTab::LocalLevels;
+    this->loadPage(m_searchObject);
+}
 void LevelBrowserLayerUIHook::onMyLevels(CCObject* sender) {
     this->revisualizeButtons(sender);
     m_fields->onTabMenu->getChildByID("my-levels-tab-on"_spr)->setVisible(true);
@@ -78,19 +84,23 @@ void LevelBrowserLayerUIHook::setupLevelBrowser(cocos2d::CCArray* items) {
         m_fields->onTabMenu->setPosition(top->getPosition() + ccp(0, 11));
         m_fields->onTabMenu->setLayout(RowLayout::create()->setAutoScale(false)->setAxisAlignment(AxisAlignment::Between));
 
+        m_fields->offTabMenu->addChild(this->generateTabButton("LocalLevelsTabOff.png"_spr, "local-levels-tab-off"_spr, [=, this](auto* sender) {
+            this->onLocalLevels(sender);
+        }));
         m_fields->offTabMenu->addChild(this->generateTabButton("MyLevelsTabOff.png"_spr, "my-levels-tab-off"_spr, [=, this](auto* sender) {
             this->onMyLevels(sender);
         }));
         m_fields->offTabMenu->addChild(this->generateTabButton("SharedWithMeTabOff.png"_spr, "shared-with-me-tab-off"_spr, [=, this](auto* sender) {
             this->onSharedWithMe(sender);
         }));
-        m_fields->offTabMenu->addChild(this->generateTabButton("DiscoverTabOff.png"_spr, "discover-tab-off"_spr, [=, this](auto* sender) {
-            this->onDiscover(sender);
-        }));
+        // m_fields->offTabMenu->addChild(this->generateTabButton("DiscoverTabOff.png"_spr, "discover-tab-off"_spr, [=, this](auto* sender) {
+        //     this->onDiscover(sender);
+        // }));
 
+        m_fields->onTabMenu->addChild(this->generateTabSprite("LocalLevelsTabOn.png"_spr, "local-levels-tab-on"_spr, m_fields->currentTab == CurrentTab::LocalLevels));
         m_fields->onTabMenu->addChild(this->generateTabSprite("MyLevelsTabOn.png"_spr, "my-levels-tab-on"_spr, m_fields->currentTab == CurrentTab::MyLevels));
         m_fields->onTabMenu->addChild(this->generateTabSprite("SharedWithMeTabOn.png"_spr, "shared-with-me-tab-on"_spr, m_fields->currentTab == CurrentTab::SharedWithMe));
-        m_fields->onTabMenu->addChild(this->generateTabSprite("DiscoverTabOn.png"_spr, "discover-tab-on"_spr, m_fields->currentTab == CurrentTab::Discover));
+        // m_fields->onTabMenu->addChild(this->generateTabSprite("DiscoverTabOn.png"_spr, "discover-tab-on"_spr, m_fields->currentTab == CurrentTab::Discover));
 
         m_fields->offTabMenu->updateLayout();
         m_fields->offTabMenu->setID("tab-off-menu"_spr);
@@ -123,8 +133,11 @@ void LevelBrowserLayerUIHook::loadLevelsFinished(CCArray* levels, char const* id
     CCArray* fullLevels;
 
     switch (m_fields->currentTab) {
-        case CurrentTab::MyLevels:
+        case CurrentTab::LocalLevels:
             fullLevels = BrowserManager::get()->getLocalLevels(m_searchObject->m_folder);
+            break;
+        case CurrentTab::MyLevels:
+            fullLevels = BrowserManager::get()->getMyLevels();
             break;
         case CurrentTab::SharedWithMe:
             fullLevels = BrowserManager::get()->getSharedLevels();
@@ -205,9 +218,6 @@ bool LevelBrowserLayerUIHook::init(GJSearchObject* searchObject) {
         if (auto resultp = event->getValue(); resultp) {
             if (GEODE_UNWRAP_IF_OK(levels, *resultp)) {
                 Notification::create("My levels fetched", nullptr, 1.5f)->show();
-                for (auto& entry : levels) {
-                    log::debug("Level: {}", entry.key);
-                }
                 BrowserManager::get()->updateMyLevels(std::move(levels));
                 this->loadPage(m_searchObject);
             }
@@ -221,9 +231,6 @@ bool LevelBrowserLayerUIHook::init(GJSearchObject* searchObject) {
         if (auto resultp = event->getValue(); resultp) {
             if (GEODE_UNWRAP_IF_OK(levels, *resultp)) {
                 Notification::create("Shared levels fetched", nullptr, 1.5f)->show();
-                for (auto& entry : levels) {
-                    log::debug("Level: {}", entry.key);
-                }
                 BrowserManager::get()->updateSharedLevels(std::move(levels));
                 this->loadPage(m_searchObject);
             }
@@ -250,7 +257,7 @@ bool LevelBrowserLayerUIHook::init(GJSearchObject* searchObject) {
     });
 
     if (!AccountManager::get()->getLoginToken().empty()) {
-        this->onMyLevels(nullptr);
+        this->onLocalLevels(nullptr);
     }
 	return true;
 }

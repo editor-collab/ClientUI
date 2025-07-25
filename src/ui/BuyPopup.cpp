@@ -59,17 +59,15 @@ bool BuyPopup::init() {
                                 }
                                 buttonController->updateLayout();
 
-                                if (str.size() > m_text.size()) {
-                                    if (str.size() == 4 || str.size() == 9 || str.size() == 14) {
-                                        m_text = str + "-";
+                                auto text = string::replace(str, "-", "");
+                                m_text.clear();
+                                for (auto i = 0; i < text.size(); i += 4) {
+                                    if (i + 4 < text.size()) {
+                                        m_text += text.substr(i, 4) + "-";
                                     }
-                                    else m_text = str;
-                                }
-                                else {
-                                    if (str.size() == 4 || str.size() == 9 || str.size() == 14) {
-                                        m_text = str.substr(0, str.size() - 1);
+                                    else {
+                                        m_text += text.substr(i);
                                     }
-                                    else m_text = str;
                                 }
                                 textInputController->setString(m_text);
                             },

@@ -569,7 +569,7 @@ void ShareSettings::startSharing(cocos2d::CCObject* sender) {
 		return;
 	}
 
-    auto task = LevelManager::get()->createLevel(0, EditorIDs::getID(m_editorLayer->m_level), *m_setting);
+    auto task = LevelManager::get()->createLevel(0, *m_setting);
     task.listen([=, this](auto* resultp) {
         if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
             BrowserManager::get()->replaceWithShadowLevel(m_editorLayer->m_level);
@@ -601,6 +601,7 @@ void ShareSettings::stopSharing(cocos2d::CCObject* sender) {
         // removing the shadow level on exit
 
         m_entry->key.clear();
+        BrowserManager::get()->detachReflectedLevel(m_editorLayer->m_level);
         BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
 
         auto token = AccountManager::get()->getLoginToken();

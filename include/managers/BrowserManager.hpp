@@ -60,5 +60,6 @@ namespace tulip::editor {
         void saveLevel(GJGameLevel* level, bool insert = false);
 
         void replaceWithShadowLevel(GJGameLevel*& level);
+        void detachReflectedLevel(GJGameLevel* level);
     };
 }

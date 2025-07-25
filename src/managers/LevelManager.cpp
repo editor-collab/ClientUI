@@ -22,7 +22,7 @@ public:
     
     bool errorCallback(web::WebResponse* response);
 
-    Task<Result<LevelManager::CreateLevelResult>, WebProgress> createLevel(int slotId, int uniqueId, LevelSetting const& settings);
+    Task<Result<LevelManager::CreateLevelResult>, WebProgress> createLevel(int slotId, LevelSetting const& settings);
     Task<Result<LevelManager::JoinLevelResult>, WebProgress> joinLevel(std::string_view levelKey);
     Task<Result<>, WebProgress> leaveLevel(CameraValue const& camera);
     Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);
@@ -92,7 +92,7 @@ std::optional<std::string> LevelManager::Impl::getJoinedLevelKey() const {
 //     return false;
 // }
 
-Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::createLevel(int slotId, int uniqueId, LevelSetting const& settings) {
+Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::createLevel(int slotId, LevelSetting const& settings) {
     log::debug("Creating level");
 
     auto const settingString = matjson::Value(settings).dump(matjson::NO_INDENTATION);
@@ -105,7 +105,6 @@ Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::c
 
     auto req = WebManager::get()->createAuthenticatedRequest();
     req.param("slot_id", slotId);
-    req.param("unique_id", uniqueId);
     req.param("settings", settingString);
     req.body(ByteVector(snapshot.begin(), snapshot.end()));
     req.header("Content-Type", "application/octet-stream");
@@ -228,11 +227,9 @@ Task<Result<std::vector<uint8_t>>, WebProgress> LevelManager::Impl::getSnapshot(
 Task<Result<LevelEntry>, WebProgress> LevelManager::Impl::updateLevelSettings(std::string_view levelKey, LevelSetting const& settings) {
     log::debug("Updating level settings for level {}", levelKey);
 
-    auto const settingString = matjson::Value(settings).dump(matjson::NO_INDENTATION);
-
     auto req = WebManager::get()->createAuthenticatedRequest();
     req.param("level_key", levelKey);
-    req.param("settings", settingString);
+    req.bodyJSON(matjson::Value(settings));
     auto task = req.post(WebManager::get()->getServerURL("level/edit_settings"));
     auto ret = task.map([](web::WebResponse* response) -> Result<LevelEntry> {
         if (response->ok()) {
@@ -292,8 +289,8 @@ LevelManager* LevelManager::get() {
 LevelManager::LevelManager() : impl(std::make_unique<Impl>()) {}
 LevelManager::~LevelManager() = default;
 
-Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::createLevel(int slotId, int uniqueId, LevelSetting const& settings) {
-    return impl->createLevel(slotId, uniqueId, std::move(settings));
+Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::createLevel(int slotId, LevelSetting const& settings) {
+    return impl->createLevel(slotId, settings);
 }
 Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::joinLevel(std::string_view levelKey) {
     return impl->joinLevel(levelKey);

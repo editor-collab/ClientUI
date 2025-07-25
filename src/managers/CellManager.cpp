@@ -24,9 +24,6 @@ void CellManager::Impl::removeLabels(LevelCell* cell) {
 
 void CellManager::Impl::applyMyLevel(LevelCell* cell, LevelEntry const& entry) {
     this->removeLabels(cell);
-    // if (auto node = typeinfo_cast<CCLabelBMFont*>(cell->getChildByIDRecursive("level-name"))) { // temp
-    //     node->setString(("Shared: " + std::string(node->getString())).c_str());
-    // }
 
     auto gen = new ui::Container {
         .size = cell->getContentSize(),
@@ -94,10 +91,13 @@ void CellManager::Impl::applyMyLevel(LevelCell* cell, LevelEntry const& entry) {
 void CellManager::Impl::applySharedLevel(LevelCell* cell, LevelEntry const& entry) {
     this->removeLabels(cell);
 
+    this->applyMyLevel(cell, entry);
 }
 
 void CellManager::Impl::applyDiscoverLevel(LevelCell* cell, LevelEntry const& entry) {
     this->removeLabels(cell);
+
+    this->applyMyLevel(cell, entry);
 }
 
 CellManager* CellManager::get() {

@@ -107,6 +107,30 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 					child->setVisible(false);
 				}
 
+				auto username = GJAccountManager::get()->m_username;
+				auto accountId = GJAccountManager::get()->m_accountID;
+				if (accountId != entry->hostAccountId) {
+					if (auto userEntry = entry->settings.getUserEntry(username)) {
+						if (userEntry->role == DefaultSharingType::Restricted || userEntry->role == DefaultSharingType::Viewer) {
+							if (auto levelName = typeinfo_cast<CCTextInputNode*>(this->getChildByIDRecursive("level-name-input"))) {
+								levelName->setTouchEnabled(false);
+								levelName->setKeypadEnabled(false);
+								if (levelName->m_textLabel) levelName->m_textLabel->setColor(ccc3(200, 200, 200));
+								levelName->setKeyboardEnabled(false);
+							}
+							if (auto description = typeinfo_cast<CCTextInputNode*>(this->getChildByIDRecursive("description-input"))) {
+								description->setTouchEnabled(false);
+								description->setKeypadEnabled(false);
+								if (description->m_textArea && description->m_textArea->m_label) {
+									description->m_textArea->m_label->setCascadeColorEnabled(true);
+									description->m_textArea->m_label->setColor(ccc3(200, 200, 200));
+								}
+								description->setKeyboardEnabled(false);
+							}
+						}
+					}
+				}
+
 				std::vector<ui::Base*> children;
 
 				children.push_back(new ui::MenuItemSpriteExtra {
@@ -114,10 +138,18 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 					.callback = [=, this](auto) {
 						auto const levelKey = entry->key;
 
+						auto notification = Notification::create(
+							"Joining: %0",
+							NotificationIcon::Loading,
+							0.f
+						);
+						notification->show();
+
 						auto task = LevelManager::get()->joinLevel(levelKey);
 						task.listen([=, this](auto* resultp) {
 							if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
 								log::debug("join level task succeed");
+								notification->hide();
 
 								auto token = AccountManager::get()->getLoginToken();
 								DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>, GJGameLevel*>(
@@ -128,6 +160,12 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 								log::debug("join level task error");
 								createQuickPopup("Error", err, "Cancel", "OK", [](auto, auto) {});
 							}
+						}, [=, this](auto* progressP) {
+							notification->setString(
+								fmt::format("Joining: %{}", progressP->downloadProgress().value_or(0)).c_str()
+							);
+						}, [=, this]() {
+							notification->hide();
 						});
 					},
 					.child = new ui::Sprite {

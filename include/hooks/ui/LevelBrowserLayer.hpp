@@ -9,6 +9,7 @@ using namespace geode::prelude;
 
 namespace tulip::editor {
     enum class CurrentTab {
+        LocalLevels,
         MyLevels,
         SharedWithMe,
         Discover,
@@ -16,7 +17,7 @@ namespace tulip::editor {
 
     struct LevelBrowserLayerUIHook : Modify<LevelBrowserLayerUIHook, LevelBrowserLayer> {
         struct Fields {
-            CurrentTab currentTab = CurrentTab::MyLevels;
+            CurrentTab currentTab = CurrentTab::LocalLevels;
 
             geode::ListView* m_myLevelsList;
 
@@ -46,6 +47,7 @@ namespace tulip::editor {
         $override
         bool init(GJSearchObject* searchObject);
 
+        void onLocalLevels(cocos2d::CCObject* sender);
         void onMyLevels(cocos2d::CCObject* sender);
         void onSharedWithMe(cocos2d::CCObject* sender);
         void onDiscover(cocos2d::CCObject* sender);
