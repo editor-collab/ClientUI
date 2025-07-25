@@ -5,6 +5,7 @@
 #include <ui/BuyPopup.hpp>
 #include <ui/LevelUserList.hpp>
 #include <lavender/Lavender.hpp>
+#include <cvolton.level-id-api/include/EditorIDs.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;
@@ -12,36 +13,22 @@ using namespace tulip::editor;
 bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
     if (!EditorUI::init(editorLayer)) return false;
 
-    auto realLevel = editorLayer->m_level;
-    if (BrowserManager::get()->isShadowLevel(editorLayer->m_level)) {
-        realLevel = BrowserManager::get()->getReflectedLevel(editorLayer->m_level);
-        log::debug("On a shadow level, using real level {}", realLevel);
-    }
-    else {
-        log::debug("On a real level {}", realLevel);
-    }
-
     auto gen = new ui::MenuItemSpriteExtra {
         .id = "share-button"_spr,
         .callback = [=, this](auto*){
-            auto const sharedLevels = BrowserManager::get()->getShadowMyLevels();
+            auto const sharedLevels = BrowserManager::get()->getMyLevels();
             auto const hostableCount = FetchManager::get()->getHostableCount();
-            auto const key = LevelManager::get()->getJoinedLevelKey();
-            LevelEntry* entry = nullptr;
-            if (key) {
-                entry = BrowserManager::get()->getLevelEntry(*key);
-            }
-            else {
-                entry = BrowserManager::get()->getLevelEntry(realLevel);
-            }
-            if (entry == nullptr) {
-                BrowserManager::get()->addLevelEntry(realLevel, LevelEntry {});
-                entry = BrowserManager::get()->getLevelEntry(realLevel);
-            }
 
+            if (!BrowserManager::get()->hasLevelEntry(editorLayer->m_level)) {
+                BrowserManager::get()->addLevelEntry(editorLayer->m_level, LevelEntry {});
+                log::debug("Added new level entry for level {}", editorLayer->m_level);
+            }
+            LevelEntry* entry = BrowserManager::get()->getLevelEntry(editorLayer->m_level);
+            entry->uniqueId = EditorIDs::getID(editorLayer->m_level);
+            entry->hostAccountId = GJAccountManager::get()->m_accountID;
 
             // TODO: cleanup
-            if (key && BrowserManager::get()->isMyLevel(*key) || sharedLevels->count() < hostableCount) {
+            if (BrowserManager::get()->isMyLevel(editorLayer->m_level) || sharedLevels->count() < hostableCount) {
                 (void)ShareSettings::create(entry, m_editorLayer);
             }
             else {

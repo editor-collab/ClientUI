@@ -26,5 +26,6 @@ namespace tulip::editor {
         void onPlay(cocos2d::CCObject*);
         void onPlayInLDM(cocos2d::CCObject*);
         void onExitWithoutPrompt(cocos2d::CCObject*);
+        void onSaveToLocal(cocos2d::CCObject*);
     };
 }

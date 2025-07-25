@@ -46,17 +46,7 @@ struct ExitHook : Modify<ExitHook, GameManager> {
 				}
 			});
 			m_fields->leaveLevelListener.setFilter(task);
-		}
-
-		auto realLevel = level;
-		if (BrowserManager::get()->isShadowLevel(level)) {
-			realLevel = BrowserManager::get()->getReflectedLevel(level);
-		}
-		auto const& entry = BrowserManager::get()->getLevelEntry(realLevel);
-		if (entry && !entry->isShared()) {
-			BrowserManager::get()->removeShadowLevel(level);
-		}
-			
+		}	
 		GameManager::returnToLastScene(level);
 	}
 };
@@ -69,6 +59,8 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 		
 		CCMenuItemSpriteExtra* m_joinButton = nullptr;
 		CCSprite* m_joinButtonSprite = nullptr;
+		CCMenuItemSpriteExtra* m_deleteButton = nullptr;
+		CCSprite* m_deleteButtonSprite = nullptr;
 
 		EventListener<DispatchFilter<>> m_disconnectListener = DispatchFilter<>("alk.editor-collab/socket-disconnected");
 	};	
@@ -85,24 +77,18 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 			else if (input->getTag() == 2) {
 				entry->settings.description = input->getString();
 			}
-			auto shadowLevel = BrowserManager::get()->getShadowLevel(m_level);
-			if (BrowserManager::get()->isShadowLevel(shadowLevel)) {
-				BrowserManager::get()->setLevelValues(shadowLevel, *entry);
-			}
+			BrowserManager::get()->setLevelValues(m_level, *entry);
 		}
 	}
 
 	$override
 	void onBack(CCObject* sender) {
 		if (m_fields->m_textChanged) {
-			auto const* entry = BrowserManager::get()->getLevelEntry(m_level);
-			BrowserManager::get()->saveLevelEntry(*entry);
+			if (BrowserManager::get()->isMyLevel(m_level)) {
+				auto* entry = BrowserManager::get()->getLevelEntry(m_level);
+				BrowserManager::get()->updateLevelEntry(m_level);
 
-			if (entry->isShared()) {
-				auto task = LevelManager::get()->updateLevelSettings(
-					BrowserManager::get()->getLevelKey(m_level).value(),
-					entry->settings
-				);
+				auto task = LevelManager::get()->updateLevelSettings(entry->key, entry->settings);
 				task.listen([=](auto* result) {});
 			}
 		}
@@ -116,8 +102,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 		m_fields->m_textChanged = false;
 
 		if (auto menu = static_cast<CCMenu*>(this->getChildByIDRecursive("level-edit-menu"))) {
-			auto entry = BrowserManager::get()->getLevelEntry(m_level);
-			if (entry && entry->isShared()) {
+			if (auto entry = BrowserManager::get()->getOnlineEntry(m_level)) {
 				for (auto child : CCArrayExt<CCNode*>(menu->getChildren())) {
 					child->setVisible(false);
 				}
@@ -129,9 +114,6 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 					.callback = [=, this](auto) {
 						auto const levelKey = entry->key;
 
-						auto shadowLevel = BrowserManager::get()->getShadowLevel(m_level);
-						log::debug("shadow of {} is {}", m_level, shadowLevel);
-
 						auto task = LevelManager::get()->joinLevel(levelKey);
 						task.listen([=, this](auto* resultp) {
 							if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
@@ -139,7 +121,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 
 								auto token = AccountManager::get()->getLoginToken();
 								DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>, GJGameLevel*>(
-									"join-level"_spr, token, value.clientId, levelKey, &value.snapshot, value.camera, shadowLevel
+									"join-level"_spr, token, value.clientId, levelKey, &value.snapshot, value.camera, m_level
 								).post();
 							}
 							else {
@@ -151,6 +133,33 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 					.child = new ui::Sprite {
 						.store = reinterpret_cast<CCNode**>(&m_fields->m_joinButtonSprite),
 						.frameName = "EditServerButton.png"_spr,
+					},
+				});
+
+				children.push_back(new ui::MenuItemSpriteExtra {
+					.store = reinterpret_cast<CCNode**>(&m_fields->m_deleteButton),
+					.callback = [=, this](auto) {
+						auto const levelKey = entry->key;
+
+						auto task = LevelManager::get()->deleteLevel(levelKey);
+						task.listen([=, this](auto* resultp) {
+							if (GEODE_UNWRAP_IF_ERR(err, *resultp)) {
+								log::debug("delete level task error");
+								createQuickPopup("Error", err, "Cancel", "OK", [](auto, auto) {});
+							}
+							else {
+								log::debug("delete level task succeed");
+
+								auto token = AccountManager::get()->getLoginToken();
+								DispatchEvent<std::string_view, uint32_t>(
+									"delete-level"_spr, token, LevelManager::get()->getClientId()
+								).post();
+							}
+						});
+					},
+					.child = new ui::Sprite {
+						.store = reinterpret_cast<CCNode**>(&m_fields->m_deleteButtonSprite),
+						.frameName = "KickIcon.png"_spr,
 					},
 				});
 
@@ -172,9 +181,13 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 				if (WebManager::get()->isSocketConnected()) {
 					m_fields->m_joinButton->setEnabled(false);
 					m_fields->m_joinButtonSprite->setColor(ccColor3B { 100, 100, 100 });
+					m_fields->m_deleteButton->setEnabled(false);
+					m_fields->m_deleteButtonSprite->setColor(ccColor3B { 100, 100, 100 });
 					m_fields->m_disconnectListener.bind([=, this]() {
 						m_fields->m_joinButton->setEnabled(true);
 						m_fields->m_joinButtonSprite->setColor(ccColor3B { 255, 255, 255 });
+						m_fields->m_deleteButton->setEnabled(true);
+						m_fields->m_deleteButtonSprite->setColor(ccColor3B { 255, 255, 255 });
 
 						return ListenerResult::Propagate;
 					});

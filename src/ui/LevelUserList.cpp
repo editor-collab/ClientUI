@@ -10,9 +10,9 @@ using namespace tulip::editor;
 
 static constexpr auto POPUP_SIZE = CCSize{400.f, 290.f};
 
-LevelUserList* LevelUserList::create(LevelEntry* entry) {
+LevelUserList* LevelUserList::create(LevelEntry* entry, LevelEditorLayer* editorLayer) {
     auto ret = new (std::nothrow) LevelUserList();
-    if (ret && ret->init(entry)) {
+    if (ret && ret->init(entry, editorLayer)) {
         ret->autorelease();
         return ret;
     }
@@ -20,11 +20,12 @@ LevelUserList* LevelUserList::create(LevelEntry* entry) {
     return nullptr;
 }
 
-bool LevelUserList::init(LevelEntry* entry) {
+bool LevelUserList::init(LevelEntry* entry, LevelEditorLayer* editorLayer) {
     if (!CCNode::init()) return false;
 
     m_entry = entry;
     m_setting = &entry->settings;
+    m_editorLayer = editorLayer;
 
     DispatchEvent<ConnectedUserList*>("alk.editor-collab/get-user-list", &m_userList).post();
 
@@ -193,7 +194,7 @@ void LevelUserList::updateUsers() {
                         );
 
                         task.listen([=](auto* result) {});
-                        BrowserManager::get()->saveLevelEntry(*m_entry);
+                        BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
 
                         this->updateUsers();
                     });
@@ -275,7 +276,7 @@ void LevelUserList::updateUsers() {
                                     );
 
                                     task.listen([=](auto* result) {});
-                                    BrowserManager::get()->saveLevelEntry(*m_entry);
+                                    BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
 
                                     this->updateUsers();
                                 },

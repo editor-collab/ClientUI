@@ -28,14 +28,6 @@ bool ShareSettings::init(LevelEntry* entry, LevelEditorLayer* editorLayer) {
     m_entry = entry;
     m_setting = &entry->settings;
     m_editorLayer = editorLayer;
-    m_realLevel = editorLayer->m_level;
-    if (BrowserManager::get()->isShadowLevel(m_realLevel)) {
-        m_realLevel = BrowserManager::get()->getReflectedLevel(m_realLevel);
-        log::debug("On a shadow level, using real level {}", m_realLevel);
-    }
-    else {
-        log::debug("On a real level {}", m_realLevel);
-    }
 
     auto shareRow = new ui::Menu {
         .child = new ui::Row {
@@ -409,7 +401,7 @@ void ShareSettings::updateValues() {
         );
         task.listen([=](auto* result) {});
     }
-    BrowserManager::get()->saveLevelEntry(*m_entry);
+    BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
 }
 
 std::string ShareSettings::getSharingTypeString(DefaultSharingType type) {
@@ -577,17 +569,17 @@ void ShareSettings::startSharing(cocos2d::CCObject* sender) {
 		return;
 	}
 
-    auto task = LevelManager::get()->createLevel(0, EditorIDs::getID(m_realLevel), *m_setting);
+    auto task = LevelManager::get()->createLevel(0, EditorIDs::getID(m_editorLayer->m_level), *m_setting);
     task.listen([=, this](auto* resultp) {
         if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
-            BrowserManager::get()->createShadowLevel(m_realLevel);
+            BrowserManager::get()->replaceWithShadowLevel(m_editorLayer->m_level);
 
             m_entry->key = value.levelKey;
-            BrowserManager::get()->saveLevelEntry(*m_entry);
+            BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
             
             auto token = AccountManager::get()->getLoginToken();
             DispatchEvent<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
-                "create-level"_spr, token, value.clientId, m_realLevel, value.levelKey
+                "create-level"_spr, token, value.clientId, m_editorLayer->m_level, value.levelKey
             ).post();
             Notification::create("Level started sharing", NotificationIcon::Success, 1.5f)->show();
         }
@@ -609,7 +601,7 @@ void ShareSettings::stopSharing(cocos2d::CCObject* sender) {
         // removing the shadow level on exit
 
         m_entry->key.clear();
-        BrowserManager::get()->saveLevelEntry(*m_entry);
+        BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
 
         auto token = AccountManager::get()->getLoginToken();
         DispatchEvent<std::string_view, uint32_t>(

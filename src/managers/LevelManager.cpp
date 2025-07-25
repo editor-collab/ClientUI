@@ -15,8 +15,8 @@ public:
     uint32_t m_clientId = 0;
 
     EventListener<DispatchFilter<std::string_view>> m_levelKickedListener = DispatchFilter<std::string_view>("alk.editor-collab/level-kicked");
-    EventListener<DispatchFilter<std::string_view, std::string_view, std::span<uint8_t>>> m_updateSnapshotListener = 
-        DispatchFilter<std::string_view, std::string_view, std::span<uint8_t>>("alk.editor-collab-ui/update-level-snapshot");
+    EventListener<DispatchFilter<std::string_view>> m_updateSnapshotListener = DispatchFilter<std::string_view>("alk.editor-collab-ui/update-level-snapshot");
+    EventListener<Task<Result<>, WebProgress>> m_updateSnapshotListenerTask;
 
     void init();
     
@@ -43,8 +43,14 @@ void LevelManager::Impl::init() {
         return ListenerResult::Propagate;
     });
 
-    m_updateSnapshotListener.bind([this](std::string_view levelKey, std::string_view token, std::span<uint8_t> snapshot) {
-        (void)LevelManager::get()->updateLevelSnapshot(levelKey, token, snapshot);
+    m_updateSnapshotListener.bind([this](std::string_view token) {
+        std::vector<uint8_t> snapshot;
+        DispatchEvent<std::vector<uint8_t>*>("alk.editor-collab-ui/get-level-snapshot", &snapshot).post();
+        if (snapshot.empty()) {
+            log::warn("No snapshot data available for update");
+            return ListenerResult::Propagate;
+        }
+        m_updateSnapshotListenerTask.setFilter(LevelManager::get()->updateLevelSnapshot(m_joinedLevel.value(), token, snapshot));
         return ListenerResult::Propagate;
     });
 }
@@ -91,10 +97,18 @@ Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::c
 
     auto const settingString = matjson::Value(settings).dump(matjson::NO_INDENTATION);
 
+    std::vector<uint8_t> snapshot;
+    DispatchEvent<std::vector<uint8_t>*>("alk.editor-collab-ui/get-level-snapshot", &snapshot).post();
+    if (snapshot.empty()) {
+        log::warn("No snapshot data available for new level");
+    }
+
     auto req = WebManager::get()->createAuthenticatedRequest();
     req.param("slot_id", slotId);
     req.param("unique_id", uniqueId);
     req.param("settings", settingString);
+    req.body(ByteVector(snapshot.begin(), snapshot.end()));
+    req.header("Content-Type", "application/octet-stream");
     auto task = req.post(WebManager::get()->getServerURL("level/create"));
     auto ret = task.map([=, this](auto response) -> Result<LevelManager::CreateLevelResult> {
         if (response->ok()) {
@@ -105,6 +119,7 @@ Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::c
 
             m_hostedLevels.push_back(levelKey);
             m_joinedLevel = levelKey;
+
             return Ok(LevelManager::CreateLevelResult{clientId, levelKey});
         }
         return Err(fmt::format("HTTP error: {}", response->code()));
@@ -236,7 +251,8 @@ Task<Result<>, WebProgress> LevelManager::Impl::updateLevelSnapshot(std::string_
     req.param("level_key", levelKey);
     req.param("request_token", token);
     req.body(ByteVector(snapshot.begin(), snapshot.end()));
-    auto task = req.post(WebManager::get()->getServerURL("level/update_level_snapshot"));
+    req.header("Content-Type", "application/octet-stream");
+    auto task = req.post(WebManager::get()->getServerURL("level/update_snapshot"));
     auto ret = task.map([](web::WebResponse* response) -> Result<> {
         if (response->ok()) {
             return Ok();

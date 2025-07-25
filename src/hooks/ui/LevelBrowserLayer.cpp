@@ -60,8 +60,6 @@ $override
 void LevelBrowserLayerUIHook::setupLevelBrowser(cocos2d::CCArray* items) {
     LevelBrowserLayer::setupLevelBrowser(items);
 
-    log::debug("items: {}", items);
-
     if (!m_searchObject || m_searchObject->m_searchType != SearchType::MyLevels) return;
 
     if (auto top = static_cast<CCSprite*>(m_list->getChildByID("top-border"))) {
@@ -120,13 +118,9 @@ void LevelBrowserLayerUIHook::setupLevelBrowser(cocos2d::CCArray* items) {
 
 $override
 void LevelBrowserLayerUIHook::loadLevelsFinished(CCArray* levels, char const* ident, int searchType) {
-    log::debug("levels {}", levels);
-    log::debug("search object {}", m_searchObject);
     if (!m_searchObject || m_searchObject->m_searchType != SearchType::MyLevels) return LevelBrowserLayer::loadLevelsFinished(levels, ident, searchType);
     auto const page = m_searchObject->m_page;
     CCArray* fullLevels;
-
-    log::debug("page: {}", page);
 
     switch (m_fields->currentTab) {
         case CurrentTab::MyLevels:
@@ -147,8 +141,6 @@ void LevelBrowserLayerUIHook::loadLevelsFinished(CCArray* levels, char const* id
     for (auto i = start; i < end; i++) {
         newLevels->addObject(fullLevels->objectAtIndex(i));
     }
-
-    log::debug("newLevels {}", newLevels);
 
     LevelBrowserLayer::loadLevelsFinished(newLevels, ident, searchType);
 }

@@ -19,15 +19,16 @@ namespace tulip::editor {
 
         LevelEntry* m_entry;
         LevelSetting* m_setting;
+        LevelEditorLayer* m_editorLayer;
         ConnectedUserList m_userList;
         geode::Ref<cocos2d::CCNode> m_userListListener;
 
         std::string m_filter = "";
         std::string m_reasonString = "";
 
-        static LevelUserList* create(LevelEntry* entry);
+        static LevelUserList* create(LevelEntry* entry, LevelEditorLayer* editorLayer);
 
-        bool init(LevelEntry* entry) ;
+        bool init(LevelEntry* entry, LevelEditorLayer* editorLayer);
 
     private:
 

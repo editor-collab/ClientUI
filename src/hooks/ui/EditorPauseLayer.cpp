@@ -24,10 +24,9 @@ void EditorPauseLayerUIHook::setupGuidelinesMenu() {
     auto gen = new ui::MenuItemSpriteExtra {
         .id = "user-list-button"_spr,
         .callback = [this](auto*){
-            if (auto key = LevelManager::get()->getJoinedLevelKey()) {
-                if (auto entry = BrowserManager::get()->getLevelEntry(*key); entry->isShared()) {
-                    auto userList = LevelUserList::create(entry);
-                }
+            if (BrowserManager::get()->isMyLevel(m_editorLayer->m_level)) {
+                auto entry = BrowserManager::get()->getLevelEntry(m_editorLayer->m_level);
+                auto userList = LevelUserList::create(entry, m_editorLayer);
             }
         },
         .child = new ui::Sprite {
@@ -53,37 +52,38 @@ void EditorPauseLayerUIHook::setupInfoMenu() {
     }
     
     CCLabelBMFont* label = nullptr;
-    if (auto key = LevelManager::get()->getJoinedLevelKey()) {
-        if (auto entry = BrowserManager::get()->getLevelEntry(*key)) {
-            auto sharingType = entry->settings.defaultSharing;
-            std::string username = GJAccountManager::get()->m_username;
-            auto accountId = GJAccountManager::get()->m_accountID;
+    if (auto entry = BrowserManager::get()->getOnlineEntry(m_editorLayer->m_level)) {
+        auto sharingType = entry->settings.defaultSharing;
+        std::string username = GJAccountManager::get()->m_username;
+        auto accountId = GJAccountManager::get()->m_accountID;
+        log::debug("Editor Collab Status: accountId {}, username {}", accountId, username);
 
-            for (auto& userEntry : entry->settings.users) {
-                if (userEntry.name == username) {
-                    sharingType = userEntry.role;
+        for (auto& userEntry : entry->settings.users) {
+            if (userEntry.name == username) {
+                sharingType = userEntry.role;
+                break;
+            }
+        }
+
+        log::debug("Editor Collab Status: hostAccountId {}, sharingType {}", entry->hostAccountId, static_cast<int>(sharingType));
+
+        if (accountId == entry->hostAccountId) {
+            label = CCLabelBMFont::create("Editor Collab Status: Host", "goldFont.fnt");
+        }
+        else {
+            switch (sharingType) {
+                case DefaultSharingType::Restricted:
+                    label = CCLabelBMFont::create("Editor Collab Status: Restricted", "goldFont.fnt");
                     break;
-                }
-            }
-
-            if (accountId == entry->hostAccountId) {
-                label = CCLabelBMFont::create("Editor Collab Status: Host", "goldFont.fnt");
-            }
-            else {
-                switch (sharingType) {
-                    case DefaultSharingType::Restricted:
-                        label = CCLabelBMFont::create("Editor Collab Status: Restricted", "goldFont.fnt");
-                        break;
-                    case DefaultSharingType::Viewer:
-                        label = CCLabelBMFont::create("Editor Collab Status: Viewer", "goldFont.fnt");
-                        break;
-                    case DefaultSharingType::Editor:
-                        label = CCLabelBMFont::create("Editor Collab Status: Editor", "goldFont.fnt");
-                        break;
-                    case DefaultSharingType::Admin:
-                        label = CCLabelBMFont::create("Editor Collab Status: Admin", "goldFont.fnt");
-                        break;
-                }
+                case DefaultSharingType::Viewer:
+                    label = CCLabelBMFont::create("Editor Collab Status: Viewer", "goldFont.fnt");
+                    break;
+                case DefaultSharingType::Editor:
+                    label = CCLabelBMFont::create("Editor Collab Status: Editor", "goldFont.fnt");
+                    break;
+                case DefaultSharingType::Admin:
+                    label = CCLabelBMFont::create("Editor Collab Status: Admin", "goldFont.fnt");
+                    break;
             }
         }
     }
@@ -122,6 +122,7 @@ void EditorPauseLayerUIHook::setupResumeMenu() {
     saveAndExit->setTarget(this, menu_selector(EditorPauseLayerUIHook::onPlayInLDM));
 
     save->setNormalImage(saveToLocalSprite);
+    save->setTarget(this, menu_selector(EditorPauseLayerUIHook::onSaveToLocal));
 
     exit->setTarget(this, menu_selector(EditorPauseLayerUIHook::onExitWithoutPrompt));
 }
@@ -129,71 +130,42 @@ void EditorPauseLayerUIHook::setupResumeMenu() {
 void EditorPauseLayerUIHook::onPlay(cocos2d::CCObject* sender) {
     if (m_fields->playLock) return;
     m_fields->playLock = true;
-
-    auto currentLevel = m_editorLayer->m_level;
-    if (!BrowserManager::get()->isShadowLevel(currentLevel)) {
-        m_editorLayer->m_level = BrowserManager::get()->getReflectedLevel(currentLevel);
-        log::debug("Found a real level while playing, shadowing to shadow level {}", m_editorLayer->m_level);
-    }
+    
     m_editorLayer->m_level->m_lowDetailMode = false;
 	m_editorLayer->m_level->m_lowDetailModeToggled = false;
 
     EditorPauseLayer::onSaveAndPlay(sender);
 
-    m_editorLayer->m_level = currentLevel;
     m_fields->playLock = false;
 }
 void EditorPauseLayerUIHook::onPlayInLDM(cocos2d::CCObject* sender) {
     if (m_fields->playLock) return;
     m_fields->playLock = true;
 
-    auto currentLevel = m_editorLayer->m_level;
-    if (!BrowserManager::get()->isShadowLevel(currentLevel)) {
-        m_editorLayer->m_level = BrowserManager::get()->getReflectedLevel(currentLevel);
-        log::debug("Found a real level while playing, shadowing to shadow level {}", m_editorLayer->m_level);
-    }
     m_editorLayer->m_level->m_lowDetailMode = true;
 	m_editorLayer->m_level->m_lowDetailModeToggled = true;
 
     EditorPauseLayer::onSaveAndPlay(sender);
 
-    m_editorLayer->m_level = currentLevel;
     m_fields->playLock = false;
 }
 void EditorPauseLayerUIHook::onExitWithoutPrompt(cocos2d::CCObject* sender) {
-    auto currentLevel = m_editorLayer->m_level;
-
-    if (BrowserManager::get()->isShadowLevel(currentLevel)) {
-        m_editorLayer->m_level = BrowserManager::get()->getReflectedLevel(currentLevel);
-        log::debug("Found a shadow level while exiting, reflecting to real level {}", m_editorLayer->m_level);
-    }
-
     GameManager::get()->m_sceneEnum = 3;
     
     EditorPauseLayer::onExitEditor(sender);
-
-    m_editorLayer->m_level = currentLevel;
 }
 
 void EditorPauseLayerUIHook::saveLevel() {
-    auto currentLevel = m_editorLayer->m_level;
+    EditorPauseLayer::saveLevel();
+    BrowserManager::get()->saveLevel(m_editorLayer->m_level, false);
+}
 
-    if (BrowserManager::get()->isShadowLevel(currentLevel)) {
-        m_editorLayer->m_level = BrowserManager::get()->getReflectedLevel(currentLevel);
-        log::debug("Found a shadow level while saving, reflecting to real level {}", m_editorLayer->m_level);
-    }
-
-    auto realLevel = m_editorLayer->m_level;
-
-    auto localLevels = CCArrayExt<GJGameLevel*>(LocalLevelManager::get()->m_localLevels);
-    if (std::find(localLevels.begin(), localLevels.end(), realLevel) == localLevels.end()) {
-        log::debug("Level not found in local levels, adding level {}", realLevel);
-
-        LocalLevelManager::get()->m_localLevels->insertObject(realLevel, 0);
-    }
+void EditorPauseLayerUIHook::onSaveToLocal(cocos2d::CCObject* sender) {
+    if (m_fields->playLock) return;
+    m_fields->playLock = true;
 
     EditorPauseLayer::saveLevel();
+    BrowserManager::get()->saveLevel(m_editorLayer->m_level, true);
 
-    // revert level back to shadow level
-    m_editorLayer->m_level = currentLevel;
+    m_fields->playLock = false;
 }
