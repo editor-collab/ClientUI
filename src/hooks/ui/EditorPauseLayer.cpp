@@ -56,7 +56,7 @@ void EditorPauseLayerUIHook::setupInfoMenu() {
         auto sharingType = entry->settings.defaultSharing;
         std::string username = GJAccountManager::get()->m_username;
         auto accountId = GJAccountManager::get()->m_accountID;
-        log::debug("Editor Collab Status: accountId {}, username {}", accountId, username);
+        //////// log::debug("Editor Collab Status: accountId {}, username {}", accountId, username);
 
         for (auto& userEntry : entry->settings.users) {
             if (userEntry.name == username) {
@@ -65,7 +65,7 @@ void EditorPauseLayerUIHook::setupInfoMenu() {
             }
         }
 
-        log::debug("Editor Collab Status: hostAccountId {}, sharingType {}", entry->hostAccountId, static_cast<int>(sharingType));
+        //////// log::debug("Editor Collab Status: hostAccountId {}, sharingType {}", entry->hostAccountId, static_cast<int>(sharingType));
 
         if (accountId == entry->hostAccountId) {
             label = CCLabelBMFont::create("Editor Collab Status: Host", "goldFont.fnt");

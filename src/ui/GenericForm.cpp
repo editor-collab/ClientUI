@@ -64,7 +64,7 @@ bool GenericForm::setup(std::string const& title) {
     m_columnMenu->updateLayout();
     auto rect = calculateChildCoverage(m_columnMenu);
 
-    log::debug("height {}", rect.size.height);
+    //////// log::debug("height {}", rect.size.height);
 
     m_mainLayer->setContentHeight(rect.size.height + 20.f);
 

@@ -21,7 +21,7 @@ bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
 
             if (!BrowserManager::get()->hasLevelEntry(editorLayer->m_level)) {
                 BrowserManager::get()->addLevelEntry(editorLayer->m_level, LevelEntry {});
-                log::debug("Added new level entry for level {}", editorLayer->m_level);
+                //////// log::debug("Added new level entry for level {}", editorLayer->m_level);
             }
             LevelEntry* entry = BrowserManager::get()->getLevelEntry(editorLayer->m_level);
             entry->hostAccountId = GJAccountManager::get()->m_accountID;

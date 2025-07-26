@@ -60,7 +60,7 @@ public:
     public:
         Reflected(Shadow* shadow) : shadow(shadow) {}
 
-        std::unordered_map<ReflectedLevel*, Ref<ShadowLevel>> m_shadowMapping;
+        std::unordered_map<Ref<ReflectedLevel>, Ref<ShadowLevel>> m_shadowMapping;
 
         std::vector<Ref<ReflectedLevel>> m_myLevels;
 
@@ -309,26 +309,26 @@ void BrowserManager::Impl::Shadow::updateMyLevels(std::vector<LevelEntry>&& entr
             auto& keys = this->reflected->m_levelIdKeys;
             return keys.contains(id) && keys[id] == entry.key;
         }); it != localLevels.end()) {
-            log::debug("found reflected level with name {}", entry.settings.title);
+            //////// log::debug("found reflected level with name {}", entry.settings.title);
             auto reflectedLevel = static_cast<ReflectedLevel*>(*it);
 
             if (this->reflected->isMyLevel(reflectedLevel)) {
                 auto shadowLevel = this->reflected->getShadowLevel(reflectedLevel);
-                log::debug("shadow level {} already exists for reflected level {}", shadowLevel, reflectedLevel);
+                //////// log::debug("shadow level {} already exists for reflected level {}", shadowLevel, reflectedLevel);
                 
                 this->setLevelValues(shadowLevel, entry);
                 m_levelEntries[shadowLevel] = std::move(entry);
             }
             else {
                 auto shadowLevel = this->reflected->createShadowLevel(reflectedLevel);
-                log::debug("creating a shadow level {} for existing reflected level {}", shadowLevel, reflectedLevel);
+                //////// log::debug("creating a shadow level {} for existing reflected level {}", shadowLevel, reflectedLevel);
 
                 this->addMyLevel(shadowLevel, std::move(entry));
             }
         }
         else {
             auto shadowLevel = ShadowLevel::create();
-            log::debug("creating new shadow level {} for level name {}", shadowLevel, entry.settings.title);
+            //////// log::debug("creating new shadow level {} for level name {}", shadowLevel, entry.settings.title);
             
             this->addMyLevel(shadowLevel, std::move(entry));
         }
@@ -453,7 +453,7 @@ void BrowserManager::Impl::Reflected::saveLevel(ReflectedLevel* level, bool inse
     //     else i++;
     // }
     if (insert && std::find(localLevels.begin(), localLevels.end(), level) == localLevels.end()) {
-        log::debug("Level not found in local levels, adding level {}", level);
+        //////// log::debug("Level not found in local levels, adding level {}", level);
         LocalLevelManager::get()->m_localLevels->insertObject(level, 0);
     }
 }
@@ -648,7 +648,7 @@ void BrowserManager::Impl::saveLevel(GJGameLevel* level, bool insert) {
             reflected.saveLevel(reflectedLevel, insert);
         },
         [&](GJGameLevel* gjLevel) {
-            log::debug("This should only be reached for offline levels");
+            //////// log::debug("This should only be reached for offline levels");
         }
     }, variant);
 }

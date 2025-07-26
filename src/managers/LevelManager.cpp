@@ -93,7 +93,7 @@ std::optional<std::string> LevelManager::Impl::getJoinedLevelKey() const {
 // }
 
 Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::createLevel(int slotId, LevelSetting const& settings) {
-    log::debug("Creating level");
+    //////// log::debug("Creating level");
 
     auto const settingString = matjson::Value(settings).dump(matjson::NO_INDENTATION);
 
@@ -126,7 +126,7 @@ Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::c
     return ret;
 }
 Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::Impl::joinLevel(std::string_view levelKey) {
-    log::debug("Joining level {}", levelKey);
+    //////// log::debug("Joining level {}", levelKey);
     std::string levelKeyStr(levelKey);
 
     auto ret = Task<Result<LevelManager::JoinLevelResult>, WebProgress>::runWithCallback([=, this](auto finish, auto progressC, auto hasBeenCancelled) {
@@ -141,8 +141,8 @@ Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::Impl::joi
                 uint32_t const clientId = GEODE_UNWRAP(values["client-id"].asInt());
                 auto camera = values["camera-value"].as<CameraValue>().unwrapOrDefault();
 
-                log::debug("Joined level {} with client ID {}", levelKeyStr, clientId);
-                log::debug("Snapshot hash: {}", hash);
+                //////// log::debug("Joined level {} with client ID {}", levelKeyStr, clientId);
+                //////// log::debug("Snapshot hash: {}", hash);
                 
                 return Ok(LevelManager::JoinLevelResult{clientId, hash, {}, camera});
             }
@@ -151,15 +151,15 @@ Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::Impl::joi
         task2.listen([=, this](auto* resultp) {
             if (GEODE_UNWRAP_IF_OK(values, *resultp)) {
                 auto task = this->getSnapshot(levelKeyStr, values.snapshotHash);
-                log::debug("task for snapshot created");
+                //////// log::debug("task for snapshot created");
                 task.listen([=, this](auto* result2p) {
-                    log::debug("task for snapshot listened");
+                    //////// log::debug("task for snapshot listened");
                     if (GEODE_UNWRAP_EITHER(snapshot, err, *result2p)) {
                         auto values2 = values;
-                        log::debug("snapshot okay");
+                        //////// log::debug("snapshot okay");
                         m_joinedLevel = levelKeyStr;
                         values2.snapshot = std::move(snapshot);
-                        log::debug("snapshot set");
+                        //////// log::debug("snapshot set");
                         finish(Ok(std::move(values2)));
                     }
                     else {
@@ -176,7 +176,7 @@ Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::Impl::joi
     return ret;
 }
 Task<Result<>, WebProgress> LevelManager::Impl::leaveLevel(CameraValue const& camera) {
-    log::debug("Leaving level");
+    //////// log::debug("Leaving level");
 
     auto req = WebManager::get()->createAuthenticatedRequest();
     req.param("camera_x", numToString(camera.x));
@@ -193,7 +193,7 @@ Task<Result<>, WebProgress> LevelManager::Impl::leaveLevel(CameraValue const& ca
     return ret;
 }
 Task<Result<>, WebProgress> LevelManager::Impl::deleteLevel(std::string_view levelKey) {
-    log::debug("Deleting level {}", levelKey);
+    //////// log::debug("Deleting level {}", levelKey);
 
     auto req = WebManager::get()->createAuthenticatedRequest();
     req.param("level_key", levelKey);
@@ -209,7 +209,7 @@ Task<Result<>, WebProgress> LevelManager::Impl::deleteLevel(std::string_view lev
     return ret;
 }
 Task<Result<std::vector<uint8_t>>, WebProgress> LevelManager::Impl::getSnapshot(std::string_view levelKey, std::string_view snapshotHash) {
-    log::debug("Getting snapshot for level {}", levelKey);
+    //////// log::debug("Getting snapshot for level {}", levelKey);
 
     auto req = WebManager::get()->createAuthenticatedRequest();
     req.param("level_key", levelKey);
@@ -225,7 +225,7 @@ Task<Result<std::vector<uint8_t>>, WebProgress> LevelManager::Impl::getSnapshot(
 }
 
 Task<Result<LevelEntry>, WebProgress> LevelManager::Impl::updateLevelSettings(std::string_view levelKey, LevelSetting const& settings) {
-    log::debug("Updating level settings for level {}", levelKey);
+    //////// log::debug("Updating level settings for level {}", levelKey);
 
     auto req = WebManager::get()->createAuthenticatedRequest();
     req.param("level_key", levelKey);
@@ -242,7 +242,7 @@ Task<Result<LevelEntry>, WebProgress> LevelManager::Impl::updateLevelSettings(st
 }
 
 Task<Result<>, WebProgress> LevelManager::Impl::updateLevelSnapshot(std::string_view levelKey, std::string_view token, std::span<uint8_t> snapshot) {
-    log::debug("Updating level snapshot for level {}", levelKey);
+    //////// log::debug("Updating level snapshot for level {}", levelKey);
 
     auto req =  WebManager::get()->createAuthenticatedRequest();
     req.param("level_key", levelKey);
@@ -260,7 +260,7 @@ Task<Result<>, WebProgress> LevelManager::Impl::updateLevelSnapshot(std::string_
 }
 
 Task<Result<>, WebProgress> LevelManager::Impl::kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason) {
-    log::debug("Kicking user {} from level {}", accountId, levelKey);
+    //////// log::debug("Kicking user {} from level {}", accountId, levelKey);
 
     auto req = WebManager::get()->createAuthenticatedRequest();
     req.param("level_key", levelKey);

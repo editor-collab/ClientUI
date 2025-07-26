@@ -40,8 +40,8 @@ void GenericList::update(float dt) {
     auto targetDownLimit = -contentLayerY;
     auto targetUpLimit = scrollLayerHeight - contentLayerY;
 
-    // log::debug("targetDownLimit: {}, targetUpLimit: {}", targetDownLimit, targetUpLimit);
-    // log::debug("downLimit: {}, upLimit: {}", m_downLimit, m_upLimit);
+    // //////// log::debug("targetDownLimit: {}, targetUpLimit: {}", targetDownLimit, targetUpLimit);
+    // //////// log::debug("downLimit: {}, upLimit: {}", m_downLimit, m_upLimit);
 
     // needs to add more items to the bottom
     while (m_downLimit > targetDownLimit && m_downLimit > 0) {

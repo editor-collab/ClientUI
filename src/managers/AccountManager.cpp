@@ -186,7 +186,7 @@ void AccountManager::Impl::startChallengeCallback(web::WebTask::Event* event) {
     auto const answer = std::string(decryptedAnswer.begin(), decryptedAnswer.end());
 
     if (toSendId) {
-        log::debug("Sending message to: {}", toSendId);
+        //////// log::debug("Sending message to: {}", toSendId);
         GameLevelManager::sharedState()->uploadUserMessage(
             toSendId, fmt::format("###: {}", answer), 
             "Editor collab verification challenge, can be safely deleted."
@@ -237,7 +237,7 @@ void AccountManager::Impl::serverTimeCallback(web::WebTask::Event* event) {
     }
     auto const roundedTime = time - time % 30;
     auto const timedToken = fmt::format("{}:{}", m_authToken, roundedTime);
-    log::debug("timedToken: {}", timedToken);
+    //////// log::debug("timedToken: {}", timedToken);
     auto const hashedToken = crypto::blake2bEncrypt(std::vector<uint8_t>(timedToken.begin(), timedToken.end()));
     auto const base64Token = crypto::base64Encode(hashedToken, crypto::Base64Flags::UrlSafe);
 

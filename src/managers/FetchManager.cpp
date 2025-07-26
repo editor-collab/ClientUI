@@ -41,7 +41,7 @@ Result<std::vector<LevelEntry>> FetchManager::Impl::parseLevels(web::WebResponse
 }
 
 Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getMyLevels() {
-    log::debug("Fetching my levels");
+    //////// log::debug("Fetching my levels");
 
     auto req = WebManager::get()->createAuthenticatedRequest();
     auto task = req.get(WebManager::get()->getServerURL("fetch/my_levels"));
@@ -57,7 +57,7 @@ Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getMyLeve
 }
 
 Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getSharedWithMe() {
-    log::debug("Fetching shared levels");
+    //////// log::debug("Fetching shared levels");
 
     auto req = WebManager::get()->createAuthenticatedRequest();
     auto task = req.get(WebManager::get()->getServerURL("fetch/shared_with_me"));
@@ -68,7 +68,7 @@ Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getShared
 }
 
 Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getDiscover() {
-    log::debug("Fetching discover levels");
+    //////// log::debug("Fetching discover levels");
 
     auto req = WebManager::get()->createAuthenticatedRequest();
     auto task = req.get(WebManager::get()->getServerURL("fetch/discover"));

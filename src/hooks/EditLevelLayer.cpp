@@ -148,7 +148,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 						auto task = LevelManager::get()->joinLevel(levelKey);
 						task.listen([=, this](auto* resultp) {
 							if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
-								log::debug("join level task succeed");
+								//////// log::debug("join level task succeed");
 								notification->hide();
 
 								auto token = AccountManager::get()->getLoginToken();
@@ -157,7 +157,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 								).post();
 							}
 							else {
-								log::debug("join level task error");
+								//////// log::debug("join level task error");
 								createQuickPopup("Error", err, "Cancel", "OK", [](auto, auto) {});
 							}
 						}, [=, this](auto* progressP) {
@@ -182,11 +182,11 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 						auto task = LevelManager::get()->deleteLevel(levelKey);
 						task.listen([=, this](auto* resultp) {
 							if (GEODE_UNWRAP_IF_ERR(err, *resultp)) {
-								log::debug("delete level task error");
+								//////// log::debug("delete level task error");
 								createQuickPopup("Error", err, "Cancel", "OK", [](auto, auto) {});
 							}
 							else {
-								log::debug("delete level task succeed");
+								//////// log::debug("delete level task succeed");
 
 								auto token = AccountManager::get()->getLoginToken();
 								DispatchEvent<std::string_view, uint32_t>(

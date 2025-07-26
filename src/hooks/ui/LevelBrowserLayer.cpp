@@ -165,12 +165,12 @@ void LevelBrowserLayerUIHook::loadLevelsFinished(CCArray* levels, char const* id
 //         if (auto levelp = std::find_if(levels.begin(), levels.end(), [=](auto const& level) {
 //             return EditorIDs::getID(level) == entry.uniqueId;
 //         }); levelp != levels.end()) {
-//             log::debug("Updating level for level {}", entry.uniqueId);
+//             //////// log::debug("Updating level for level {}", entry.uniqueId);
 //             (*levelp)->m_levelName = entry.settings.title;
 //             (*levelp)->m_levelDesc = entry.settings.description;
 //         }
 //         else {
-//             log::debug("Creating new level for level {}", entry.uniqueId);
+//             //////// log::debug("Creating new level for level {}", entry.uniqueId);
 //             auto level = GJGameLevel::create();
 //             level->m_levelName = entry.settings.title;
 //             level->m_levelDesc = entry.settings.description;
@@ -245,7 +245,7 @@ bool LevelBrowserLayerUIHook::init(GJSearchObject* searchObject) {
             if (GEODE_UNWRAP_IF_OK(levels, *resultp)) {
                 Notification::create("Discover levels fetched", nullptr, 1.5f)->show();
                 for (auto& entry : levels) {
-                    log::debug("Level: {}", entry.key);
+                    //////// log::debug("Level: {}", entry.key);
                 }
                 BrowserManager::get()->updateDiscoverLevels(std::move(levels));
                 this->loadPage(m_searchObject);
