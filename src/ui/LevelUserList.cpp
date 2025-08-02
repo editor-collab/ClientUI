@@ -23,11 +23,23 @@ LevelUserList* LevelUserList::create(LevelEntry* entry, LevelEditorLayer* editor
 bool LevelUserList::init(LevelEntry* entry, LevelEditorLayer* editorLayer) {
     if (!CCNode::init()) return false;
 
+    if (Mod::get()->getSavedValue<bool>("shown-user-list-popup-tutorial") == false) {
+        auto popup = geode::createQuickPopup(
+            "Editor Collab", 
+            "Here you can find the <ca>list of people</c> in the level. "
+            "If you're <cf>Admin</c> or <cy>Host</c>, you can <cr>kick or ban</c> them, if needed.",
+            "OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {}, false
+        );
+        popup->m_scene = this;
+        popup->show();
+        Mod::get()->setSavedValue("shown-user-list-popup-tutorial", true);
+    }
+
     m_entry = entry;
     m_setting = &entry->settings;
     m_editorLayer = editorLayer;
 
-    DispatchEvent<ConnectedUserList*>("alk.editor-collab/get-user-list", &m_userList).post();
+    DispatchEvent<ConnectedUserList*>("get-user-list"_spr, &m_userList).post();
 
     m_userListListener = EventListenerNode<DispatchFilter<ConnectedUserList>>::create(
         EventListener([this](ConnectedUserList userList) {

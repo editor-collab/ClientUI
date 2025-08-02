@@ -3,6 +3,7 @@
 #include <managers/AccountManager.hpp>
 #include <managers/BrowserManager.hpp>
 #include <managers/LevelManager.hpp>
+#include <managers/FetchManager.hpp>
 #include <lavender/Lavender.hpp>
 #include <Geode/loader/Dispatch.hpp>
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
@@ -24,6 +25,18 @@ ShareSettings* ShareSettings::create(LevelEntry* entry, LevelEditorLayer* editor
 
 bool ShareSettings::init(LevelEntry* entry, LevelEditorLayer* editorLayer) {
     if (!CCNode::init()) return false;
+
+    if (Mod::get()->getSavedValue<bool>("shown-share-popup-tutorial") == false) {
+        auto popup = geode::createQuickPopup(
+            "Editor Collab", 
+            "Here you can <co>share your level</c> with others! Press <cg>Start Sharing</c>, and <cs>invite your friends</c> to join! "
+            "You can specify <cb>Viewer</c>, <cl>Editor</c> or <cf>Admin</c> to assign what they can do in the level.",
+            "OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {}, false
+        );
+        popup->m_scene = this;
+        popup->show();
+        Mod::get()->setSavedValue("shown-share-popup-tutorial", true);
+    }
 
     m_entry = entry;
     m_setting = &entry->settings;
@@ -231,19 +244,24 @@ bool ShareSettings::init(LevelEntry* entry, LevelEditorLayer* editorLayer) {
                 .children = {
                     new ui::Row {
                         .children = {
-                            new ui::MenuItemToggler {
-                                .toggled = m_setting->discoverable,
-                                .standardScale = 0.5f,
-                                .callback = [this](auto* sender) {
-                                    this->changeGeneralAccess(nullptr);
-                                },
-                            },
-                            new ui::Container {.width = 4},
-                            new ui::TextArea {
-                                .text = "Public",
-                                .font = "bigFont.fnt",
-                                .scale = 0.5f,
-                            },
+                            // new ui::MenuItemToggler {
+                            //     .toggled = m_setting->discoverable,
+                            //     .standardScale = 0.5f,
+                            //     .callback = [this](auto* sender) {
+                            //         // this->changeGeneralAccess(nullptr);
+                            //         geode::createQuickPopup(
+                            //             "Editor Collab",
+                            //             "Changing general access <cr>is not implemented</c> for <cb>early access</c>. Thank you for understanding.",
+                            //             "OK", nullptr, [](auto*, bool) {}, true
+                            //         );
+                            //     },
+                            // },
+                            // new ui::Container {.width = 4},
+                            // new ui::TextArea {
+                            //     .text = "Public",
+                            //     .font = "bigFont.fnt",
+                            //     .scale = 0.5f,
+                            // },
                         },
                     },
                     new ui::Container {.height = 4},
@@ -561,27 +579,33 @@ void ShareSettings::changeGeneralAccess(cocos2d::CCObject* sender) {
 }
 
 void ShareSettings::startSharing(cocos2d::CCObject* sender) {
-    if (LevelEditorLayer::get()->m_objects->count() > 5000) {
-		createQuickPopup(
-		    "Error", "There is a 5000 object limit right now (testing)", "Cancel", "OK",
-		    [](auto, auto) {}
+    if (LevelEditorLayer::get()->m_objects->count() > 40000) {
+		geode::createQuickPopup(
+		    "Editor Collab", "There is a <cr>40000 object limit</c> for early access.", "OK", nullptr,
+		    [](auto, auto) {}, true
 		);
 		return;
 	}
 
-    auto task = LevelManager::get()->createLevel(0, *m_setting);
+    auto task = LevelManager::get()->createLevel(*m_setting);
     task.listen([=, this](auto* resultp) {
         if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
-            BrowserManager::get()->replaceWithShadowLevel(m_editorLayer->m_level);
+            BrowserManager::get()->replaceWithShadowLevel(m_editorLayer->m_level, true);
 
             m_entry->key = value.levelKey;
             BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
+            BrowserManager::get()->initializeKey(m_editorLayer->m_level, *m_entry);
+            BrowserManager::get()->saveLevel(m_editorLayer->m_level, true, true);
             
             auto token = AccountManager::get()->getLoginToken();
             DispatchEvent<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
                 "create-level"_spr, token, value.clientId, m_editorLayer->m_level, value.levelKey
             ).post();
             Notification::create("Level started sharing", NotificationIcon::Success, 1.5f)->show();
+
+            m_popup->removeFromParent();
+
+            FetchManager::get()->getMyLevels().listen([](auto*){});
         }
         else {
             Notification::create("Failed to start sharing the level", NotificationIcon::Error, 1.5f)->show();
@@ -601,13 +625,18 @@ void ShareSettings::stopSharing(cocos2d::CCObject* sender) {
         // removing the shadow level on exit
 
         m_entry->key.clear();
+        BrowserManager::get()->saveLevel(m_editorLayer->m_level, true, false);
         BrowserManager::get()->detachReflectedLevel(m_editorLayer->m_level);
-        BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
+        // BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
 
         auto token = AccountManager::get()->getLoginToken();
         DispatchEvent<std::string_view, uint32_t>(
             "delete-level"_spr, token, LevelManager::get()->getClientId()
         ).post();
         Notification::create("Level stopped sharing", NotificationIcon::Success, 1.5f)->show();
+
+        m_popup->removeFromParent();
+
+        FetchManager::get()->getMyLevels().listen([](auto*){});
     });
 }

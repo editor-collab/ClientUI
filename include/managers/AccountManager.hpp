@@ -21,16 +21,12 @@ namespace tulip::editor {
         static AccountManager* get();
 
         void authenticate(Callback&& callback);
-        void startChallenge(Callback&& callback);
+        void logout(Callback&& callback);
 
         std::string getLoginToken() const;
 
-        std::string getAuthToken() const;
-        void setAuthToken(std::string_view const token);
-
         Task<Result<uint32_t>, WebProgress> claimKey(std::string_view key);
 
-        bool isAuthenticated() const;
         bool isLoggedIn() const;
     };
 }

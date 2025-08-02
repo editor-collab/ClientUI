@@ -90,11 +90,11 @@ bool BuyPopup::init() {
                                             if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
                                                 popupController->removeFromParentAndCleanup(true);
                                                 FetchManager::get()->addHostableCount(value);
-                                                createQuickPopup("Success", "Key claimed successfully!", "Cancel", "OK", [=](auto, auto) {});
+                                                geode::createQuickPopup("Editor Collab", "Key claimed <cg>successfully</c>!", "OK", nullptr, [=](auto, auto) {}, true);
                                             }
                                             else {
                                                 log::warn("Claim key error: {}", err);
-                                                createQuickPopup("Error", "Could not claim the key", "Cancel", "OK", [](auto, auto) {});
+                                                geode::createQuickPopup("Editor Collab (Error)", "<cr>Could not</c> claim the key.", "OK", nullptr, [](auto, auto) {}, true);
                                             }
                                         });
                                     }

@@ -5,6 +5,7 @@
 #include <ui/BuyPopup.hpp>
 #include <ui/LevelUserList.hpp>
 #include <lavender/Lavender.hpp>
+#include <managers/AccountManager.hpp>
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
 
 using namespace geode::prelude;
@@ -12,6 +13,22 @@ using namespace tulip::editor;
 
 bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
     if (!EditorUI::init(editorLayer)) return false;
+
+    if (!AccountManager::get()->isLoggedIn()) {
+        m_fields->m_shareButton = nullptr;
+        return true;
+    }
+
+    if (Mod::get()->getSavedValue<bool>("shown-share-introduction-popup") == false) {
+        auto popup = geode::createQuickPopup(
+            "Editor Collab", 
+            "To <cg>share</c> your levels, press the <cj>Share Button</c> at the <cp>top right corner</c> of the editor to open the <cb>Share Popup</c>.",
+            "OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {}, false
+        );
+        popup->m_scene = this;
+        popup->show();
+        Mod::get()->setSavedValue("shown-share-introduction-popup", true);
+    }
 
     auto gen = new ui::MenuItemSpriteExtra {
         .id = "share-button"_spr,
@@ -42,7 +59,7 @@ bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
                         "You can either stop sharing one or <cg>buy more slots</c>.",
                         sharedLevels->count(), hostableCount, fmt::join(levelNames, ", ")
                     );
-                    createQuickPopup("Editor Collab", desc, "Cancel", "Buy", [this](auto*, bool isBtn2) {
+                    geode::createQuickPopup("Editor Collab", desc, "Cancel", "Buy", [this](auto*, bool isBtn2) {
                         if (isBtn2)  {
                             (void)BuyPopup::create();
                         }
@@ -60,6 +77,7 @@ bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
 
     auto button = gen->get();
     m_fields->m_shareButton = static_cast<CCMenuItemSpriteExtra*>(button);
+    m_uiItems->addObject(button);    
 
     if (auto menu = static_cast<CCMenu*>(this->getChildByIDRecursive("settings-menu"))) {
         menu->addChild(button);

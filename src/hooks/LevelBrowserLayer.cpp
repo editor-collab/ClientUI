@@ -9,36 +9,102 @@
 #include <data/LevelEntry.hpp>
 #include <ui/ShareSettings.hpp>
 #include <ui/ClubstepBackground.hpp>
+#include <managers/WebManager.hpp>
+#include <Geode/ui/GeodeUI.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;
 
-void LevelBrowserLayerHook::onChallenge(Result<> result) {
-	if (result.isErr()) {
-		Notification::create("Failed to complete the challenge!", nullptr)->show();
+void LevelBrowserLayerHook::refreshButton() {
+	if (m_fields->menuButton) m_fields->menuButton->removeFromParent();
+	std::string filename;
+	if (Mod::get()->getSettingValue<bool>("alternate-button")) {
+		if (!AccountManager::get()->isLoggedIn()) {
+			filename = "DeactiveAlternateMenuButton.png"_spr;
+		}
+		else {
+			filename = "AlternateMenuButton.png"_spr;
+		}
 	}
 	else {
-		AccountManager::get()->authenticate(std::bind(&LevelBrowserLayerHook::onLogin, this, std::placeholders::_1, false));
+		if (!AccountManager::get()->isLoggedIn()) {
+			filename = "DeactiveMenuButton.png"_spr;
+		}
+		else {
+			filename = "MenuButton.png"_spr;
+		}
 	}
+	
+	auto menuSprite = CCSprite::createWithSpriteFrameName(filename.c_str());
+	menuSprite->setScale(0.9f);
+
+	auto menuButton = CCMenuItemExt::createSpriteExtra(menuSprite, [this](CCObject* sender) {
+		if (!AccountManager::get()->isLoggedIn()) {
+			AccountManager::get()->authenticate(std::bind(&LevelBrowserLayerHook::onLogin, this, std::placeholders::_1));
+		}
+		else {
+			AccountManager::get()->logout(std::bind(&LevelBrowserLayerHook::onLogout, this, std::placeholders::_1));
+		}
+	});
+	menuButton->setScale(0.9f);
+
+	m_fields->menuButton = menuButton;
+
+	if (auto menu = static_cast<CCMenu*>(this->getChildByIDRecursive("my-levels-menu"))) {
+		menu->addChild(menuButton);
+		menu->updateLayout();
+	}
+	this->loadPage(m_searchObject);
 }
 
-void LevelBrowserLayerHook::onLogin(Result<> result, bool challenge) {
+void LevelBrowserLayerHook::onLogin(Result<> result) {
+	// auto req = WebManager::get()->createAuthenticatedRequest();
+	// auto task = req.post(WebManager::get()->getServerURL("admin/generate_key"));
+	// task.listen([this](web::WebResponse* response) {
+	// 	auto result = response->string();
+	// 	if (result.isErr()) {
+	// 		Notification::create("Failed to generate key!", nullptr)->show();
+	// 	}
+	// 	else {
+	// 		auto key = result.unwrap();
+	// 		log::info("Generated key: {}", key);
+	// 		Notification::create(fmt::format("Generated key: {}", key), nullptr)->show();
+	// 	}
+	// });
+
 	if (result.isErr()) {
-		if (challenge) AccountManager::get()->startChallenge(std::bind(&LevelBrowserLayerHook::onChallenge, this, std::placeholders::_1));
-		else Notification::create("Failed to login!", nullptr)->show();
+		Notification::create("Failed to login!", nullptr)->show();
 	}
 	else {
 		Notification::create("Logged in successfully!", nullptr)->show();
-		reinterpret_cast<LevelBrowserLayerUIHook*>(this)->onLocalLevels(nullptr);
+		LevelBrowserLayerUIHook::Fields::initialCall = false;
+
+		if (Mod::get()->getSavedValue<bool>("shown-globed-compatibility-popup") == false) {
+			geode::createQuickPopup(
+				"Editor Collab", 
+				"<cg>Editor Collab</c> is now compatible with <co>Globed</c>! "
+				"You can <cc>see your friends</c> playtesting <cl>while editing</c> at the same time, just <cb>join the same server</c>!",
+				"OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {}, true
+			);
+			Mod::get()->setSavedValue("shown-globed-compatibility-popup", true);
+		}
+
+		if (Fields::self == this) {
+			LevelBrowserLayerUIHook::from(this)->onLocalLevels(nullptr);
+			this->refreshButton();
+		}
 	}
 }
 
-void LevelBrowserLayerHook::onConnect() {
-	if (AccountManager::get()->getAuthToken().empty()) {
-		AccountManager::get()->startChallenge(std::bind(&LevelBrowserLayerHook::onChallenge, this, std::placeholders::_1));
+void LevelBrowserLayerHook::onLogout(Result<> result) {
+	if (result.isErr()) {
+		Notification::create("Failed to logout!", nullptr)->show();
 	}
 	else {
-		AccountManager::get()->authenticate(std::bind(&LevelBrowserLayerHook::onLogin, this, std::placeholders::_1, true));
+		Notification::create("Logged out successfully!", nullptr)->show();
+	}
+	if (Fields::self == this) {
+		this->refreshButton();
 	}
 }
 
@@ -46,39 +112,33 @@ $override
 bool LevelBrowserLayerHook::init(GJSearchObject* searchObject) {
 	if (!LevelBrowserLayer::init(searchObject)) return false;
 
+	Fields::self = this;
+
 	if (searchObject->m_searchType != SearchType::MyLevels) return true;
 
-	if (auto menu = static_cast<CCMenu*>(this->getChildByIDRecursive("my-levels-menu"))) {
-		auto alternate = Mod::get()->getSettingValue<bool>("alt-button");
-		auto menuSprite = CCSprite::createWithSpriteFrameName(
-			alternate ? "AlternateMenuButton.png"_spr : "MenuButton.png"_spr
-		);
-		menuSprite->setScale(0.9f);
-
-		static auto setting = [](){
-			LevelSetting setting;
-			setting.title = "Test Level";
-			setting.users = {
-				{"user1", DefaultSharingType::Viewer},
-				{"user2", DefaultSharingType::Editor},
-				{"user3", DefaultSharingType::Admin},
-				{"user4", DefaultSharingType::Viewer},
-				{"user5", DefaultSharingType::Editor},
-				{"user6", DefaultSharingType::Admin}
-			};
-			return setting;
-		}();
-
-		auto menuButton = CCMenuItemExt::createSpriteExtra(menuSprite, [this](CCObject* sender) {
-			this->onConnect();
-			// auto bg = ClubstepBackground::create();
-			// bg->setPosition(0, 0);
-			// this->addChild(bg, 10);
-			// auto shareSettings = ShareSettings::create(&setting);
-		});
-		menu->addChild(menuButton);
-		
-		menu->updateLayout();
+	if (Mod::get()->getSavedValue<bool>("shown-introduction-popup") == false) {
+		auto popup = geode::createQuickPopup(
+			"Editor Collab", 
+			"Press the <cl>button</c> at the <cp>bottom left corner</c> to login to <cg>Editor Collab</c> and <co>share your levels</c> with others!", 
+			"OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {}, false);
+		popup->m_scene = this;
+		popup->show();
+		Mod::get()->setSavedValue("shown-introduction-popup", true);
 	}
+
+	if (!Loader::get()->isModLoaded("alk.editor-collab")) {
+		log::warn("Editor Collab mod is not loaded, Editor Collab UI requires the mod to function.");
+		auto popup = geode::createQuickPopup(
+			"Editor Collab (Error)", 
+			"<cg>Editor Collab</c> mod <cr>is not loaded</c>, <cf>Editor Collab UI</c> requires the mod to function.", 
+			"OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {
+				m_fields->modPageTask = geode::openInfoPopup("alk.editor-collab");
+			}, false);
+		popup->m_scene = this;
+		popup->show();
+		return true;
+	}
+
+	this->refreshButton();
 	return true;
 }

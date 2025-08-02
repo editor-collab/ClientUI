@@ -1,6 +1,4 @@
 #include <utils/CryptoHelper.hpp>
-#include <blake2.h>
-#include <ChaCha20-Poly1305.hpp>
 #include <Geode/Geode.hpp>
 #include <cppcodec/base64_rfc4648.hpp>
 #include <cppcodec/base64_url.hpp>
@@ -30,38 +28,38 @@ std::string crypto::base64Encode(std::vector<uint8_t> const& data, Base64Flags f
     }
 }
 
-std::vector<uint8_t> crypto::blake2bEncrypt(std::vector<uint8_t> const& data) {
-    auto const dataLen = data.size();
-    auto const outLen = 32;
-    auto out = std::vector<uint8_t>(outLen);
-    blake2b(out.data(), outLen, data.data(), dataLen, nullptr, 0);
-    return out;
-}
+// std::vector<uint8_t> crypto::blake2bEncrypt(std::vector<uint8_t> const& data) {
+//     auto const dataLen = data.size();
+//     auto const outLen = 32;
+//     auto out = std::vector<uint8_t>(outLen);
+//     blake2b(out.data(), outLen, data.data(), dataLen, nullptr, 0);
+//     return out;
+// }
 
-std::vector<uint8_t> crypto::blake2bDecrypt(std::vector<uint8_t> const& data) {
-    auto const dataLen = data.size();
-    auto const outLen = 64;
-    auto out = std::vector<uint8_t>(outLen);
-    blake2b(out.data(), outLen, data.data(), dataLen, nullptr, 0);
-    return out;
-}
+// std::vector<uint8_t> crypto::blake2bDecrypt(std::vector<uint8_t> const& data) {
+//     auto const dataLen = data.size();
+//     auto const outLen = 64;
+//     auto out = std::vector<uint8_t>(outLen);
+//     blake2b(out.data(), outLen, data.data(), dataLen, nullptr, 0);
+//     return out;
+// }
 
-std::pair<std::vector<uint8_t>, std::vector<uint8_t>> crypto::chacha20Poly1305Encrypt(std::vector<uint8_t> const& data, std::vector<uint8_t> const& key, std::vector<uint8_t> const& nonce) {
-    auto const dataLen = data.size();
-    auto const outLen = dataLen;
-    auto out = std::vector<uint8_t>(outLen);
-    auto tag = std::vector<uint8_t>(16);
-    auto aad = std::vector<uint8_t>();
-    ChaCha20_Poly1305::aead_encrypt(out.data(), tag.data(), data.data(), data.size(), aad.data(), aad.size(), key.data(), nonce.data());
-    return {out, tag};
-}
+// std::pair<std::vector<uint8_t>, std::vector<uint8_t>> crypto::chacha20Poly1305Encrypt(std::vector<uint8_t> const& data, std::vector<uint8_t> const& key, std::vector<uint8_t> const& nonce) {
+//     auto const dataLen = data.size();
+//     auto const outLen = dataLen;
+//     auto out = std::vector<uint8_t>(outLen);
+//     auto tag = std::vector<uint8_t>(16);
+//     auto aad = std::vector<uint8_t>();
+//     ChaCha20_Poly1305::aead_encrypt(out.data(), tag.data(), data.data(), data.size(), aad.data(), aad.size(), key.data(), nonce.data());
+//     return {out, tag};
+// }
 
-std::pair<std::vector<uint8_t>, std::vector<uint8_t>> crypto::chacha20Poly1305Decrypt(std::vector<uint8_t> const& data, std::vector<uint8_t> const& key, std::vector<uint8_t> const& nonce) {
-    auto const dataLen = data.size();
-    auto const outLen = dataLen;
-    auto out = std::vector<uint8_t>(outLen);
-    auto tag = std::vector<uint8_t>(16);
-    auto aad = std::vector<uint8_t>();
-    ChaCha20_Poly1305::aead_decrypt(out.data(), tag.data(), data.data(), data.size(), aad.data(), aad.size(), key.data(), nonce.data());
-    return {out, tag};
-}
+// std::pair<std::vector<uint8_t>, std::vector<uint8_t>> crypto::chacha20Poly1305Decrypt(std::vector<uint8_t> const& data, std::vector<uint8_t> const& key, std::vector<uint8_t> const& nonce) {
+//     auto const dataLen = data.size();
+//     auto const outLen = dataLen;
+//     auto out = std::vector<uint8_t>(outLen);
+//     auto tag = std::vector<uint8_t>(16);
+//     auto aad = std::vector<uint8_t>();
+//     ChaCha20_Poly1305::aead_decrypt(out.data(), tag.data(), data.data(), data.size(), aad.data(), aad.size(), key.data(), nonce.data());
+//     return {out, tag};
+// }

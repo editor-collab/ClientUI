@@ -1,5 +1,6 @@
 #include <managers/CellManager.hpp>
 #include <lavender/Lavender.hpp>
+#include <managers/BrowserManager.hpp>
 
 using namespace tulip::editor;
 using namespace geode::prelude;
@@ -23,6 +24,12 @@ void CellManager::Impl::removeLabels(LevelCell* cell) {
 }
 
 void CellManager::Impl::applyMyLevel(LevelCell* cell, LevelEntry const& entry) {
+    BrowserManager::get()->replaceWithShadowLevel(cell->m_level, false);
+
+    if (auto node = static_cast<CCLabelBMFont*>(cell->getChildByIDRecursive("level-name"))) {
+        node->setString(entry.settings.title.c_str());
+    }
+
     this->removeLabels(cell);
 
     auto gen = new ui::Container {
@@ -41,15 +48,15 @@ void CellManager::Impl::applyMyLevel(LevelCell* cell, LevelEntry const& entry) {
                     new ui::Container {
                         .width = 10,
                     },
-                    new ui::TextArea {
-                        .text = entry.key,
-                        .font = "bigFont.fnt",
-                        .color = {0, 255, 200, 255},
-                        .scale = 0.4f,
-                    },
-                    new ui::Container {
-                        .width = 10,
-                    },
+                    // new ui::TextArea {
+                    //     .text = entry.key,
+                    //     .font = "bigFont.fnt",
+                    //     .color = {0, 255, 200, 255},
+                    //     .scale = 0.4f,
+                    // },
+                    // new ui::Container {
+                    //     .width = 10,
+                    // },
                 },
             },
         },

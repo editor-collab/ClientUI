@@ -15,14 +15,14 @@ public:
     uint32_t m_clientId = 0;
 
     EventListener<DispatchFilter<std::string_view>> m_levelKickedListener = DispatchFilter<std::string_view>("alk.editor-collab/level-kicked");
-    EventListener<DispatchFilter<std::string_view>> m_updateSnapshotListener = DispatchFilter<std::string_view>("alk.editor-collab-ui/update-level-snapshot");
+    EventListener<DispatchFilter<std::string_view>> m_updateSnapshotListener = DispatchFilter<std::string_view>("alk.editor-collab/update-level-snapshot");
     EventListener<Task<Result<>, WebProgress>> m_updateSnapshotListenerTask;
 
     void init();
     
     bool errorCallback(web::WebResponse* response);
 
-    Task<Result<LevelManager::CreateLevelResult>, WebProgress> createLevel(int slotId, LevelSetting const& settings);
+    Task<Result<LevelManager::CreateLevelResult>, WebProgress> createLevel(LevelSetting const& settings);
     Task<Result<LevelManager::JoinLevelResult>, WebProgress> joinLevel(std::string_view levelKey);
     Task<Result<>, WebProgress> leaveLevel(CameraValue const& camera);
     Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);
@@ -45,7 +45,7 @@ void LevelManager::Impl::init() {
 
     m_updateSnapshotListener.bind([this](std::string_view token) {
         std::vector<uint8_t> snapshot;
-        DispatchEvent<std::vector<uint8_t>*>("alk.editor-collab-ui/get-level-snapshot", &snapshot).post();
+        DispatchEvent<std::vector<uint8_t>*>("get-level-snapshot"_spr, &snapshot).post();
         if (snapshot.empty()) {
             log::warn("No snapshot data available for update");
             return ListenerResult::Propagate;
@@ -92,19 +92,18 @@ std::optional<std::string> LevelManager::Impl::getJoinedLevelKey() const {
 //     return false;
 // }
 
-Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::createLevel(int slotId, LevelSetting const& settings) {
+Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::Impl::createLevel(LevelSetting const& settings) {
     //////// log::debug("Creating level");
 
     auto const settingString = matjson::Value(settings).dump(matjson::NO_INDENTATION);
 
     std::vector<uint8_t> snapshot;
-    DispatchEvent<std::vector<uint8_t>*>("alk.editor-collab-ui/get-level-snapshot", &snapshot).post();
+    DispatchEvent<std::vector<uint8_t>*>("get-level-snapshot"_spr, &snapshot).post();
     if (snapshot.empty()) {
         log::warn("No snapshot data available for new level");
     }
 
     auto req = WebManager::get()->createAuthenticatedRequest();
-    req.param("slot_id", slotId);
     req.param("settings", settingString);
     req.body(ByteVector(snapshot.begin(), snapshot.end()));
     req.header("Content-Type", "application/octet-stream");
@@ -289,8 +288,8 @@ LevelManager* LevelManager::get() {
 LevelManager::LevelManager() : impl(std::make_unique<Impl>()) {}
 LevelManager::~LevelManager() = default;
 
-Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::createLevel(int slotId, LevelSetting const& settings) {
-    return impl->createLevel(slotId, settings);
+Task<Result<LevelManager::CreateLevelResult>, WebProgress> LevelManager::createLevel(LevelSetting const& settings) {
+    return impl->createLevel(settings);
 }
 Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::joinLevel(std::string_view levelKey) {
     return impl->joinLevel(levelKey);

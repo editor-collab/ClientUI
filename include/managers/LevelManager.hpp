@@ -31,7 +31,7 @@ namespace tulip::editor {
             std::optional<CameraValue> camera;
         };
 
-        Task<Result<CreateLevelResult>, WebProgress> createLevel(int slotId, LevelSetting const& settings);
+        Task<Result<CreateLevelResult>, WebProgress> createLevel(LevelSetting const& settings);
         Task<Result<JoinLevelResult>, WebProgress> joinLevel(std::string_view levelKey);
         Task<Result<>, WebProgress> leaveLevel(CameraValue const& camera);
         Task<Result<>, WebProgress> deleteLevel(std::string_view levelKey);

@@ -9,12 +9,20 @@ using namespace geode::prelude;
 namespace tulip::editor {
     struct LevelBrowserLayerHook : Modify<LevelBrowserLayerHook, LevelBrowserLayer> {
         struct Fields {
-            EventListener<Task<Result<std::pair<uint32_t, std::vector<uint8_t>>>, web::WebProgress>> joinLevelListener;
+            geode::Ref<CCMenuItemSpriteExtra> menuButton = nullptr;
+            geode::Task<bool> modPageTask;
+
+            static inline LevelBrowserLayerHook* self = nullptr;
+
+            ~ Fields() {
+                self = nullptr;
+            }
         };
 
-        void onChallenge(Result<> result);
-        void onLogin(Result<> result, bool challenge = false);
-        void onConnect();
+        void refreshButton();
+
+        void onLogin(Result<> result);
+        void onLogout(Result<> result);
 
         $override
         bool init(GJSearchObject* searchObject);

@@ -63,10 +63,17 @@ web::WebRequest WebManager::Impl::createAuthenticatedRequest() const {
 }
 
 std::string WebManager::Impl::getServerURL() const {
-    if (Mod::get()->getSettingValue<bool>("use-local-server")) {
-        return "http://localhost:9100";
+    auto local = Mod::get()->getSettingValue<bool>("use-local-server");
+    auto testing = Mod::get()->getSettingValue<bool>("use-testing-server");
+    if (local) {
+        return "http://localhost:9101/v1";
     }
-    return "https://tulipalk.me/editor-collab/testing";
+    else if (testing) {
+        return "https://tulipalk.me/editor-collab/testing/v1";
+    }
+    else {
+        return "https://tulipalk.me/editor-collab/release/v1";
+    }
 }
 
 bool WebManager::Impl::isSocketConnected() const {

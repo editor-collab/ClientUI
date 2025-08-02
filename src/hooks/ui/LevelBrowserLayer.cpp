@@ -26,10 +26,10 @@ CCSprite* LevelBrowserLayerUIHook::generateTabSprite(std::string_view framename,
 }
 
 void LevelBrowserLayerUIHook::revisualizeButtons(CCObject* sender) {
-    for (auto child : CCArrayExt<CCNode*>(m_fields->onTabMenu->getChildren())) {
+    if (m_fields->onTabMenu) for (auto child : CCArrayExt<CCNode*>(m_fields->onTabMenu->getChildren())) {
         child->setVisible(false);
     }
-    for (auto child : CCArrayExt<CCNode*>(m_fields->offTabMenu->getChildren())) {
+    if (m_fields->offTabMenu) for (auto child : CCArrayExt<CCNode*>(m_fields->offTabMenu->getChildren())) {
         child->setVisible(true);
     }
     if (sender) {
@@ -39,8 +39,15 @@ void LevelBrowserLayerUIHook::revisualizeButtons(CCObject* sender) {
 
 void LevelBrowserLayerUIHook::onLocalLevels(CCObject* sender) {
     this->revisualizeButtons(sender);
-    m_fields->onTabMenu->getChildByID("local-levels-tab-on"_spr)->setVisible(true);
+    if (m_fields->onTabMenu) m_fields->onTabMenu->getChildByID("local-levels-tab-on"_spr)->setVisible(true);
     m_fields->currentTab = CurrentTab::LocalLevels;
+
+    if (Fields::initialCall == false) {
+        m_fields->myLevelsListener.setFilter(FetchManager::get()->getMyLevels());
+        m_fields->sharedWithMeListener.setFilter(FetchManager::get()->getSharedWithMe());
+        Fields::initialCall = true;
+    }
+
     this->loadPage(m_searchObject);
 }
 void LevelBrowserLayerUIHook::onMyLevels(CCObject* sender) {
@@ -48,12 +55,30 @@ void LevelBrowserLayerUIHook::onMyLevels(CCObject* sender) {
     m_fields->onTabMenu->getChildByID("my-levels-tab-on"_spr)->setVisible(true);
     m_fields->currentTab = CurrentTab::MyLevels;
     m_fields->myLevelsListener.setFilter(FetchManager::get()->getMyLevels());
+
+    if (!Mod::get()->getSavedValue<bool>("shown-my-levels-tutorial")) {
+        geode::createQuickPopup(
+            "Editor Collab", 
+            "Here you can find <cd>your shared levels</c>. Open one of them to <cl>join the level</c> and <co>start editing</c>.",
+            "OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {}, true
+        );
+        Mod::get()->setSavedValue("shown-my-levels-tutorial", true);
+    }
 }
 void LevelBrowserLayerUIHook::onSharedWithMe(CCObject* sender) {
     this->revisualizeButtons(sender);
     m_fields->onTabMenu->getChildByID("shared-with-me-tab-on"_spr)->setVisible(true);
     m_fields->currentTab = CurrentTab::SharedWithMe;
     m_fields->sharedWithMeListener.setFilter(FetchManager::get()->getSharedWithMe());
+
+    if (!Mod::get()->getSavedValue<bool>("shown-shared-with-me-tutorial")) {
+        geode::createQuickPopup(
+            "Editor Collab", 
+            "Here you can find <cd>levels shared with you</c>. Open one of them to <cl>join the level</c> and <co>start editing</c>.",
+            "OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {}, true
+        );
+        Mod::get()->setSavedValue("shown-shared-with-me-tutorial", true);
+    }
 }
 void LevelBrowserLayerUIHook::onDiscover(CCObject* sender) {
     this->revisualizeButtons(sender);
@@ -67,6 +92,10 @@ void LevelBrowserLayerUIHook::setupLevelBrowser(cocos2d::CCArray* items) {
     LevelBrowserLayer::setupLevelBrowser(items);
 
     if (!m_searchObject || m_searchObject->m_searchType != SearchType::MyLevels) return;
+
+    if (!AccountManager::get()->isLoggedIn()) {
+        return;
+    }
 
     if (auto top = static_cast<CCSprite*>(m_list->getChildByID("top-border"))) {
         m_list->getChildByID("title")->setVisible(false);
@@ -132,10 +161,11 @@ void LevelBrowserLayerUIHook::loadLevelsFinished(CCArray* levels, char const* id
     auto const page = m_searchObject->m_page;
     CCArray* fullLevels;
 
+    if (!AccountManager::get()->isLoggedIn()) {
+        return LevelBrowserLayer::loadLevelsFinished(levels, ident, searchType);
+    }
+
     switch (m_fields->currentTab) {
-        case CurrentTab::LocalLevels:
-            fullLevels = BrowserManager::get()->getLocalLevels(m_searchObject->m_folder);
-            break;
         case CurrentTab::MyLevels:
             fullLevels = BrowserManager::get()->getMyLevels();
             break;
@@ -145,6 +175,8 @@ void LevelBrowserLayerUIHook::loadLevelsFinished(CCArray* levels, char const* id
         case CurrentTab::Discover:
             fullLevels = BrowserManager::get()->getDiscoverLevels();
             break;
+        default:
+            return LevelBrowserLayer::loadLevelsFinished(levels, ident, searchType);
     }
 
     constexpr auto levelsPerPage = 10;
@@ -231,6 +263,9 @@ bool LevelBrowserLayerUIHook::init(GJSearchObject* searchObject) {
         if (auto resultp = event->getValue(); resultp) {
             if (GEODE_UNWRAP_IF_OK(levels, *resultp)) {
                 Notification::create("Shared levels fetched", nullptr, 1.5f)->show();
+                // for (auto& entry : levels) {
+                //     log::debug("Level: {}", entry.key);
+                // }
                 BrowserManager::get()->updateSharedLevels(std::move(levels));
                 this->loadPage(m_searchObject);
             }

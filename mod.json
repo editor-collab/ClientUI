@@ -7,7 +7,7 @@
 	},
 	"id": "alk.editor-collab-ui",
 	"name": "Editor Collab UI",
-	"version": "0.1.0-alpha",
+	"version": "0.2.4-alpha",
 	"developer": "alk",
 	"description": "UI for the Editor Collab mod",
 	"resources": {
@@ -37,15 +37,21 @@
             "importance": "required"
         },
 		"alk.editor-collab": {
-			"version": "0.1.0-alpha",
-			"importance": "required"
+			"version": "0.2.0-alpha",
+			"importance": "recommended"
 		}
 	},
 	"settings": {
-		"use-local-server": {
+		"auto-connect": {
 			"type": "bool",
-			"name": "Use local server",
-			"description": "This is for me testing. Lol",
+			"name": "Auto connect",
+			"description": "Automatically connect to the server when the level list is opened",
+			"default": false
+		},
+		"alternate-button": {
+			"type": "bool",
+			"name": "Use alternate button",
+			"description": "This man wouldn't survive \"use alternative bi button texture\" (the sequel)",
 			"default": false
 		}
 	}

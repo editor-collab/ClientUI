@@ -36,12 +36,13 @@ struct ExitHook : Modify<ExitHook, GameManager> {
 					).post();
 				}
 				else if (resultp) {
-					createQuickPopup(
-						"Error",
+					geode::createQuickPopup(
+						"Editor Collab (Error)",
 						resultp->unwrapErr(),
-						"Cancel",
 						"OK",
-						[](auto, auto) {}
+						nullptr,
+						[](auto, auto) {},
+						true
 					);
 				}
 			});
@@ -61,14 +62,21 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 		CCSprite* m_joinButtonSprite = nullptr;
 		CCMenuItemSpriteExtra* m_deleteButton = nullptr;
 		CCSprite* m_deleteButtonSprite = nullptr;
+		Ref<Notification> m_notification = nullptr;
 
 		EventListener<DispatchFilter<>> m_disconnectListener = DispatchFilter<>("alk.editor-collab/socket-disconnected");
+
+		~Fields() {
+			if (m_notification) {
+				m_notification->hide();
+			}
+		}
 	};	
 
 	$override
 	void textChanged(CCTextInputNode* input) {
 		EditLevelLayer::textChanged(input);
-		if (BrowserManager::get()->isMyLevel(m_level)) {
+		if (AccountManager::get()->isLoggedIn() && BrowserManager::get()->isMyLevel(m_level)) {
 			m_fields->m_textChanged = true;
 			auto* entry = BrowserManager::get()->getLevelEntry(m_level);
 			if (input->getTag() == 1) {
@@ -95,14 +103,57 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 		EditLevelLayer::onBack(sender);
 	}
 
+	void joinLevel(std::string levelKey) {
+		auto task = LevelManager::get()->joinLevel(levelKey);
+		task.listen([=, this](auto* resultp) {
+			if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
+				//////// log::debug("join level task succeed");
+				m_fields->m_notification->runAction(CCSequence::create(
+					CCDelayTime::create(0.0),
+					CCCallFunc::create(m_fields->m_notification, callfunc_selector(Notification::hide)),
+					nullptr
+				));
+				m_fields->m_notification = nullptr;
+
+				auto token = AccountManager::get()->getLoginToken();
+				DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>, GJGameLevel*>(
+					"join-level"_spr, token, value.clientId, levelKey, &value.snapshot, value.camera, m_level
+				).post();
+			}
+			else {
+				//////// log::debug("join level task error");
+				geode::createQuickPopup("Editor Collab (Error)", err, "OK", nullptr, [](auto, auto) {}, true);
+			}
+		}, [=, this](auto* progressP) {
+			m_fields->m_notification->setString(
+				fmt::format("Joining: %{}", progressP->downloadProgress().value_or(0)).c_str()
+			);
+		}, [=, this]() {
+			m_fields->m_notification->hide();
+			m_fields->m_notification = nullptr;
+		});
+	}
+
     $override
     bool init(GJGameLevel* level) {
         if (!EditLevelLayer::init(level)) return false;
 
 		m_fields->m_textChanged = false;
 
+		if (!AccountManager::get()->isLoggedIn()) return true;
+
 		if (auto menu = static_cast<CCMenu*>(this->getChildByIDRecursive("level-edit-menu"))) {
 			if (auto entry = BrowserManager::get()->getOnlineEntry(m_level)) {
+
+				if (!Mod::get()->getSavedValue<bool>("shown-edit-level-tutorial")) {
+					geode::createQuickPopup(
+						"Editor Collab", 
+						"Here you can <cy>join the level</c>! If you have <cl>Editor</c> or <cf>Admin</c> permissions, you can <co>edit</c> the <cb>level name and description</c> too.",
+						"OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {}, true
+					);
+					Mod::get()->setSavedValue("shown-edit-level-tutorial", true);
+				}
+
 				for (auto child : CCArrayExt<CCNode*>(menu->getChildren())) {
 					child->setVisible(false);
 				}
@@ -138,35 +189,27 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 					.callback = [=, this](auto) {
 						auto const levelKey = entry->key;
 
-						auto notification = Notification::create(
+						m_fields->m_notification = Notification::create(
 							"Joining: %0",
 							NotificationIcon::Loading,
 							0.f
 						);
-						notification->show();
+						m_fields->m_notification->show();
+						if (m_fields->m_textChanged) {
+							if (BrowserManager::get()->isMyLevel(m_level)) {
+								auto* entry = BrowserManager::get()->getLevelEntry(m_level);
+								BrowserManager::get()->updateLevelEntry(m_level);
 
-						auto task = LevelManager::get()->joinLevel(levelKey);
-						task.listen([=, this](auto* resultp) {
-							if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
-								//////// log::debug("join level task succeed");
-								notification->hide();
-
-								auto token = AccountManager::get()->getLoginToken();
-								DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>, GJGameLevel*>(
-									"join-level"_spr, token, value.clientId, levelKey, &value.snapshot, value.camera, m_level
-								).post();
+								auto task = LevelManager::get()->updateLevelSettings(entry->key, entry->settings);
+								task.listen([=, this](auto* result) {
+									this->joinLevel(levelKey);
+								});
 							}
-							else {
-								//////// log::debug("join level task error");
-								createQuickPopup("Error", err, "Cancel", "OK", [](auto, auto) {});
-							}
-						}, [=, this](auto* progressP) {
-							notification->setString(
-								fmt::format("Joining: %{}", progressP->downloadProgress().value_or(0)).c_str()
-							);
-						}, [=, this]() {
-							notification->hide();
-						});
+						}
+						else {
+							this->joinLevel(levelKey);
+						}
+						
 					},
 					.child = new ui::Sprite {
 						.store = reinterpret_cast<CCNode**>(&m_fields->m_joinButtonSprite),
@@ -174,32 +217,32 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 					},
 				});
 
-				children.push_back(new ui::MenuItemSpriteExtra {
-					.store = reinterpret_cast<CCNode**>(&m_fields->m_deleteButton),
-					.callback = [=, this](auto) {
-						auto const levelKey = entry->key;
+				// children.push_back(new ui::MenuItemSpriteExtra {
+				// 	.store = reinterpret_cast<CCNode**>(&m_fields->m_deleteButton),
+				// 	.callback = [=, this](auto) {
+				// 		auto const levelKey = entry->key;
 
-						auto task = LevelManager::get()->deleteLevel(levelKey);
-						task.listen([=, this](auto* resultp) {
-							if (GEODE_UNWRAP_IF_ERR(err, *resultp)) {
-								//////// log::debug("delete level task error");
-								createQuickPopup("Error", err, "Cancel", "OK", [](auto, auto) {});
-							}
-							else {
-								//////// log::debug("delete level task succeed");
+				// 		auto task = LevelManager::get()->deleteLevel(levelKey);
+				// 		task.listen([=, this](auto* resultp) {
+				// 			if (GEODE_UNWRAP_IF_ERR(err, *resultp)) {
+				// 				//////// log::debug("delete level task error");
+				// 				geode::createQuickPopup("Editor Collab (Error)", err, "OK", nullptr, [](auto, auto) {}, true);
+				// 			}
+				// 			else {
+				// 				//////// log::debug("delete level task succeed");
 
-								auto token = AccountManager::get()->getLoginToken();
-								DispatchEvent<std::string_view, uint32_t>(
-									"delete-level"_spr, token, LevelManager::get()->getClientId()
-								).post();
-							}
-						});
-					},
-					.child = new ui::Sprite {
-						.store = reinterpret_cast<CCNode**>(&m_fields->m_deleteButtonSprite),
-						.frameName = "KickIcon.png"_spr,
-					},
-				});
+				// 				auto token = AccountManager::get()->getLoginToken();
+				// 				DispatchEvent<std::string_view, uint32_t>(
+				// 					"delete-level"_spr, token, LevelManager::get()->getClientId()
+				// 				).post();
+				// 			}
+				// 		});
+				// 	},
+				// 	.child = new ui::Sprite {
+				// 		.store = reinterpret_cast<CCNode**>(&m_fields->m_deleteButtonSprite),
+				// 		.frameName = "KickIcon.png"_spr,
+				// 	},
+				// });
 
 				auto gen = new ui::Container {
 					.size = menu->getContentSize(),
@@ -219,13 +262,13 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 				if (WebManager::get()->isSocketConnected()) {
 					m_fields->m_joinButton->setEnabled(false);
 					m_fields->m_joinButtonSprite->setColor(ccColor3B { 100, 100, 100 });
-					m_fields->m_deleteButton->setEnabled(false);
-					m_fields->m_deleteButtonSprite->setColor(ccColor3B { 100, 100, 100 });
+					// m_fields->m_deleteButton->setEnabled(false);
+					// m_fields->m_deleteButtonSprite->setColor(ccColor3B { 100, 100, 100 });
 					m_fields->m_disconnectListener.bind([=, this]() {
 						m_fields->m_joinButton->setEnabled(true);
 						m_fields->m_joinButtonSprite->setColor(ccColor3B { 255, 255, 255 });
-						m_fields->m_deleteButton->setEnabled(true);
-						m_fields->m_deleteButtonSprite->setColor(ccColor3B { 255, 255, 255 });
+						// m_fields->m_deleteButton->setEnabled(true);
+						// m_fields->m_deleteButtonSprite->setColor(ccColor3B { 255, 255, 255 });
 
 						return ListenerResult::Propagate;
 					});

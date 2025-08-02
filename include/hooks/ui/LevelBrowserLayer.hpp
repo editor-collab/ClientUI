@@ -29,6 +29,8 @@ namespace tulip::editor {
 
             geode::Ref<cocos2d::CCMenu> offTabMenu;
             geode::Ref<cocos2d::CCMenu> onTabMenu;
+
+            static inline bool initialCall = false;
         };
 
         template <class Lambda>
@@ -52,7 +54,7 @@ namespace tulip::editor {
         void onSharedWithMe(cocos2d::CCObject* sender);
         void onDiscover(cocos2d::CCObject* sender);
 
-        LevelBrowserLayerUIHook* from(LevelBrowserLayer* layer) {
+        static LevelBrowserLayerUIHook* from(LevelBrowserLayer* layer) {
             return static_cast<LevelBrowserLayerUIHook*>(layer);
         }
     };
