@@ -87,15 +87,15 @@ namespace tulip::editor {
 
         bool hasUser(std::string_view name) const {
             auto lower = this->lowercase(name);
-            return std::any_of(users.begin(), users.end(), [lower](auto const& user) {
-                return user.name == lower;
+            return std::any_of(users.begin(), users.end(), [this, lower](auto const& user) {
+                return this->lowercase(user.name) == lower;
             });
         }
 
         void removeUser(std::string_view name) {
             auto lower = this->lowercase(name);
-            users.erase(std::remove_if(users.begin(), users.end(), [lower](auto const& user) {
-                return user.name == lower;
+            users.erase(std::remove_if(users.begin(), users.end(), [this, lower](auto const& user) {
+                return this->lowercase(user.name) == lower;
             }), users.end());
         }
 
