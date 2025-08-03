@@ -126,7 +126,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 			}
 		}, [=, this](auto* progressP) {
 			m_fields->m_notification->setString(
-				fmt::format("Joining: %{}", progressP->downloadProgress().value_or(0)).c_str()
+				fmt::format("Joining: {:.2f}%", progressP->downloadProgress().value_or(0)).c_str()
 			);
 		}, [=, this]() {
 			m_fields->m_notification->hide();
@@ -190,7 +190,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 						auto const levelKey = entry->key;
 
 						m_fields->m_notification = Notification::create(
-							"Joining: %0",
+							"Joining: 0.00%",
 							NotificationIcon::Loading,
 							0.f
 						);
