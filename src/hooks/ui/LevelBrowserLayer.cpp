@@ -55,6 +55,8 @@ void LevelBrowserLayerUIHook::onMyLevels(CCObject* sender) {
     m_fields->onTabMenu->getChildByID("my-levels-tab-on"_spr)->setVisible(true);
     m_fields->currentTab = CurrentTab::MyLevels;
     m_fields->myLevelsListener.setFilter(FetchManager::get()->getMyLevels());
+    m_list->m_listView->setVisible(false);
+    m_circle->setVisible(true);
 
     if (!Mod::get()->getSavedValue<bool>("shown-my-levels-tutorial")) {
         geode::createQuickPopup(
@@ -70,6 +72,8 @@ void LevelBrowserLayerUIHook::onSharedWithMe(CCObject* sender) {
     m_fields->onTabMenu->getChildByID("shared-with-me-tab-on"_spr)->setVisible(true);
     m_fields->currentTab = CurrentTab::SharedWithMe;
     m_fields->sharedWithMeListener.setFilter(FetchManager::get()->getSharedWithMe());
+    m_list->m_listView->setVisible(false);
+    m_circle->setVisible(true);
 
     if (!Mod::get()->getSavedValue<bool>("shown-shared-with-me-tutorial")) {
         geode::createQuickPopup(
@@ -249,45 +253,51 @@ bool LevelBrowserLayerUIHook::init(GJSearchObject* searchObject) {
     m_fields->myLevelsListener.bind([=, this](auto* event) {
         if (auto resultp = event->getValue(); resultp) {
             if (GEODE_UNWRAP_IF_OK(levels, *resultp)) {
-                Notification::create("My levels fetched", nullptr, 1.5f)->show();
+                log::debug("My levels fetched");
                 BrowserManager::get()->updateMyLevels(std::move(levels));
                 this->loadPage(m_searchObject);
+                m_list->m_listView->setVisible(true);
             }
             else {
-                Notification::create("Failed to fetch my levels", nullptr, 1.5f)->show();
+                Notification::create("Failed to fetch my levels", nullptr)->show();
             }
+            m_circle->setVisible(false);
         }
     });
 
     m_fields->sharedWithMeListener.bind([=, this](auto* event) {
         if (auto resultp = event->getValue(); resultp) {
             if (GEODE_UNWRAP_IF_OK(levels, *resultp)) {
-                Notification::create("Shared levels fetched", nullptr, 1.5f)->show();
+                log::debug("Shared levels fetched");
                 // for (auto& entry : levels) {
                 //     log::debug("Level: {}", entry.key);
                 // }
                 BrowserManager::get()->updateSharedLevels(std::move(levels));
                 this->loadPage(m_searchObject);
+                m_list->m_listView->setVisible(true);
             }
             else {
-                Notification::create("Failed to fetch shared levels", nullptr, 1.5f)->show();
+                Notification::create("Failed to fetch shared levels", nullptr)->show();
             }
+            m_circle->setVisible(false);
         }
     });
 
     m_fields->discoverListener.bind([=, this](auto* event) {
         if (auto resultp = event->getValue(); resultp) {
             if (GEODE_UNWRAP_IF_OK(levels, *resultp)) {
-                Notification::create("Discover levels fetched", nullptr, 1.5f)->show();
+                log::debug("Discover levels fetched");
                 for (auto& entry : levels) {
                     //////// log::debug("Level: {}", entry.key);
                 }
                 BrowserManager::get()->updateDiscoverLevels(std::move(levels));
                 this->loadPage(m_searchObject);
+                m_list->m_listView->setVisible(true);
             }
             else {
-                Notification::create("Failed to fetch discover levels", nullptr, 1.5f)->show();
+                Notification::create("Failed to fetch discover levels", nullptr)->show();
             }
+            m_circle->setVisible(false);
         }
     });
 
