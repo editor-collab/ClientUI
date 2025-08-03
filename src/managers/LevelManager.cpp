@@ -35,10 +35,14 @@ public:
     std::optional<std::string> getJoinedLevelKey() const;
     uint32_t getClientId() const;
     bool isInLevel() const;
+
+    void cancelReconnect();
 };
 
 void LevelManager::Impl::init() {
     m_levelKickedListener.bind([this](std::string_view reason) {
+        log::debug("Level kicked: {}", reason);
+        if (m_joinedLevel.has_value()) this->leaveLevel(CameraValue{}).listen([](auto) {});
         m_joinedLevel = std::nullopt;
         return ListenerResult::Propagate;
     });
@@ -69,6 +73,13 @@ bool LevelManager::Impl::isInLevel() const {
 
 std::optional<std::string> LevelManager::Impl::getJoinedLevelKey() const {
     return m_joinedLevel;
+}
+
+void LevelManager::Impl::cancelReconnect() {
+    DispatchEvent<std::string_view>("cancel-reconnect"_spr, "Cancelled reconnect").post();
+
+    if (m_joinedLevel.has_value()) this->leaveLevel(CameraValue{}).listen([](auto) {});
+    m_joinedLevel = std::nullopt;
 }
 
 // bool LevelManager::Impl::errorCallback(web::WebResponse* response) {
@@ -329,4 +340,8 @@ bool LevelManager::isInLevel() const {
 
 std::optional<std::string> LevelManager::getJoinedLevelKey() const {
     return impl->getJoinedLevelKey();
+}
+
+void LevelManager::cancelReconnect() {
+    impl->cancelReconnect();
 }

@@ -44,7 +44,9 @@ bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
             entry->hostAccountId = GJAccountManager::get()->m_accountID;
 
             // TODO: cleanup
-            if (BrowserManager::get()->isMyLevel(editorLayer->m_level) || sharedLevels->count() < hostableCount) {
+            if (entry->settings.getUserType(GJAccountManager::get()->m_username) == DefaultSharingType::Admin
+                || BrowserManager::get()->isMyLevel(editorLayer->m_level)
+                || sharedLevels->count() < hostableCount) {
                 (void)ShareSettings::create(entry, m_editorLayer);
             }
             else {

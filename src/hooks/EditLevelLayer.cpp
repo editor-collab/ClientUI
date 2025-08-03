@@ -65,6 +65,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 		Ref<Notification> m_notification = nullptr;
 
 		EventListener<DispatchFilter<>> m_disconnectListener = DispatchFilter<>("alk.editor-collab/socket-disconnected");
+		EventListener<DispatchFilter<std::string_view>> m_levelKickedListener = DispatchFilter<std::string_view>("alk.editor-collab/level-kicked");
 
 		~Fields() {
 			if (m_notification) {
@@ -100,6 +101,26 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 				task.listen([=](auto* result) {});
 			}
 		}
+
+		if (LevelManager::get()->getJoinedLevelKey().has_value()) {
+			geode::createQuickPopup(
+				"Editor Collab",
+				"Are you sure you want to cancel the connection?",
+				"Cancel", "OK", [=, this](FLAlertLayer* layer, bool btn2) {
+					if (btn2) {
+						LevelManager::get()->cancelReconnect();
+						if (m_fields->m_notification) {
+							m_fields->m_notification->hide();
+							m_fields->m_notification = nullptr;
+						}
+
+						EditLevelLayer::onBack(sender);
+					}
+				}, true
+			);
+			return;
+		}
+
 		EditLevelLayer::onBack(sender);
 	}
 
@@ -132,6 +153,20 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 			m_fields->m_notification->hide();
 			m_fields->m_notification = nullptr;
 		});
+	}
+
+	void updateToGray() {
+		if (m_fields->m_joinButton) m_fields->m_joinButton->setEnabled(false);
+		if (m_fields->m_joinButtonSprite) m_fields->m_joinButtonSprite->setColor(ccColor3B { 100, 100, 100 });
+		if (m_fields->m_deleteButton) m_fields->m_deleteButton->setEnabled(false);
+		if (m_fields->m_deleteButtonSprite) m_fields->m_deleteButtonSprite->setColor(ccColor3B { 100, 100, 100 });
+	}
+
+	void updateToNormal() {
+		if (m_fields->m_joinButton) m_fields->m_joinButton->setEnabled(true);
+		if (m_fields->m_joinButtonSprite) m_fields->m_joinButtonSprite->setColor(ccColor3B { 255, 255, 255 });
+		if (m_fields->m_deleteButton) m_fields->m_deleteButton->setEnabled(true);
+		if (m_fields->m_deleteButtonSprite) m_fields->m_deleteButtonSprite->setColor(ccColor3B { 255, 255, 255 });
 	}
 
     $override
@@ -188,6 +223,12 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 					.store = reinterpret_cast<CCNode**>(&m_fields->m_joinButton),
 					.callback = [=, this](auto) {
 						auto const levelKey = entry->key;
+
+						this->updateToGray();
+						m_fields->m_levelKickedListener.bind([=, this](std::string_view reason) {
+							this->updateToNormal();
+							return ListenerResult::Propagate;
+						});
 
 						m_fields->m_notification = Notification::create(
 							"Joining: 0.00%",
@@ -264,16 +305,8 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 				this->addChild(node);
 
 				if (WebManager::get()->isSocketConnected()) {
-					if (m_fields->m_joinButton) m_fields->m_joinButton->setEnabled(false);
-					if (m_fields->m_joinButtonSprite) m_fields->m_joinButtonSprite->setColor(ccColor3B { 100, 100, 100 });
-					if (m_fields->m_deleteButton) m_fields->m_deleteButton->setEnabled(false);
-					if (m_fields->m_deleteButtonSprite) m_fields->m_deleteButtonSprite->setColor(ccColor3B { 100, 100, 100 });
 					m_fields->m_disconnectListener.bind([=, this]() {
-						if (m_fields->m_joinButton) m_fields->m_joinButton->setEnabled(true);
-						if (m_fields->m_joinButtonSprite) m_fields->m_joinButtonSprite->setColor(ccColor3B { 255, 255, 255 });
-						if (m_fields->m_deleteButton) m_fields->m_deleteButton->setEnabled(true);
-						if (m_fields->m_deleteButtonSprite) m_fields->m_deleteButtonSprite->setColor(ccColor3B { 255, 255, 255 });
-
+						this->updateToNormal();
 						return ListenerResult::Propagate;
 					});
 				}

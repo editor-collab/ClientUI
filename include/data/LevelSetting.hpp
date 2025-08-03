@@ -49,6 +49,15 @@ namespace tulip::editor {
         bool copyable = false;
         bool discoverable = false;
 
+        std::string lowercase(std::string_view str) const {
+            std::string result;
+            result.reserve(str.size());
+            for (char c : str) {
+                result.push_back(std::tolower(c));
+            }
+            return result;
+        }
+
         static LevelSetting fromLevel(GJGameLevel* level) {
             LevelSetting entry;
             entry.title = level->m_levelName;
@@ -57,8 +66,9 @@ namespace tulip::editor {
         }
 
         DefaultSharingType getUserType(std::string_view name) const {
+            auto lower = this->lowercase(name);
             for (auto const& user : users) {
-                if (user.name == name) {
+                if (this->lowercase(user.name) == lower) {
                     return user.role;
                 }
             }
@@ -66,8 +76,9 @@ namespace tulip::editor {
         }
 
         SettingUserEntry* getUserEntry(std::string_view name) {
+            auto lower = this->lowercase(name);
             for (auto& user : users) {
-                if (user.name == name) {
+                if (this->lowercase(user.name) == lower) {
                     return &user;
                 }
             }
@@ -75,14 +86,16 @@ namespace tulip::editor {
         }
 
         bool hasUser(std::string_view name) const {
-            return std::any_of(users.begin(), users.end(), [name](auto const& user) {
-                return user.name == name;
+            auto lower = this->lowercase(name);
+            return std::any_of(users.begin(), users.end(), [lower](auto const& user) {
+                return user.name == lower;
             });
         }
 
         void removeUser(std::string_view name) {
-            users.erase(std::remove_if(users.begin(), users.end(), [name](auto const& user) {
-                return user.name == name;
+            auto lower = this->lowercase(name);
+            users.erase(std::remove_if(users.begin(), users.end(), [lower](auto const& user) {
+                return user.name == lower;
             }), users.end());
         }
 

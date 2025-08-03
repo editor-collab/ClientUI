@@ -78,8 +78,13 @@ bool AccountManager::Impl::errorCallback(web::WebResponse* response, Callback& c
     }
     if (!response->ok()) {
         auto const code = response->code();
-        if (code == 401) {
-            callback(Err("Invalid credentials"));
+        if (code == 403) {
+            argon::clearToken();
+            log::warn("Forbidden: {}", res.unwrapOrDefault());
+            callback(Err("Please log into your GD account again."));
+        }
+        else if (code == 500) {
+            callback(Err("Internal server error: {}", res.unwrapOrDefault()));
         }
         else {
             callback(Err(fmt::format("HTTP error: {}", code)));

@@ -74,7 +74,7 @@ void LevelBrowserLayerHook::onLogin(Result<> result) {
 
 	if (result.isErr()) {
 		log::debug("Failed to login: {}", result.unwrapErr());
-		Notification::create("Failed to login!", nullptr)->show();
+		Notification::create(fmt::format("Failed to login!: {}", result.unwrapErr()), nullptr)->show();
 	}
 	else {
 		Notification::create("Logged in successfully!", nullptr)->show();

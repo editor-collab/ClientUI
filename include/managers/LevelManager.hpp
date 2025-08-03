@@ -47,5 +47,7 @@ namespace tulip::editor {
         uint32_t getClientId() const;
 
         bool isInLevel() const;
+
+        void cancelReconnect();
     };
 }
