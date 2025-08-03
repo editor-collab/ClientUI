@@ -58,6 +58,6 @@ Developed by <cp>Alk1m123 (alk)</c> with <cf>love and tears</c>. Please <cs>supp
 
 ## Thanks
 
-Huge thanks to the [Geode Development team](https://github.com/orgs/geode-sdk/people) for making me not suffer porting the mod to Windows. Love you [HJfod](https://twitter.com/hjfod), [Mat](https://twitter.com/mateus44_/), [Dank Meme](https://github.com/dankmeme01/), and other people who helped me in some capacity.
+Huge thanks to the [Geode Development team](https://github.com/orgs/geode-sdk/people) for making me not suffer porting the mod to Windows. Love you [HJfod](https://twitter.com/hjfod), [Mat](https://github.com/matcool/), [Dank Meme](https://github.com/dankmeme01/), and other people who helped me in some capacity.
 
 Also big thanks to you for using my mod, either as a user or host. I love you. <3
