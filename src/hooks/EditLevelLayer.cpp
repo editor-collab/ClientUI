@@ -217,32 +217,36 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 					},
 				});
 
-				// children.push_back(new ui::MenuItemSpriteExtra {
-				// 	.store = reinterpret_cast<CCNode**>(&m_fields->m_deleteButton),
-				// 	.callback = [=, this](auto) {
-				// 		auto const levelKey = entry->key;
+				if (Mod::get()->getSettingValue<bool>("force-delete-button")) {
+					children.push_back(new ui::MenuItemSpriteExtra {
+						.store = reinterpret_cast<CCNode**>(&m_fields->m_deleteButton),
+						.callback = [=, this](auto) {
+							auto const levelKey = entry->key;
 
-				// 		auto task = LevelManager::get()->deleteLevel(levelKey);
-				// 		task.listen([=, this](auto* resultp) {
-				// 			if (GEODE_UNWRAP_IF_ERR(err, *resultp)) {
-				// 				//////// log::debug("delete level task error");
-				// 				geode::createQuickPopup("Editor Collab (Error)", err, "OK", nullptr, [](auto, auto) {}, true);
-				// 			}
-				// 			else {
-				// 				//////// log::debug("delete level task succeed");
+							auto task = LevelManager::get()->deleteLevel(levelKey);
+							task.listen([=, this](auto* resultp) {
+								if (GEODE_UNWRAP_IF_ERR(err, *resultp)) {
+									//////// log::debug("delete level task error");
+									geode::createQuickPopup("Editor Collab (Error)", err, "OK", nullptr, [](auto, auto) {}, true);
+								}
+								else {
+									//////// log::debug("delete level task succeed");
 
-				// 				auto token = AccountManager::get()->getLoginToken();
-				// 				DispatchEvent<std::string_view, uint32_t>(
-				// 					"delete-level"_spr, token, LevelManager::get()->getClientId()
-				// 				).post();
-				// 			}
-				// 		});
-				// 	},
-				// 	.child = new ui::Sprite {
-				// 		.store = reinterpret_cast<CCNode**>(&m_fields->m_deleteButtonSprite),
-				// 		.frameName = "KickIcon.png"_spr,
-				// 	},
-				// });
+									auto token = AccountManager::get()->getLoginToken();
+									DispatchEvent<std::string_view, uint32_t>(
+										"delete-level"_spr, token, LevelManager::get()->getClientId()
+									).post();
+								}
+							});
+						},
+						.child = new ui::Sprite {
+							.store = reinterpret_cast<CCNode**>(&m_fields->m_deleteButtonSprite),
+							.frameName = "KickIcon.png"_spr,
+						},
+					});
+				}
+
+				
 
 				auto gen = new ui::Container {
 					.size = menu->getContentSize(),
@@ -260,15 +264,15 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 				this->addChild(node);
 
 				if (WebManager::get()->isSocketConnected()) {
-					m_fields->m_joinButton->setEnabled(false);
-					m_fields->m_joinButtonSprite->setColor(ccColor3B { 100, 100, 100 });
-					// m_fields->m_deleteButton->setEnabled(false);
-					// m_fields->m_deleteButtonSprite->setColor(ccColor3B { 100, 100, 100 });
+					if (m_fields->m_joinButton) m_fields->m_joinButton->setEnabled(false);
+					if (m_fields->m_joinButtonSprite) m_fields->m_joinButtonSprite->setColor(ccColor3B { 100, 100, 100 });
+					if (m_fields->m_deleteButton) m_fields->m_deleteButton->setEnabled(false);
+					if (m_fields->m_deleteButtonSprite) m_fields->m_deleteButtonSprite->setColor(ccColor3B { 100, 100, 100 });
 					m_fields->m_disconnectListener.bind([=, this]() {
-						m_fields->m_joinButton->setEnabled(true);
-						m_fields->m_joinButtonSprite->setColor(ccColor3B { 255, 255, 255 });
-						// m_fields->m_deleteButton->setEnabled(true);
-						// m_fields->m_deleteButtonSprite->setColor(ccColor3B { 255, 255, 255 });
+						if (m_fields->m_joinButton) m_fields->m_joinButton->setEnabled(true);
+						if (m_fields->m_joinButtonSprite) m_fields->m_joinButtonSprite->setColor(ccColor3B { 255, 255, 255 });
+						if (m_fields->m_deleteButton) m_fields->m_deleteButton->setEnabled(true);
+						if (m_fields->m_deleteButtonSprite) m_fields->m_deleteButtonSprite->setColor(ccColor3B { 255, 255, 255 });
 
 						return ListenerResult::Propagate;
 					});

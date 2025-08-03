@@ -7,7 +7,7 @@
 	},
 	"id": "alk.editor-collab-ui",
 	"name": "Editor Collab UI",
-	"version": "0.2.5-alpha",
+	"version": "0.2.6-alpha",
 	"developer": "alk",
 	"description": "UI for the Editor Collab mod",
 	"resources": {
@@ -52,6 +52,12 @@
 			"type": "bool",
 			"name": "Use alternate button",
 			"description": "This man wouldn't survive \"use alternative bi button texture\" (the sequel)",
+			"default": false
+		},
+		"force-delete-button": {
+			"type": "bool",
+			"name": "Force delete button",
+			"description": "Make the force delete button visible, for dire needs",
 			"default": false
 		}
 	}
