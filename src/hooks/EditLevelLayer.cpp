@@ -69,7 +69,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 
 		~Fields() {
 			if (m_notification) {
-				m_notification->hide();
+				m_notification->cancel();
 			}
 		}
 	};	
@@ -110,7 +110,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 					if (btn2) {
 						LevelManager::get()->cancelReconnect();
 						if (m_fields->m_notification) {
-							m_fields->m_notification->hide();
+							m_fields->m_notification->cancel();
 							m_fields->m_notification = nullptr;
 						}
 
@@ -150,7 +150,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 				fmt::format("Joining: {:.2f}%", progressP->downloadProgress().value_or(0)).c_str()
 			);
 		}, [=, this]() {
-			m_fields->m_notification->hide();
+			m_fields->m_notification->cancel();
 			m_fields->m_notification = nullptr;
 		});
 	}
