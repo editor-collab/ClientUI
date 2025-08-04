@@ -7,6 +7,7 @@
 #include <lavender/Lavender.hpp>
 #include <Geode/loader/Dispatch.hpp>
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
+#include <hooks/ui/EditorPauseLayer.hpp>
 
 using namespace geode::prelude;
 using namespace tulip::editor;
@@ -625,8 +626,9 @@ void ShareSettings::stopSharing(cocos2d::CCObject* sender) {
         // removing the shadow level on exit
 
         m_entry->key.clear();
-        BrowserManager::get()->saveLevel(m_editorLayer->m_level, true, false);
         BrowserManager::get()->detachReflectedLevel(m_editorLayer->m_level);
+        static_cast<EditorPauseLayerUIHook*>(EditorPauseLayer::create(m_editorLayer))->onSaveToLocal(nullptr);
+        // BrowserManager::get()->saveLevel(m_editorLayer->m_level, true, false);
         // BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
 
         auto token = AccountManager::get()->getLoginToken();
