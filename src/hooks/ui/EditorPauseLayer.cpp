@@ -36,10 +36,8 @@ void EditorPauseLayerUIHook::setupGuidelinesMenu() {
     auto gen = new ui::MenuItemSpriteExtra {
         .id = "user-list-button"_spr,
         .callback = [this](auto*){
-            if (BrowserManager::get()->isMyLevel(m_editorLayer->m_level)) {
-                auto entry = BrowserManager::get()->getLevelEntry(m_editorLayer->m_level);
-                auto userList = LevelUserList::create(entry, m_editorLayer);
-            }
+            auto entry = BrowserManager::get()->getLevelEntry(m_editorLayer->m_level);
+            if (entry) (void)LevelUserList::create(entry, m_editorLayer);
         },
         .child = new ui::Sprite {
             .frameName = "UserListButton.png"_spr,

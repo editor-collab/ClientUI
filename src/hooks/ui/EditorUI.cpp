@@ -77,6 +77,10 @@ bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
         },
     };
 
+    if (auto gridSizeControls = static_cast<CCMenuItemSpriteExtra*>(this->getChildByIDRecursive("hjfod.betteredit/grid-size-controls"))) {
+        gridSizeControls->setPosition(gridSizeControls->getPosition() + ccp(-40.f, -20.f));
+    }
+
     auto button = gen->get();
     m_fields->m_shareButton = static_cast<CCMenuItemSpriteExtra*>(button);
     m_uiItems->addObject(button);    
