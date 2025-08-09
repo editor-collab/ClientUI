@@ -1,28 +1,32 @@
 # Editor Collab
 
-The ultimate <co>live multiplayer editor collaboration tool</c>! Go to [Stripe](https://buy.stripe.com/aEUbLb38R2Cw91K9AA) to be able to <cp>host levels</c>!
+The ultimate <co>live multiplayer editor collaboration tool</c>! Go to [<cg>Stripe</c>](https://buy.stripe.com/aEUbLb38R2Cw91K9AA) to be able to <cp>host levels</c>!
+
+Editor Collab is a <cp>one-time purchase of $10</c> to unlock the ability to host levels. You can host <cf>unlimited levels</c>, but only one level can be hosted at a time per activation key. Only the <cy>Host</c> needs to purchase, your friends can join your hosted level <cg>for free</c>!
 
 ## About
 
 [Discord](https://discord.gg/GFMnMMkpBq)
 
-### <cg>Editor Collab</c> is currently in <cb>Early Access</c>, <cr>issues may occur</c>!
+### Editor Collab is currently in Early Access, issues may occur!
 
 <cg>**Editor Collab**</c>, is a <co>live multiplayer editor collaboration tool</c> designed for all kinds of people from <cc>casual creators</c> to <cf>megacollab hosts</c>. While being one of its kind, <cg>Editor Collab</c> provides you with <cd>all the functionality</c> you would expect from a <cy>multiplayer editor tool</c>. Just login and <cp>share your level with your friends</cp>!
-
-## Usage
-
-Go to <co>your levels list</c>, and press the <cy>Editor Collab</c> button at the <cp>bottom left</c> to login into the server. You can then <co>open a level</c>, and press the <cy>Share Button</c> at the <cp>top right</c> to <co>share the level</c> with your friends. If you don't have any available <cs>level slots</c>, the mod will redirect you to the <ca>key entering screen</c>, where you can <cj>buy or enter</c> a key to <co>unlock more slots</c>.
-
-In the <cg>Share Menu</c>, you can press the <cy>Start Sharing</c> button to begin <co>sharing your level</c>. Your friends can then <co>join your level</c> using the <cy>Shared W Me</c> menu in the <cp>levels list</c>. You can also <co>enter back your level</c> using the <cy>My Levels</c> menu in the <cp>levels list</c>.
 
 ## Help, Bugs, Crashes, Questions, Feature Requests
 
 If you need any help with the mod, or encountered an issue, feel free to either message me on Discord (alk1m123#3076), or join my Discord server.
 
+## Usage
+
+You only need to buy <cs>one key</c> to host levels! The purchase is <cr>not per level</c>, and your friends <cr>do not need to pay</c> to join.
+
+Go to <co>your levels list</c>, and press the <cy>Editor Collab</c> button at the <cp>bottom left</c> to login into the server. You can then <co>open a level</c>, and press the <cy>Share Button</c> at the <cp>top right</c> to <co>share the level</c> with your friends. If you don't have any available <cs>level slots</c>, the mod will redirect you to the <ca>key entering screen</c>, where you can <cj>buy or enter</c> a key to <co>unlock more slots</c>.
+
+In the <cg>Share Menu</c>, you can press the <cy>Start Sharing</c> button to begin <co>sharing your level</c>. Your friends can then <co>join your level</c> using the <cy>Shared W Me</c> menu in the <cp>levels list</c>. You can also <co>enter back your level</c> using the <cy>My Levels</c> menu in the <cp>levels list</c>.
+
 ## Credits
 
-Developed by <cp>Alk1m123 (alk)</c> with <cf>love and tears</c>. Please <cs>support me</c>!
+Developed by Alk1m123 (alk) with love and tears. Please support me!
 
  * [Stripe](https://buy.stripe.com/aEUbLb38R2Cw91K9AA)
 

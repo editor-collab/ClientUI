@@ -72,8 +72,24 @@ void LevelBrowserLayerHook::onLogin(Result<> result) {
 	// 	}
 	// });
 
+	// auto req = WebManager::get()->createAuthenticatedRequest();
+	// req.param("old_account_name", "oldAccount");
+	// req.param("new_account_name", "newAccount");
+	// auto task = req.post(WebManager::get()->getServerURL("admin/transfer_account"));
+	// task.listen([this](web::WebResponse* response) {
+	// 	auto result = response->string();
+	// 	if (result.isErr()) {
+	// 		Notification::create("Failed to transfer account!", nullptr)->show();
+	// 	}
+	// 	else {
+	// 		auto key = result.unwrap();
+	// 		log::info("Transfer account: {}", key);
+	// 		Notification::create(fmt::format("Transfer account: {}", key), nullptr)->show();
+	// 	}
+	// });
+
 	if (result.isErr()) {
-		log::debug("Failed to login: {}", result.unwrapErr());
+		log::info("Failed to login: {}", result.unwrapErr());
 		Notification::create(fmt::format("Failed to login!: {}", result.unwrapErr()), nullptr)->show();
 	}
 	else {

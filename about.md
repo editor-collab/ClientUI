@@ -2,6 +2,8 @@
 
 The ultimate <co>live multiplayer editor collaboration tool</c>! Go to [<cg>Stripe</c>](https://buy.stripe.com/aEUbLb38R2Cw91K9AA) to be able to <cp>host levels</c>!
 
+Editor Collab is a <cp>one-time purchase of $10</c> to unlock the ability to host levels. You can host <cf>unlimited levels</c>, but only one level can be hosted at a time per activation key. Only the <cy>Host</c> needs to purchase, your friends can join your hosted level <cg>for free</c>!
+
 ## About
 
 [Discord](https://discord.gg/GFMnMMkpBq)
@@ -15,6 +17,8 @@ The ultimate <co>live multiplayer editor collaboration tool</c>! Go to [<cg>Stri
 If you need any help with the mod, or encountered an issue, feel free to either message me on Discord (alk1m123#3076), or join my Discord server.
 
 ## Usage
+
+You only need to buy <cs>one key</c> to host levels! The purchase is <cr>not per level</c>, and your friends <cr>do not need to pay</c> to join.
 
 Go to <co>your levels list</c>, and press the <cy>Editor Collab</c> button at the <cp>bottom left</c> to login into the server. You can then <co>open a level</c>, and press the <cy>Share Button</c> at the <cp>top right</c> to <co>share the level</c> with your friends. If you don't have any available <cs>level slots</c>, the mod will redirect you to the <ca>key entering screen</c>, where you can <cj>buy or enter</c> a key to <co>unlock more slots</c>.
 
