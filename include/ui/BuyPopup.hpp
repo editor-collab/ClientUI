@@ -10,6 +10,7 @@ namespace tulip::editor {
     public:
         cocos2d::CCNode* m_popup;
         std::string m_text;
+        geode::EventListener<geode::Task<geode::Result<uint32_t>, geode::utils::web::WebProgress>> m_claimListener;
 
         static BuyPopup* create();
 

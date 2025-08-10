@@ -589,56 +589,64 @@ void ShareSettings::startSharing(cocos2d::CCObject* sender) {
 	}
 
     auto task = LevelManager::get()->createLevel(*m_setting);
-    task.listen([=, this](auto* resultp) {
-        if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
-            BrowserManager::get()->replaceWithShadowLevel(m_editorLayer->m_level, true);
+    m_createLevelListener.bind([=, this](auto* event) {
+        if (auto resultp = event->getValue(); resultp) {
+            if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
+                BrowserManager::get()->replaceWithShadowLevel(m_editorLayer->m_level, true);
 
-            m_entry->key = value.levelKey;
-            BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
-            BrowserManager::get()->initializeKey(m_editorLayer->m_level, *m_entry);
-            BrowserManager::get()->saveLevel(m_editorLayer->m_level, true, true);
-            
-            auto token = AccountManager::get()->getLoginToken();
-            DispatchEvent<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
-                "create-level"_spr, token, value.clientId, m_editorLayer->m_level, value.levelKey
-            ).post();
-            Notification::create("Level started sharing", NotificationIcon::Success, 1.5f)->show();
+                m_entry->key = value.levelKey;
+                BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
+                BrowserManager::get()->initializeKey(m_editorLayer->m_level, *m_entry);
+                BrowserManager::get()->saveLevel(m_editorLayer->m_level, true, true);
+                
+                auto token = AccountManager::get()->getLoginToken();
+                DispatchEvent<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
+                    "create-level"_spr, token, value.clientId, m_editorLayer->m_level, value.levelKey
+                ).post();
+                Notification::create("Level started sharing", NotificationIcon::Success, 1.5f)->show();
 
-            m_popup->removeFromParent();
+                m_popup->removeFromParent();
 
-            FetchManager::get()->getMyLevels().listen([](auto*){});
+                FetchManager::get()->getMyLevels().listen([](auto*){});
+            }
+            else {
+                Notification::create("Failed to start sharing the level", NotificationIcon::Error, 1.5f)->show();
+            }
         }
-        else {
-            Notification::create("Failed to start sharing the level", NotificationIcon::Error, 1.5f)->show();
-        }
+        return ListenerResult::Propagate;
     });
+    m_createLevelListener.setFilter(task);
 }
 
 void ShareSettings::stopSharing(cocos2d::CCObject* sender) {
     auto const levelKey = m_entry->key;
 
     auto task = LevelManager::get()->deleteLevel(levelKey);
-    task.listen([=, this](Result<>* resultp) {
-        if (resultp->isErr()) {
-            Notification::create("Failed to stop sharing the level", NotificationIcon::Error, 1.5f)->show();
-            return;
+    m_deleteLevelListener.bind([=, this](auto* event) {
+        if (auto resultp = event->getValue(); resultp) {
+            if (resultp->isErr()) {
+                Notification::create("Failed to stop sharing the level", NotificationIcon::Error, 1.5f)->show();
+                return ListenerResult::Propagate;
+            }
+            // removing the shadow level on exit
+
+            m_entry->key.clear();
+            BrowserManager::get()->detachReflectedLevel(m_editorLayer->m_level);
+            static_cast<EditorPauseLayerUIHook*>(EditorPauseLayer::create(m_editorLayer))->onSaveToLocal(nullptr);
+            // BrowserManager::get()->saveLevel(m_editorLayer->m_level, true, false);
+            // BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
+
+            auto token = AccountManager::get()->getLoginToken();
+            DispatchEvent<std::string_view, uint32_t>(
+                "delete-level"_spr, token, LevelManager::get()->getClientId()
+            ).post();
+            Notification::create("Level stopped sharing", NotificationIcon::Success, 1.5f)->show();
+
+            m_popup->removeFromParent();
+
+            FetchManager::get()->getMyLevels().listen([](auto*){});
         }
-        // removing the shadow level on exit
-
-        m_entry->key.clear();
-        BrowserManager::get()->detachReflectedLevel(m_editorLayer->m_level);
-        static_cast<EditorPauseLayerUIHook*>(EditorPauseLayer::create(m_editorLayer))->onSaveToLocal(nullptr);
-        // BrowserManager::get()->saveLevel(m_editorLayer->m_level, true, false);
-        // BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
-
-        auto token = AccountManager::get()->getLoginToken();
-        DispatchEvent<std::string_view, uint32_t>(
-            "delete-level"_spr, token, LevelManager::get()->getClientId()
-        ).post();
-        Notification::create("Level stopped sharing", NotificationIcon::Success, 1.5f)->show();
-
-        m_popup->removeFromParent();
-
-        FetchManager::get()->getMyLevels().listen([](auto*){});
+        return ListenerResult::Propagate;
     });
+    m_deleteLevelListener.setFilter(task);
 }

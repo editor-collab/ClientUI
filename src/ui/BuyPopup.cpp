@@ -86,17 +86,21 @@ bool BuyPopup::init() {
                                     if (m_text.size() == 19) {
                                         auto key = m_text.substr(0, 4) + m_text.substr(5, 4) + m_text.substr(10, 4) + m_text.substr(15, 4);
                                         auto task = AccountManager::get()->claimKey(key);
-                                        task.listen([=, this](auto* resultp) {
-                                            if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
-                                                popupController->removeFromParentAndCleanup(true);
-                                                FetchManager::get()->addHostableCount(value);
-                                                geode::createQuickPopup("Editor Collab", "Key claimed <cg>successfully</c>!", "OK", nullptr, [=](auto, auto) {}, true);
+                                        m_claimListener.bind([=, this](auto* event) {
+                                            if (auto resultp = event->getValue(); resultp) {
+                                                if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
+                                                    popupController->removeFromParentAndCleanup(true);
+                                                    FetchManager::get()->addHostableCount(value);
+                                                    geode::createQuickPopup("Editor Collab", "Key claimed <cg>successfully</c>!", "OK", nullptr, [=](auto, auto) {}, true);
+                                                }
+                                                else {
+                                                    log::warn("Claim key error: {}", err);
+                                                    geode::createQuickPopup("Editor Collab (Error)", "<cr>Could not</c> claim the key.", "OK", nullptr, [](auto, auto) {}, true);
+                                                }
                                             }
-                                            else {
-                                                log::warn("Claim key error: {}", err);
-                                                geode::createQuickPopup("Editor Collab (Error)", "<cr>Could not</c> claim the key.", "OK", nullptr, [](auto, auto) {}, true);
-                                            }
+                                            return ListenerResult::Propagate;
                                         });
+                                        m_claimListener.setFilter(task);
                                     }
                                     else if (m_text.size() == 0) {
                                         web::openLinkInBrowser("https://buy.stripe.com/aEUbLb38R2Cw91K9AA");

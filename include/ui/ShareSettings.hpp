@@ -1,6 +1,7 @@
 #pragma once
 #include <Geode/Geode.hpp>
 #include "../data/LevelEntry.hpp"
+#include "../managers/LevelManager.hpp"
 #include <deque>
 
 namespace ui {
@@ -25,6 +26,9 @@ namespace tulip::editor {
         cocos2d::CCNode* m_generalAccessTypeRow = nullptr;
         geode::ScrollLayer* m_peopleScrollLayer = nullptr;
         geode::SimpleTextArea* m_shareDescription = nullptr;
+
+        geode::EventListener<geode::Task<geode::Result<LevelManager::CreateLevelResult>, geode::utils::web::WebProgress>> m_createLevelListener;
+        geode::EventListener<geode::Task<geode::Result<>, geode::utils::web::WebProgress>> m_deleteLevelListener;
 
         bool m_resetScroll = false;
 

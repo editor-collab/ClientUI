@@ -64,6 +64,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 		CCSprite* m_deleteButtonSprite = nullptr;
 		Ref<Notification> m_notification = nullptr;
 
+		EventListener<Task<Result<LevelManager::JoinLevelResult>, WebProgress>> m_joinListener;
 		EventListener<DispatchFilter<>> m_disconnectListener = DispatchFilter<>("alk.editor-collab/socket-disconnected");
 		EventListener<DispatchFilter<std::string_view>> m_levelKickedListener = DispatchFilter<std::string_view>("alk.editor-collab/level-kicked");
 
@@ -126,33 +127,39 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 
 	void joinLevel(std::string levelKey) {
 		auto task = LevelManager::get()->joinLevel(levelKey);
-		task.listen([=, this](auto* resultp) {
-			if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
-				//////// log::debug("join level task succeed");
-				m_fields->m_notification->runAction(CCSequence::create(
-					CCDelayTime::create(0.0),
-					CCCallFunc::create(m_fields->m_notification, callfunc_selector(Notification::hide)),
-					nullptr
-				));
-				m_fields->m_notification = nullptr;
+		m_fields->m_joinListener.bind([=, this](auto* event) {
+			if (auto v = event->getValue()) {
+				if (GEODE_UNWRAP_EITHER(value, err, *v)) {
+					//////// log::debug("join level task succeed");
+					m_fields->m_notification->runAction(CCSequence::create(
+						CCDelayTime::create(0.0),
+						CCCallFunc::create(m_fields->m_notification, callfunc_selector(Notification::hide)),
+						nullptr
+					));
+					m_fields->m_notification = nullptr;
 
-				auto token = AccountManager::get()->getLoginToken();
-				DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>, GJGameLevel*>(
-					"join-level"_spr, token, value.clientId, levelKey, &value.snapshot, value.camera, m_level
-				).post();
+					auto token = AccountManager::get()->getLoginToken();
+					DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>, GJGameLevel*>(
+						"join-level"_spr, token, value.clientId, levelKey, &value.snapshot, value.camera, m_level
+					).post();
+				}
+				else {
+					//////// log::debug("join level task error");
+					geode::createQuickPopup("Editor Collab (Error)", err, "OK", nullptr, [](auto, auto) {}, true);
+				}
 			}
-			else {
-				//////// log::debug("join level task error");
-				geode::createQuickPopup("Editor Collab (Error)", err, "OK", nullptr, [](auto, auto) {}, true);
+			else if (auto p = event->getProgress()) {
+				m_fields->m_notification->setString(
+					fmt::format("Joining: {:.2f}%", p->downloadProgress().value_or(0)).c_str()
+				);
 			}
-		}, [=, this](auto* progressP) {
-			m_fields->m_notification->setString(
-				fmt::format("Joining: {:.2f}%", progressP->downloadProgress().value_or(0)).c_str()
-			);
-		}, [=, this]() {
-			m_fields->m_notification->cancel();
-			m_fields->m_notification = nullptr;
+			else if (event->isCancelled()) {
+				m_fields->m_notification->cancel();
+				m_fields->m_notification = nullptr;
+			}
+			return ListenerResult::Propagate;
 		});
+		m_fields->m_joinListener.setFilter(task);
 	}
 
 	void updateToGray() {
@@ -242,9 +249,8 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 								BrowserManager::get()->updateLevelEntry(m_level);
 
 								auto task = LevelManager::get()->updateLevelSettings(entry->key, entry->settings);
-								task.listen([=, this](auto* result) {
-									this->joinLevel(levelKey);
-								});
+								task.listen([=, this](auto* result) {});
+								this->joinLevel(levelKey);
 							}
 						}
 						else {

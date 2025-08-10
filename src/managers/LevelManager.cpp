@@ -177,10 +177,14 @@ Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::Impl::joi
                     }
                 }, [=](auto* progress) {
                     progressC(*progress);
+                }, [=]() {
+                    hasBeenCancelled();
                 });
             }
         }, [=](auto* progress) {
             progressC(*progress);
+        }, [=]() {
+            hasBeenCancelled();
         });
     });
     return ret;

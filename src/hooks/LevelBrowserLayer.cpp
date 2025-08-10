@@ -88,6 +88,21 @@ void LevelBrowserLayerHook::onLogin(Result<> result) {
 	// 	}
 	// });
 
+	// auto req = WebManager::get()->createAuthenticatedRequest();
+	// req.param("account_id", "accountId");
+	// auto task = req.post(WebManager::get()->getServerURL("admin/ban_user"));
+	// task.listen([this](web::WebResponse* response) {
+	// 	auto result = response->string();
+	// 	if (result.isErr()) {
+	// 		Notification::create("Failed to ban user!", nullptr)->show();
+	// 	}
+	// 	else {
+	// 		auto res = result.unwrap();
+	// 		log::info("Ban user: {}", res);
+	// 		Notification::create(fmt::format("Ban user: {}", res), nullptr)->show();
+	// 	}
+	// });
+
 	if (result.isErr()) {
 		log::info("Failed to login: {}", result.unwrapErr());
 		Notification::create(fmt::format("Failed to login!: {}", result.unwrapErr()), nullptr)->show();
