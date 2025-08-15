@@ -199,11 +199,11 @@ Task<Result<>, WebProgress> LevelManager::Impl::leaveLevel(CameraValue const& ca
     auto task = req.post(WebManager::get()->getServerURL("level/leave"));
     auto ret = task.map([=, this](auto response) -> Result<> {
         if (response->ok()) {
-            m_joinedLevel = std::nullopt;
             return Ok();
         }
         return Err(fmt::format("HTTP error: {}", response->code()));
     });
+    m_joinedLevel = std::nullopt;
     return ret;
 }
 Task<Result<>, WebProgress> LevelManager::Impl::deleteLevel(std::string_view levelKey) {

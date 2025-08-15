@@ -103,6 +103,21 @@ void LevelBrowserLayerHook::onLogin(Result<> result) {
 	// 	}
 	// });
 
+	// auto req = WebManager::get()->createAuthenticatedRequest();
+	// req.param("key", "claimKey");
+	// auto task = req.post(WebManager::get()->getServerURL("admin/revoke_key"));
+	// task.listen([this](web::WebResponse* response) {
+	// 	auto result = response->string();
+	// 	if (result.isErr()) {
+	// 		Notification::create("Failed to revoke key!", nullptr)->show();
+	// 	}
+	// 	else {
+	// 		auto res = result.unwrap();
+	// 		log::info("Revoke key: {}", res);
+	// 		Notification::create(fmt::format("Revoke key: {}", res), nullptr)->show();
+	// 	}
+	// });
+
 	if (result.isErr()) {
 		log::info("Failed to login: {}", result.unwrapErr());
 		Notification::create(fmt::format("Failed to login!: {}", result.unwrapErr()), nullptr)->show();

@@ -27,6 +27,7 @@ struct ExitHook : Modify<ExitHook, GameManager> {
 				camera.zoom = editorLayer->m_objectLayer->getScale();
 			}
 
+			
 			auto task = LevelManager::get()->leaveLevel(camera);
 			m_fields->leaveLevelListener.bind([=](auto* event) {
 				if (auto resultp = event->getValue(); resultp && resultp->isOk()) {
