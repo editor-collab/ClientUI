@@ -162,15 +162,14 @@ Task<Result<LevelManager::JoinLevelResult>, WebProgress> LevelManager::Impl::joi
             if (GEODE_UNWRAP_IF_OK(values, *resultp)) {
                 auto task = this->getSnapshot(levelKeyStr, values.snapshotHash);
                 //////// log::debug("task for snapshot created");
-                task.listen([=, this](auto* result2p) {
+                task.listen([=, values = std::move(values), this](auto* result2p) mutable {
                     //////// log::debug("task for snapshot listened");
                     if (GEODE_UNWRAP_EITHER(snapshot, err, *result2p)) {
-                        auto values2 = values;
                         //////// log::debug("snapshot okay");
                         m_joinedLevel = levelKeyStr;
-                        values2.snapshot = std::move(snapshot);
+                        values.snapshot = std::move(snapshot);
                         //////// log::debug("snapshot set");
-                        finish(Ok(std::move(values2)));
+                        finish(Ok(std::move(values)));
                     }
                     else {
                         finish(Err(err));
