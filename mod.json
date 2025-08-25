@@ -8,7 +8,7 @@
 	},
 	"id": "alk.editor-collab-ui",
 	"name": "Editor Collab UI",
-	"version": "0.2.13-alpha",
+	"version": "0.3.0-alpha",
 	"developer": "alk",
 	"description": "UI for the Editor Collab mod",
 	"resources": {
