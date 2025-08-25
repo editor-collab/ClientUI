@@ -57,7 +57,7 @@ CPMAddPackage("gh:GlobedGD/argon@1.1.9")
 
 CPMAddPackage("gh:tplgy/cppcodec#8019b8b")
 
-CPMAddPackage("gh:altalk23/lavender#v1.0.0")
+CPMAddPackage("gh:altalk23/lavender#main")
 
 target_link_libraries(${PROJECT_NAME}
     cppcodec
