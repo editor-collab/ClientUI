@@ -65,4 +65,4 @@ target_link_libraries(${PROJECT_NAME}
     argon
 )
 
-setup_geode_mod(${PROJECT_NAME} EXTERNALS alk.editor-collab cvolton.level-id-api geode.node-ids)
+setup_geode_mod(${PROJECT_NAME} EXTERNALS )
