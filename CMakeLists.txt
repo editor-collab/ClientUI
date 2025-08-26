@@ -70,3 +70,46 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 setup_geode_mod(${PROJECT_NAME} EXTERNALS )
+
+
+if (ANDROID)
+	if (CMAKE_BUILD_TYPE STREQUAL "Release")
+		# 1. Extract full debug info into a separate .sym file
+        add_custom_command(
+            TARGET "${PROJECT_NAME}" POST_BUILD
+            DEPENDS "${PROJECT_NAME}"
+            COMMAND ${CMAKE_OBJCOPY} 
+			ARGS --only-keep-debug "$<TARGET_FILE:${PROJECT_NAME}>" "$<TARGET_FILE:${PROJECT_NAME}>.dbg"
+        )
+		# 2. Strip everything from the binary
+		add_custom_command(
+			TARGET "${PROJECT_NAME}" POST_BUILD
+			DEPENDS "${PROJECT_NAME}"
+			COMMAND $<$<CONFIG:release>:${CMAKE_STRIP}>
+			ARGS --strip-all $<TARGET_FILE:${PROJECT_NAME}>
+		)
+		# 3. Link the .dbg file back for debugging tools
+        add_custom_command(
+            TARGET "${PROJECT_NAME}" POST_BUILD
+            DEPENDS "${PROJECT_NAME}"
+            COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink="$<TARGET_FILE:${PROJECT_NAME}>.dbg" "$<TARGET_FILE:${PROJECT_NAME}>"
+        )
+	endif()
+elseif(APPLE)
+	if (CMAKE_BUILD_TYPE STREQUAL "Release")
+		# Generate dSYM bundle
+        add_custom_command(
+            TARGET "${PROJECT_NAME}" POST_BUILD
+            DEPENDS "${PROJECT_NAME}"
+            COMMAND dsymutil $<TARGET_FILE:${PROJECT_NAME}> 
+			ARGS -o $<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>.dSYM
+        )
+        # Strip the executable
+		add_custom_command(
+			TARGET "${PROJECT_NAME}" POST_BUILD
+			DEPENDS "${PROJECT_NAME}"
+			COMMAND $<$<CONFIG:release>:${CMAKE_STRIP}>
+			ARGS -x $<TARGET_FILE:${PROJECT_NAME}>
+		)
+	endif()
+endif()

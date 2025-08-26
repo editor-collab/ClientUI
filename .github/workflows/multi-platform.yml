@@ -11,21 +11,26 @@ jobs:
         config:
         - name: Windows
           os: windows-latest
+          build-type: RelWithDebInfo
 
         - name: macOS
           os: macos-latest
+          build-type: Release
 
         - name: iOS
           os: macos-latest
           target: iOS
+          build-type: Release
 
         - name: Android32
           os: ubuntu-latest
           target: Android32
+          build-type: Release
 
         - name: Android64
           os: ubuntu-latest
           target: Android64
+          build-type: Release
 
     name: ${{ matrix.config.name }}
     runs-on: ${{ matrix.config.os }}
@@ -36,10 +41,11 @@ jobs:
       - name: Build the mod
         uses: geode-sdk/build-geode-mod@main
         with:
-          bindings: altalk23/bindings
+          bindings: geode-sdk/bindings
           bindings-ref: main
           combine: true
-          export-pdb: true
+          export-debug: true
+          build-config: ${{ matrix.config.build-type }}
           target: ${{ matrix.config.target }}
 
   package:
