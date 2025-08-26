@@ -102,7 +102,7 @@ elseif(APPLE)
             TARGET "${PROJECT_NAME}" POST_BUILD
             DEPENDS "${PROJECT_NAME}"
             COMMAND dsymutil $<TARGET_FILE:${PROJECT_NAME}> 
-			ARGS -o $<TARGET_FILE_DIR:${PROJECT_NAME}>/$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>.dSYM
+			ARGS -o $<TARGET_FILE:${PROJECT_NAME}>.dSYM
         )
         # Strip the executable
 		add_custom_command(
