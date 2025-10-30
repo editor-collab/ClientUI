@@ -33,23 +33,34 @@ bool EditorPauseLayerUIHook::init(LevelEditorLayer* editorLayer) {
     return true;
 }
 void EditorPauseLayerUIHook::setupGuidelinesMenu() {
-    auto gen = new ui::MenuItemSpriteExtra {
-        .id = "user-list-button"_spr,
-        .callback = [this](auto*){
-            auto entry = BrowserManager::get()->getLevelEntry(m_editorLayer->m_level);
-            if (entry) (void)LevelUserList::create(entry, m_editorLayer);
-        },
-        .child = new ui::Sprite {
-            .frameName = "UserListButton.png"_spr,
-        },
-    };
+    if (auto entry = BrowserManager::get()->getOnlineEntry(m_editorLayer->m_level)) {
+        auto accountId = GJAccountManager::get()->m_accountID;
+        auto setting = &entry->settings;
+        
+        if (
+            setting->hideUsers == false || 
+            entry->hostAccountId == GJAccountManager::get()->m_accountID ||
+            setting->getUserType(GJAccountManager::get()->m_username) == DefaultSharingType::Admin
+        ) {
+            auto gen = new ui::MenuItemSpriteExtra {
+                .id = "user-list-button"_spr,
+                .callback = [this](auto*){
+                    auto entry = BrowserManager::get()->getLevelEntry(m_editorLayer->m_level);
+                    if (entry) (void)LevelUserList::create(entry, m_editorLayer);
+                },
+                .child = new ui::Sprite {
+                    .frameName = "UserListButton.png"_spr,
+                },
+            };
 
-    auto button = gen->get();
-    button->setID("user-list-button"_spr);
+            auto button = gen->get();
+            button->setID("user-list-button"_spr);
 
-    if (auto menu = static_cast<CCMenu*>(this->querySelector("guidelines-menu"))) {
-        menu->addChild(button);
-        menu->updateLayout();
+            if (auto menu = static_cast<CCMenu*>(this->querySelector("guidelines-menu"))) {
+                menu->addChild(button);
+                menu->updateLayout();
+            }
+        }
     }
 }
 void EditorPauseLayerUIHook::setupInfoMenu() {

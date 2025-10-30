@@ -18,6 +18,15 @@ namespace tulip::editor {
     struct AllowedRange {
         uint32_t min = 0;
         uint32_t max = 0;
+
+        AllowedRange(uint32_t min, uint32_t max) :
+            min(min),
+            max(max) {}
+        AllowedRange() = default;
+        AllowedRange(AllowedRange const&) = default;
+        AllowedRange& operator=(AllowedRange const&) = default;
+        AllowedRange(AllowedRange&&) = default;
+        AllowedRange& operator=(AllowedRange&&) = default;
     };
 
     struct UserLimitsEntry {
@@ -25,17 +34,41 @@ namespace tulip::editor {
         std::vector<AllowedRange> groups;
         std::vector<AllowedRange> colors;
         std::vector<AllowedRange> items;
+
+        UserLimitsEntry() = default;
+        UserLimitsEntry(UserLimitsEntry const&) = default;
+        UserLimitsEntry& operator=(UserLimitsEntry const&) = default;
+        UserLimitsEntry(UserLimitsEntry&&) = default;
+        UserLimitsEntry& operator=(UserLimitsEntry&&) = default;
     };
 
     struct SettingUserEntry {
         std::string name;
         DefaultSharingType role;
         UserLimitsEntry limits;
+
+        SettingUserEntry(std::string_view name, DefaultSharingType role) :
+            name(name),
+            role(role) {}
+        SettingUserEntry() = default;
+        SettingUserEntry(SettingUserEntry const&) = default;
+        SettingUserEntry& operator=(SettingUserEntry const&) = default;
+        SettingUserEntry(SettingUserEntry&&) = default;
+        SettingUserEntry& operator=(SettingUserEntry&&) = default;
     };
 
     struct BannedUserEntry {
         User user;
         std::string reason;
+
+        BannedUserEntry(User user, std::string_view reason) :
+            user(user),
+            reason(reason) {}
+        BannedUserEntry() = default;
+        BannedUserEntry(BannedUserEntry const&) = default;
+        BannedUserEntry& operator=(BannedUserEntry const&) = default;
+        BannedUserEntry(BannedUserEntry&&) = default;
+        BannedUserEntry& operator=(BannedUserEntry&&) = default;
     };
     
     struct LevelSetting {
@@ -48,6 +81,13 @@ namespace tulip::editor {
         DefaultSharingType defaultSharing = DefaultSharingType::Restricted;
         bool copyable = false;
         bool discoverable = false;
+        bool hideUsers = false;
+
+        LevelSetting() = default;
+        LevelSetting(LevelSetting const&) = default;
+        LevelSetting& operator=(LevelSetting const&) = default;
+        LevelSetting(LevelSetting&&) = default;
+        LevelSetting& operator=(LevelSetting&&) = default;
 
         std::string lowercase(std::string_view str) const {
             std::string result;
@@ -237,6 +277,7 @@ struct matjson::Serialize<tulip::editor::LevelSetting> {
         value["default-sharing"] = entry.defaultSharing;
         value["copyable"] = entry.copyable;
         value["discoverable"] = entry.discoverable;
+        value["hide-users"] = entry.hideUsers;
         return value;
     }
     static geode::Result<LevelSetting> fromJson(matjson::Value const& value) {
@@ -248,6 +289,7 @@ struct matjson::Serialize<tulip::editor::LevelSetting> {
         entry.defaultSharing = value["default-sharing"].as<DefaultSharingType>().unwrapOr(DefaultSharingType::Restricted);
         entry.copyable = value["copyable"].asBool().unwrapOr(false);
         entry.discoverable = value["discoverable"].asBool().unwrapOr(false);
+        entry.hideUsers = value["hide-users"].asBool().unwrapOr(false);
         return geode::Ok(entry);
     }
 };

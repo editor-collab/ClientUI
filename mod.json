@@ -8,7 +8,7 @@
 	},
 	"id": "alk.editor-collab-ui",
 	"name": "Editor Collab UI",
-	"version": "0.3.0-alpha",
+	"version": "0.3.1-alpha",
 	"developer": "alk",
 	"description": "UI for the Editor Collab mod",
 	"resources": {
@@ -38,7 +38,7 @@
             "importance": "required"
         },
 		"alk.editor-collab": {
-			"version": "0.2.0-alpha",
+			"version": "0.3.6-alpha",
 			"importance": "recommended"
 		}
 	},
@@ -59,6 +59,12 @@
 			"type": "bool",
 			"name": "Force delete button",
 			"description": "Make the force delete button visible, for dire needs",
+			"default": false
+		},
+		"show-hide-users": {
+			"type": "bool",
+			"name": "Show hide users toggle",
+			"description": "Show the hide users toggle in the share settings",
 			"default": false
 		}
 	}

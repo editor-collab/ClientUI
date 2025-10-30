@@ -10,6 +10,7 @@ namespace tulip::editor {
         User user;
         uint32_t clientLevelId = 0;
         bool hanging = false;
+        DefaultSharingType sharingType = DefaultSharingType::Restricted;
     };
 
     struct ConnectedUserList {

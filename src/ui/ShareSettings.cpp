@@ -243,27 +243,45 @@ bool ShareSettings::init(LevelEntry* entry, LevelEditorLayer* editorLayer) {
             new ui::Column {
                 .crossAxis = ui::CrossAxisAlignment::Start,
                 .children = {
+                    // new ui::Row {
+                    //     .children = {
+                    //         // new ui::MenuItemToggler {
+                    //         //     .toggled = m_setting->discoverable,
+                    //         //     .standardScale = 0.5f,
+                    //         //     .callback = [this](auto* sender) {
+                    //         //         // this->changeGeneralAccess(nullptr);
+                    //         //         geode::createQuickPopup(
+                    //         //             "Editor Collab",
+                    //         //             "Changing general access <cr>is not implemented</c> for <cb>early access</c>. Thank you for understanding.",
+                    //         //             "OK", nullptr, [](auto*, bool) {}, true
+                    //         //         );
+                    //         //     },
+                    //         // },
+                    //         // new ui::Container {.width = 4},
+                    //         // new ui::TextArea {
+                    //         //     .text = "Public",
+                    //         //     .font = "bigFont.fnt",
+                    //         //     .scale = 0.5f,
+                    //         // },
+                    //     },
+                    // },
                     new ui::Row {
-                        .children = {
-                            // new ui::MenuItemToggler {
-                            //     .toggled = m_setting->discoverable,
-                            //     .standardScale = 0.5f,
-                            //     .callback = [this](auto* sender) {
-                            //         // this->changeGeneralAccess(nullptr);
-                            //         geode::createQuickPopup(
-                            //             "Editor Collab",
-                            //             "Changing general access <cr>is not implemented</c> for <cb>early access</c>. Thank you for understanding.",
-                            //             "OK", nullptr, [](auto*, bool) {}, true
-                            //         );
-                            //     },
-                            // },
-                            // new ui::Container {.width = 4},
-                            // new ui::TextArea {
-                            //     .text = "Public",
-                            //     .font = "bigFont.fnt",
-                            //     .scale = 0.5f,
-                            // },
-                        },
+                        .children = Mod::get()->getSettingValue<bool>("show-hide-users") ? std::vector<ui::Base*>{
+                            new ui::MenuItemToggler {
+                                .toggled = m_setting->hideUsers,
+                                .standardScale = 0.5f,
+                                .callback = [this](auto* sender) {
+                                    m_setting->hideUsers = !m_setting->hideUsers;
+                                    this->updateValues();
+                                },
+                            },
+                            new ui::Container {.width = 4},
+                            new ui::TextArea {
+                                .text = "Hide Users",
+                                .font = "bigFont.fnt",
+                                .scale = 0.5f,
+                            },
+                        } : std::vector<ui::Base*>{},
                     },
                     new ui::Container {.height = 4},
                     new ui::TextArea {
