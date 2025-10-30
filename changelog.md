@@ -1,3 +1,6 @@
+## v0.3.2-alpha
+ - **Fix** Crash on new editor overlay if the main mod isn't updated
+
 ## v0.3.1-alpha
  - **Add** A testing option that allows for the host to disable viewing other's usernames for editors and viewers
  - **Fix** Move Editor Overlay that shows object selection rectangles into the UI mod

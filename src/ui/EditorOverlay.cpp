@@ -99,6 +99,7 @@ cocos2d::ccColor3B EditorOverlay::getClientColor(uint32_t clientLevelId) {
 class $modify(EditorUI) {
     void updateZoom(float zoom) {
         EditorUI::updateZoom(zoom);
+		if (EditorOverlay::get() == nullptr) return;
         EditorOverlay::get()->redrawSelectionRect();
     }
 };
