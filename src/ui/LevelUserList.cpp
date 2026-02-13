@@ -39,15 +39,13 @@ bool LevelUserList::init(LevelEntry* entry, LevelEditorLayer* editorLayer) {
     m_setting = &entry->settings;
     m_editorLayer = editorLayer;
 
-    DispatchEvent<ConnectedUserList*>("get-user-list"_spr, &m_userList).post();
+    Dispatch<ConnectedUserList*>("get-user-list"_spr).send(&m_userList);
 
-    m_userListListener = EventListenerNode<DispatchFilter<ConnectedUserList>>::create(
-        EventListener([this](ConnectedUserList userList) {
-            m_userList = userList;
-            this->updateUsers();
-            return ListenerResult::Propagate;
-        }, DispatchFilter<ConnectedUserList>("alk.editor-collab/update-user-list"))
-    );
+    m_userListHandle = Dispatch<ConnectedUserList>("alk.editor-collab/update-user-list").listen([this](ConnectedUserList userList) {
+        m_userList = userList;
+        this->updateUsers();
+        return ListenerResult::Propagate;
+    });
 
     std::vector<ConnectedUserEntry> users;
     for (auto& entry : m_userList.users) {
@@ -173,9 +171,7 @@ void LevelUserList::updateUsers() {
                     this->createReasonPopup([=, this](std::string_view reason) {
                         m_userList.erase(entry.user.accountId);
 
-                        auto task = LevelManager::get()->kickUser(m_entry->key, entry.user.accountId, reason);
-
-                        task.listen([=](auto* result) {});
+                        m_kickListener.spawn(LevelManager::get()->kickUser(m_entry->key, entry.user.accountId, reason), [=](auto result) {});
 
                         this->updateUsers();
                     });
@@ -200,12 +196,11 @@ void LevelUserList::updateUsers() {
                         m_setting->setBanned(entry.user, reason);
                         m_userList.erase(entry.user.accountId);
 
-                        auto task = LevelManager::get()->updateLevelSettings(
+                        m_updateLevelListener.spawn(LevelManager::get()->updateLevelSettings(
                             m_entry->key,
                             *m_setting
-                        );
+                        ), [=](auto result) {});
 
-                        task.listen([=](auto* result) {});
                         BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
 
                         this->updateUsers();
@@ -282,12 +277,11 @@ void LevelUserList::updateUsers() {
                                 .callback = [=, this](auto*) {
                                     m_setting->removeBanned(entry.user.accountId);
 
-                                    auto task = LevelManager::get()->updateLevelSettings(
+                                    m_updateLevelListener.spawn(LevelManager::get()->updateLevelSettings(
                                         m_entry->key,
                                         *m_setting
-                                    );
+                                    ), [=](auto result) {});
 
-                                    task.listen([=](auto* result) {});
                                     BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
 
                                     this->updateUsers();

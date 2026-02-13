@@ -12,38 +12,59 @@ public:
     ~Impl() = default;
 
     bool m_socketConnected = false;
+    std::string m_loginToken;
 
-    void init();
-
-    EventListener<DispatchFilter<>> m_socketConnectedListener = DispatchFilter<>("alk.editor-collab/socket-connected");
-    EventListener<DispatchFilter<>> m_socketDisconnectedListener = DispatchFilter<>("alk.editor-collab/socket-disconnected");
-    EventListener<DispatchFilter<>> m_socketAbnormallyDisconnectedListener = DispatchFilter<>("alk.editor-collab/socket-abnormally-disconnected");
-
+    geode::Result<> errorCallback(geode::utils::web::WebResponse* response);
     web::WebRequest createRequest() const;
     web::WebRequest createAuthenticatedRequest() const;
     std::string getServerURL() const;
 
+    void setLoginToken(std::string token) {
+        m_loginToken = std::move(token);
+    }
+
+    std::string_view getLoginToken() const {
+        return m_loginToken;
+    }
+
     bool isSocketConnected() const;
+    void connectSocket();
+    void disconnectSocket();
 };
 
-void WebManager::Impl::init() {
-    m_socketConnectedListener.bind([this]() {
-        m_socketConnected = true;
+void WebManager::Impl::connectSocket() {
+    m_socketConnected = true;
+}
 
-        return ListenerResult::Propagate;
-    });
+void WebManager::Impl::disconnectSocket() {
+    m_socketConnected = false;
+}
 
-    m_socketDisconnectedListener.bind([this]() {
-        m_socketConnected = false;
-
-        return ListenerResult::Propagate;
-    });
-
-    m_socketAbnormallyDisconnectedListener.bind([this]() {
-        m_socketConnected = false;
-
-        return ListenerResult::Propagate;
-    });
+geode::Result<> WebManager::Impl::errorCallback(web::WebResponse* response) {
+    auto const res = response->string();
+    if (res.isErr()) {
+        return Err("Invalid string response");
+    }
+    if (!response->ok()) {
+        auto const code = response->code();
+        switch (code) {
+            case 400:
+                return Err("Bad request: {}", res.unwrapOrDefault());
+            case 401:
+                return Err("Unauthorized: {}", res.unwrapOrDefault());
+            case 404:
+                return Err("Not found: {}", res.unwrapOrDefault());
+            case 403:
+                return Err("Forbidden: {}", res.unwrapOrDefault());
+            case 500:
+                return Err("Internal server error: {}", res.unwrapOrDefault());
+            case 502:
+                return Err("Bad gateway: {}", res.unwrapOrDefault());
+            default:
+                return Err(fmt::format("Error {}: {}", code, res.unwrapOrDefault()));
+        }
+    }
+    return Ok();
 }
 
 web::WebRequest WebManager::Impl::createRequest() const {
@@ -56,7 +77,7 @@ web::WebRequest WebManager::Impl::createRequest() const {
 }
 
 web::WebRequest WebManager::Impl::createAuthenticatedRequest() const {
-    auto token = AccountManager::get()->getLoginToken();
+    auto token = this->getLoginToken();
     auto req = this->createRequest();
     req.header("Authorization", fmt::format("Bearer {}", token));
     return req;
@@ -82,11 +103,6 @@ bool WebManager::Impl::isSocketConnected() const {
 
 WebManager* WebManager::get() {
     static WebManager instance;
-    static bool initialized = false;
-    if (!initialized) {
-        instance.impl->init();
-        initialized = true;
-    }
     return &instance;
 }
 
@@ -111,4 +127,16 @@ web::WebRequest WebManager::createAuthenticatedRequest() const {
 
 bool WebManager::isSocketConnected() const {
     return impl->isSocketConnected();
+}
+
+geode::Result<> WebManager::errorCallback(web::WebResponse* response) {
+    return impl->errorCallback(response);
+}
+
+void WebManager::setLoginToken(std::string token) {
+    impl->setLoginToken(std::move(token));
+}
+
+std::string_view WebManager::getLoginToken() const {
+    return impl->getLoginToken();
 }

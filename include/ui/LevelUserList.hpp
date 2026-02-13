@@ -4,6 +4,7 @@
 #include "../data/LevelEntry.hpp"
 #include "../data/ConnectedUserList.hpp"
 #include <deque>
+#include <Geode/utils/async.hpp>
 
 namespace ui {
     struct Base;
@@ -21,7 +22,9 @@ namespace tulip::editor {
         LevelSetting* m_setting;
         LevelEditorLayer* m_editorLayer;
         ConnectedUserList m_userList;
-        geode::Ref<cocos2d::CCNode> m_userListListener;
+        geode::ListenerHandle m_userListHandle;
+        geode::async::TaskHolder<geode::Result<>> m_kickListener;
+        geode::async::TaskHolder<geode::Result<LevelEntry>> m_updateLevelListener;
 
         std::string m_filter = "";
         std::string m_reasonString = "";

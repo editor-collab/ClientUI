@@ -85,10 +85,10 @@ bool BuyPopup::init() {
                                 .callback = [=, this](auto* self) {
                                     if (m_text.size() == 19) {
                                         auto key = m_text.substr(0, 4) + m_text.substr(5, 4) + m_text.substr(10, 4) + m_text.substr(15, 4);
-                                        auto task = AccountManager::get()->claimKey(key);
-                                        m_claimListener.bind([=, this](auto* event) {
-                                            if (auto resultp = event->getValue(); resultp) {
-                                                if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
+                                        m_claimListener.spawn(
+                                            AccountManager::get()->claimKey(key),
+                                            [=, this](auto res) {
+                                                if (GEODE_UNWRAP_EITHER(value, err, res)) {
                                                     popupController->removeFromParentAndCleanup(true);
                                                     FetchManager::get()->addHostableCount(value);
                                                     geode::createQuickPopup("Editor Collab", "Key claimed <cg>successfully</c>!", "OK", nullptr, [=](auto, auto) {}, true);
@@ -97,10 +97,9 @@ bool BuyPopup::init() {
                                                     log::warn("Claim key error: {}", err);
                                                     geode::createQuickPopup("Editor Collab (Error)", "<cr>Could not</c> claim the key.", "OK", nullptr, [](auto, auto) {}, true);
                                                 }
+                                                return ListenerResult::Propagate;
                                             }
-                                            return ListenerResult::Propagate;
-                                        });
-                                        m_claimListener.setFilter(task);
+                                        );
                                     }
                                     else if (m_text.size() == 0) {
                                         web::openLinkInBrowser("https://buy.stripe.com/aEUbLb38R2Cw91K9AA");

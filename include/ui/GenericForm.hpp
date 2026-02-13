@@ -2,7 +2,7 @@
 #include <Geode/Geode.hpp>
 
 namespace tulip::editor {
-	class GenericForm : public geode::Popup<std::string const&> {
+	class GenericForm : public geode::Popup {
 	public:
         cocos2d::CCMenu* m_columnMenu;
 		cocos2d::CCLabelBMFont* m_errorLabel;
@@ -12,7 +12,6 @@ namespace tulip::editor {
 		~GenericForm() override;
 
 		bool init(std::string const& title);
-		bool setup(std::string const& title) override;
         virtual void formSetup() = 0;
 
 		void close();

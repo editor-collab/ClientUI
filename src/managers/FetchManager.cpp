@@ -17,10 +17,10 @@ public:
 
     Result<std::vector<LevelEntry>> parseLevels(web::WebResponse* response);
 
-    Task<Result<std::vector<LevelEntry>>, WebProgress> getMyLevels();
+    arc::Future<Result<std::vector<LevelEntry>>> getMyLevels();
     std::vector<LevelEntry> const& getLastMyLevels();
-    Task<Result<std::vector<LevelEntry>>, WebProgress> getSharedWithMe();
-    Task<Result<std::vector<LevelEntry>>, WebProgress> getDiscover();
+    arc::Future<Result<std::vector<LevelEntry>>> getSharedWithMe();
+    arc::Future<Result<std::vector<LevelEntry>>> getDiscover();
 
     size_t getHostableCount() const {
         return m_hostableCount;
@@ -40,42 +40,36 @@ Result<std::vector<LevelEntry>> FetchManager::Impl::parseLevels(web::WebResponse
     return json["levels"].as<std::vector<LevelEntry>>();
 }
 
-Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getMyLevels() {
+arc::Future<Result<std::vector<LevelEntry>>> FetchManager::Impl::getMyLevels() {
     //////// log::debug("Fetching my levels");
 
     auto req = WebManager::get()->createAuthenticatedRequest();
-    auto task = req.get(WebManager::get()->getServerURL("fetch/my_levels"));
-    auto ret = task.map([=, this](auto response) -> Result<std::vector<LevelEntry>> {
-        auto levels = this->parseLevels(response);
-        if (levels.isOk()) {
-            matjson::Value json = GEODE_UNWRAP(response->json());
-            m_hostableCount = json["hostable-count"].as<size_t>().unwrapOr(0);
-        }
-        return levels;
-    });
-    return ret;
+    auto response = co_await req.get(WebManager::get()->getServerURL("fetch/my_levels"));
+    GEODE_CO_UNWRAP(WebManager::get()->errorCallback(&response));
+    auto levels = this->parseLevels(&response);
+    if (levels.isOk()) {
+        matjson::Value json = GEODE_CO_UNWRAP(response.json());
+        m_hostableCount = json["hostable-count"].as<size_t>().unwrapOr(0);
+    }
+    co_return levels;
 }
 
-Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getSharedWithMe() {
+arc::Future<Result<std::vector<LevelEntry>>> FetchManager::Impl::getSharedWithMe() {
     //////// log::debug("Fetching shared levels");
 
     auto req = WebManager::get()->createAuthenticatedRequest();
-    auto task = req.get(WebManager::get()->getServerURL("fetch/shared_with_me"));
-    auto ret = task.map([=, this](auto response) -> Result<std::vector<LevelEntry>> {
-        return this->parseLevels(response);
-    });
-    return ret;
+    auto response = co_await req.get(WebManager::get()->getServerURL("fetch/shared_with_me"));
+    GEODE_CO_UNWRAP(WebManager::get()->errorCallback(&response));
+    co_return this->parseLevels(&response);
 }
 
-Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::Impl::getDiscover() {
+arc::Future<Result<std::vector<LevelEntry>>> FetchManager::Impl::getDiscover() {
     //////// log::debug("Fetching discover levels");
 
     auto req = WebManager::get()->createAuthenticatedRequest();
-    auto task = req.get(WebManager::get()->getServerURL("fetch/discover"));
-    auto ret = task.map([=, this](auto response) -> Result<std::vector<LevelEntry>> {
-        return this->parseLevels(response);
-    });
-    return ret;
+    auto response = co_await req.get(WebManager::get()->getServerURL("fetch/discover"));
+    GEODE_CO_UNWRAP(WebManager::get()->errorCallback(&response));
+    co_return this->parseLevels(&response);
 }
 
 FetchManager* FetchManager::get() {
@@ -87,15 +81,15 @@ FetchManager::FetchManager() : impl(std::make_unique<Impl>()) {}
 
 FetchManager::~FetchManager() = default;
 
-Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::getMyLevels() {
+arc::Future<Result<std::vector<LevelEntry>>> FetchManager::getMyLevels() {
     return impl->getMyLevels();
 }
 
-Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::getSharedWithMe() {
+arc::Future<Result<std::vector<LevelEntry>>> FetchManager::getSharedWithMe() {
     return impl->getSharedWithMe();
 }
 
-Task<Result<std::vector<LevelEntry>>, WebProgress> FetchManager::getDiscover() {
+arc::Future<Result<std::vector<LevelEntry>>> FetchManager::getDiscover() {
     return impl->getDiscover();
 }
 

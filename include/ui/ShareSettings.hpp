@@ -27,8 +27,10 @@ namespace tulip::editor {
         geode::ScrollLayer* m_peopleScrollLayer = nullptr;
         geode::SimpleTextArea* m_shareDescription = nullptr;
 
-        geode::EventListener<geode::Task<geode::Result<LevelManager::CreateLevelResult>, geode::utils::web::WebProgress>> m_createLevelListener;
-        geode::EventListener<geode::Task<geode::Result<>, geode::utils::web::WebProgress>> m_deleteLevelListener;
+        geode::async::TaskHolder<geode::Result<LevelManager::CreateLevelResult>> m_createLevelListener;
+        geode::async::TaskHolder<geode::Result<>> m_deleteLevelListener;
+        geode::async::TaskHolder<geode::Result<LevelEntry>> m_updateSettingsListener;
+        geode::async::TaskHolder<geode::Result<std::vector<LevelEntry>>> m_fetchMyLevelsListener;
 
         bool m_resetScroll = false;
 

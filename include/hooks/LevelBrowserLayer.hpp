@@ -2,6 +2,7 @@
 
 #include <Geode/Geode.hpp>  
 #include <Geode/utils/web.hpp>
+#include <Geode/utils/async.hpp>
 
 #include <Geode/modify/LevelBrowserLayer.hpp>
 using namespace geode::prelude;
@@ -10,8 +11,10 @@ namespace tulip::editor {
     struct LevelBrowserLayerHook : Modify<LevelBrowserLayerHook, LevelBrowserLayer> {
         struct Fields {
             geode::Ref<CCMenuItemSpriteExtra> menuButton = nullptr;
-            geode::Task<bool> modPageTask;
+            geode::async::TaskHolder<bool> modPageTask;
 
+            geode::async::TaskHolder<web::WebResponse> adminTask;
+            geode::async::TaskHolder<Result<std::string>> loginListener;
             static inline LevelBrowserLayerHook* self = nullptr;
 
             ~ Fields() {
@@ -21,7 +24,7 @@ namespace tulip::editor {
 
         void refreshButton();
 
-        void onLogin(Result<> result);
+        void onLogin(Result<std::string> result);
         void onLogout(Result<> result);
 
         $override

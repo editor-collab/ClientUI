@@ -205,11 +205,10 @@ void LimitsSettings::updateValues() {
     fillGrid(m_colorsGrid, &m_entry->limits.colors, "colors");
     fillGrid(m_itemsGrid, &m_entry->limits.items, "items");
 
-    auto task = LevelManager::get()->updateLevelSettings(
+    m_updateLevelListener.spawn(LevelManager::get()->updateLevelSettings(
         m_key,
         *m_setting
-    );
-    task.listen([=](auto* result) {});
+    ), [=](auto result) {});
 }
 
 ui::Base* LimitsSettings::generateItem(size_t idx, std::string id, std::vector<AllowedRange>* range) {

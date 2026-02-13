@@ -2,176 +2,76 @@
 
 #include <managers/WebManager.hpp>
 #include <Geode/utils/web.hpp>
-#include <argon/argon.hpp>
+#include <Geode/utils/async.hpp>
 #include <utils/CryptoHelper.hpp>
 
 using namespace tulip::editor;
 using namespace geode::prelude;
 
-static inline std::string s_savedLoginToken = "";
-
 class AccountManager::Impl {
 public:
     Impl() = default;
     ~Impl() = default;
-
-    int m_accountId = 0;
-    int m_userId = 0;
-    std::string m_username;
     
-    std::string m_loginToken;
-
-    EventListener<web::WebTask> m_authListener;
-
-    Result<> refreshCredentials();
-
-    bool errorCallback(web::WebResponse* response, Callback& callback);
-    void loginCallback(web::WebTask::Event* event, Callback callback);
-
-    Result<> authenticate(Callback&& callback);
-    Result<> logout(Callback&& callback);
-
-    std::string getLoginToken() const;
-
-    Task<Result<uint32_t>, WebProgress> claimKey(std::string_view key);
-
-    bool isLoggedIn() const;
+    arc::Future<Result<std::string>> login(argon::AccountData accountData);
+    Result<> logout();
+    arc::Future<Result<uint32_t>> claimKey(std::string_view key);
 };
 
-$on_mod(Loaded) {
-    if (Mod::get()->getSettingValue<bool>("auto-connect")) {
-        s_savedLoginToken = Mod::get()->getSavedValue<std::string>("saved-login-token", "");
-    }
-}
+arc::Future<Result<std::string>> AccountManager::Impl::login(argon::AccountData accountData) {  
+    auto accountId = accountData.accountId;
+    auto userId = accountData.userId;
+    auto username = accountData.username; 
 
-std::string AccountManager::Impl::getLoginToken() const {
-    if (!m_loginToken.empty()) {
-        return m_loginToken;
-    }
-    return s_savedLoginToken;
-}
-
-bool AccountManager::Impl::isLoggedIn() const {
-    if (!m_loginToken.empty()) {
-        return true;
-    }
-    return !s_savedLoginToken.empty();
-}
-
-Result<> AccountManager::Impl::refreshCredentials() {
-    if (GJAccountManager::get()->m_accountID == 0) {
-        return Err("Account not logged in");
+    auto res = co_await argon::startAuth(std::move(accountData));
+    if (!res) {
+        log::warn("Auth failed: {}", res.unwrapErr());
+        co_return Err(std::move(res.unwrapErr()));
     }
 
-    m_accountId = GJAccountManager::get()->m_accountID;
-    m_userId = GameManager::get()->m_playerUserID.value();
-    m_username = GJAccountManager::get()->m_username;
+    auto token = std::move(res).unwrap();
 
-    return Ok();
-}
+    auto req = WebManager::get()->createRequest();
+    req.bodyString(
+        fmt::format("account_id={}&user_id={}&account_name={}&auth_token={}",
+            accountId, userId, username, token
+        )
+    );
+    // req.param("account_id", m_accountId);
+    // req.param("user_id", m_userId);
+    // req.param("account_name", m_username);
+    // req.param("auth_token", token);
 
-bool AccountManager::Impl::errorCallback(web::WebResponse* response, Callback& callback) {
-    auto const res = response->string();
-    if (res.isErr()) {
-        callback(Err("Invalid string response"));
-        return true;
-    }
-    if (!response->ok()) {
-        auto const code = response->code();
-        if (code == 403) {
+    auto response = co_await req.post(WebManager::get()->getServerURL("auth/login"));
+    if (!response.ok()) {
+        if (response.code() == 403) {
             argon::clearToken();
-            log::warn("Forbidden: {}", res.unwrapOrDefault());
-            callback(Err("Please log into your GD account again."));
+            log::warn("Auth token invalid, cleared saved token");
         }
-        else if (code == 500) {
-            callback(Err("Internal server error: {}", res.unwrapOrDefault()));
-        }
-        else {
-            callback(Err(fmt::format("HTTP error: {}", code)));
-        }
-        return true;
     }
-    return false;
-}
+    GEODE_CO_UNWRAP(WebManager::get()->errorCallback(&response));
 
+    auto genToken = GEODE_CO_UNWRAP(response.string());
 
-void AccountManager::Impl::loginCallback(web::WebTask::Event* event, Callback callback) {
-    if (event->getValue() == nullptr) return;
-
-    auto response = event->getValue();
-    if (this->errorCallback(response, callback)) return;
-
-    auto token = response->string().unwrapOrDefault();
-
-    auto header = fmt::format("{}.{}.{}", m_accountId, m_userId, token);
+    auto header = fmt::format("{}.{}.{}", accountId, userId, genToken);
     std::vector<uint8_t> headerBytes(header.begin(), header.end());
     auto base64Token = crypto::base64Encode(headerBytes, crypto::Base64Flags::UrlSafe);
 
-    Mod::get()->setSavedValue("saved-login-token", base64Token);
-    m_loginToken = base64Token;
-    s_savedLoginToken.clear();
-
-    callback(Ok());
+    co_return Ok(base64Token);
 }
 
-Result<> AccountManager::Impl::authenticate(Callback&& callback) {   
-    GEODE_UNWRAP(this->refreshCredentials());
-
-    auto res = argon::startAuth([this, callback = std::move(callback)](Result<std::string> res) {
-        if (!res) {
-            log::warn("Auth failed: {}", res.unwrapErr());
-            callback(Err(std::move(res.unwrapErr())));
-            return;
-        }
-
-        auto token = std::move(res).unwrap();
-
-        auto req = WebManager::get()->createRequest();
-        req.bodyString(fmt::format("account_id={}&user_id={}&account_name={}&auth_token={}",
-            m_accountId, m_userId, m_username, token));
-        // req.param("account_id", m_accountId);
-        // req.param("user_id", m_userId);
-        // req.param("account_name", m_username);
-        // req.param("auth_token", token);
-
-        auto task = req.post(WebManager::get()->getServerURL("auth/login"));
-
-        m_authListener.bind([this, callback = std::move(callback)](web::WebTask::Event* event) {
-            this->loginCallback(event, callback);
-        });
-        m_authListener.setFilter(task);
-    }, [](argon::AuthProgress progress) {
-        log::info("Auth progress: {}", argon::authProgressToString(progress));
-    }); 
-
+Result<> AccountManager::Impl::logout() {
     return Ok();
 }
 
-Result<> AccountManager::Impl::logout(Callback&& callback) {
-    GEODE_UNWRAP(this->refreshCredentials());
-
-    m_loginToken.clear();
-    s_savedLoginToken.clear();
-
-    callback(Ok());
-
-    return Ok();
-}
-
-Task<Result<uint32_t>, WebProgress> AccountManager::Impl::claimKey(std::string_view key) {
+arc::Future<Result<uint32_t>> AccountManager::Impl::claimKey(std::string_view key) {
     auto req = WebManager::get()->createAuthenticatedRequest();
+    req.param("activation_key", std::string(key));
 
-    req.param("activation_key", key);
+    auto response = co_await req.post(WebManager::get()->getServerURL("auth/claim_key"));
+    GEODE_CO_UNWRAP(WebManager::get()->errorCallback(&response));
 
-    auto task = req.post(WebManager::get()->getServerURL("auth/claim_key"));
-    auto ret = task.map([=, this](auto response) -> Result<uint32_t> {
-        if (!response->ok()) return Err(fmt::format("HTTP error: {}", response->code()));
-        auto count = response->string().map([](auto str) {
-            return numFromString<uint32_t>(str).unwrapOrDefault();
-        });
-        return count;
-    });
-    return ret;
+    co_return Ok(numFromString<uint32_t>(response.string().unwrapOrDefault()).unwrapOrDefault());
 }
 
 AccountManager* AccountManager::get() {
@@ -182,29 +82,13 @@ AccountManager* AccountManager::get() {
 AccountManager::AccountManager() : impl(std::make_unique<Impl>()) {}
 AccountManager::~AccountManager() = default;
 
-void AccountManager::authenticate(Callback&& callback) {
-    auto res = impl->authenticate(std::move(callback));
-    if (res.isErr()) {
-        callback(res);
-        return;
-    }
+arc::Future<Result<std::string>> AccountManager::login(argon::AccountData accountData) {
+    return impl->login(std::move(accountData));
 }
-void AccountManager::logout(Callback&& callback) {
-    auto res = impl->logout(std::move(callback));
-    if (res.isErr()) {
-        callback(res);
-        return;
-    }
+Result<> AccountManager::logout() {
+    return impl->logout();
 }
 
-std::string AccountManager::getLoginToken() const {
-    return impl->getLoginToken();
-}
-
-Task<Result<uint32_t>, WebProgress> AccountManager::claimKey(std::string_view key) {
+arc::Future<Result<uint32_t>> AccountManager::claimKey(std::string_view key) {
     return impl->claimKey(key);
-}
-
-bool AccountManager::isLoggedIn() const {
-    return impl->isLoggedIn();
 }

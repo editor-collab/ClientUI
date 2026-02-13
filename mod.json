@@ -1,14 +1,14 @@
 {
-	"geode": "4.8.0",
+	"geode": "5.0.0-alpha.2",
 	"gd": {
-		"win": "2.2074",
-		"android": "2.2074",
-		"mac": "2.2074",
-		"ios": "2.2074"
+		"win": "2.2081",
+		"android": "2.2081",
+		"mac": "2.2081",
+		"ios": "2.2081"
 	},
 	"id": "alk.editor-collab-ui",
 	"name": "Editor Collab UI",
-	"version": "0.3.2-alpha",
+	"version": "0.4.0-alpha",
 	"developer": "alk",
 	"description": "UI for the Editor Collab mod",
 	"resources": {
@@ -30,17 +30,13 @@
     ],
 	"dependencies": {
 		"cvolton.level-id-api": {
-			"version": "1.0.0",
+			"version": "2.0.0-beta.1",
 			"importance": "required"
 		},
 		"geode.node-ids": {
-            "version": ">=1.11.0",
+            "version": ">=1.22.0-beta.1",
             "importance": "required"
-        },
-		"alk.editor-collab": {
-			"version": "0.3.6-alpha",
-			"importance": "recommended"
-		}
+        }
 	},
 	"settings": {
 		"auto-connect": {

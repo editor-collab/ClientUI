@@ -12,10 +12,6 @@ GenericForm::GenericForm() :
 
 GenericForm::~GenericForm() {}
 
-bool GenericForm::init(std::string const& title) {
-	return Popup::initAnchored(300.f, 100.f, title, "GJ_square05.png");
-}
-
 void GenericForm::updateErrorLabel(std::string const& error) {
 	m_errorLabel->setString(error.c_str());
 }
@@ -25,7 +21,11 @@ void GenericForm::onEnter(CCObject* sender) {
     this->confirm();
 }
 
-bool GenericForm::setup(std::string const& title) {
+bool GenericForm::init(std::string const& title) {
+    if (!Popup::init(300.f, 100.f)) {
+        return false;
+    }
+    
     m_columnMenu = CCMenu::create();
     m_columnMenu->setContentSize(CCSizeMake(300.f, 300.f));
     m_columnMenu->setAnchorPoint(ccp(0.5f, 1.f));

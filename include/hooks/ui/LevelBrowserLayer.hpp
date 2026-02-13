@@ -23,9 +23,9 @@ namespace tulip::editor {
 
             std::vector<geode::Ref<GJGameLevel>> missingMyLevels;
 
-            EventListener<FetchManager::TaskType> myLevelsListener;
-            EventListener<FetchManager::TaskType> sharedWithMeListener;
-            EventListener<FetchManager::TaskType> discoverListener;
+            geode::async::TaskHolder<geode::Result<std::vector<LevelEntry>>> myLevelsListener;
+            geode::async::TaskHolder<geode::Result<std::vector<LevelEntry>>> sharedWithMeListener;
+            geode::async::TaskHolder<geode::Result<std::vector<LevelEntry>>> discoverListener;
 
             geode::Ref<cocos2d::CCMenu> offTabMenu;
             geode::Ref<cocos2d::CCMenu> onTabMenu;

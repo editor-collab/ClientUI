@@ -42,40 +42,32 @@ bool EditorOverlay::init(uint32_t hostAccountId) {
 	}
 	m_hostAccountId = hostAccountId;
 
-	DispatchEvent<ConnectedUserList*>("get-user-list"_spr, &m_userList).post();
+	Dispatch<ConnectedUserList*>("get-user-list"_spr).send(&m_userList);
 
-    m_userListListener = EventListenerNode<DispatchFilter<ConnectedUserList>>::create(
-        EventListener([this](ConnectedUserList userList) {
-            m_userList = userList;
-			this->redrawSelectionRect();
-            return ListenerResult::Propagate;
-        }, DispatchFilter<ConnectedUserList>("alk.editor-collab/update-user-list"))
-    );
+	m_userListHandle = Dispatch<ConnectedUserList>("alk.editor-collab/update-user-list").listen([this](ConnectedUserList userList) {
+		m_userList = userList;
+		this->redrawSelectionRect();
+		return ListenerResult::Propagate;
+	});
 
-	m_drawListener = EventListenerNode<DispatchFilter<uint32_t, CCRect>>::create(
-		EventListener([this](uint32_t clientLevelId, CCRect rectangle) {
-			this->drawSelectionRect(clientLevelId, rectangle);
-			return ListenerResult::Propagate;
-		}, DispatchFilter<uint32_t, CCRect>("alk.editor-collab/draw-selection-overlay"))
-	);
+	m_redrawHandle = Dispatch<>("alk.editor-collab/redraw-selection-overlay").listen([this]() {
+		this->redrawSelectionRect();
+		return ListenerResult::Propagate;
+	});
 
-	m_redrawListener = EventListenerNode<DispatchFilter<>>::create(
-		EventListener([this]() {
-			this->redrawSelectionRect();
-			return ListenerResult::Propagate;
-		}, DispatchFilter<>("alk.editor-collab/redraw-selection-overlay"))
-	);
+	m_drawHandle = Dispatch<uint32_t, CCRect>("alk.editor-collab/draw-selection-overlay").listen([this](uint32_t clientLevelId, CCRect rectangle) {
+		this->drawSelectionRect(clientLevelId, rectangle);
+		return ListenerResult::Propagate;
+	});
 
-	m_levelSettingListener = EventListenerNode<DispatchFilter<LevelSetting>>::create(
-		EventListener([this](LevelSetting levelSetting) {
-			m_levelSetting = levelSetting;
-			// God i cant wait to change this all
-			LevelEntry* entry = BrowserManager::get()->getLevelEntry(LevelEditorLayer::get()->m_level);
-			entry->settings = m_levelSetting;
-			this->redrawSelectionRect();
-			return ListenerResult::Propagate;
-		}, DispatchFilter<LevelSetting>("alk.editor-collab/update-level-setting"))
-	);
+	m_levelSettingHandle = Dispatch<LevelSetting>("alk.editor-collab/update-level-setting").listen([this](LevelSetting levelSetting) {
+		m_levelSetting = levelSetting;
+		// God i cant wait to change this all
+		LevelEntry* entry = BrowserManager::get()->getLevelEntry(LevelEditorLayer::get()->m_level);
+		entry->settings = m_levelSetting;
+		this->redrawSelectionRect();
+		return ListenerResult::Propagate;
+	});
 
 	if (auto slider = EditorUI::get()->getChildByID("position-slider")) {
 		m_positionSliderIndicator = CCDrawNode::create();

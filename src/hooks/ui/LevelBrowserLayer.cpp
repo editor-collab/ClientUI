@@ -1,6 +1,6 @@
 #include <hooks/ui/LevelBrowserLayer.hpp>
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
-#include <managers/AccountManager.hpp>
+#include <managers/WebManager.hpp>
 #include <managers/BrowserManager.hpp>
 #include <managers/CellManager.hpp>
 #include <lavender/Lavender.hpp>
@@ -10,7 +10,7 @@ using namespace tulip::editor;
 
 template <class Lambda>
 CCMenuItemSpriteExtra* LevelBrowserLayerUIHook::generateTabButton(std::string_view framename, std::string_view id, Lambda&& func) {
-    auto button = CCMenuItemExt::createSpriteExtraWithFrameName(framename, 1.f, func);
+    auto button = CCMenuItemExt::createSpriteExtraWithFrameName(framename.data(), 1.f, func);
     button->m_colorEnabled = true;
     button->m_animationEnabled = false;
     button->m_colorDip = 0.80f;
@@ -43,8 +43,9 @@ void LevelBrowserLayerUIHook::onLocalLevels(CCObject* sender) {
     m_fields->currentTab = CurrentTab::LocalLevels;
 
     if (Fields::initialCall == false) {
-        m_fields->myLevelsListener.setFilter(FetchManager::get()->getMyLevels());
-        m_fields->sharedWithMeListener.setFilter(FetchManager::get()->getSharedWithMe());
+        // TODO: v5
+        // m_fields->myLevelsListener.setFilter(FetchManager::get()->getMyLevels());
+        // m_fields->sharedWithMeListener.setFilter(FetchManager::get()->getSharedWithMe());
         Fields::initialCall = true;
     }
 
@@ -54,7 +55,21 @@ void LevelBrowserLayerUIHook::onMyLevels(CCObject* sender) {
     this->revisualizeButtons(sender);
     m_fields->onTabMenu->getChildByID("my-levels-tab-on"_spr)->setVisible(true);
     m_fields->currentTab = CurrentTab::MyLevels;
-    m_fields->myLevelsListener.setFilter(FetchManager::get()->getMyLevels());
+    m_fields->myLevelsListener.spawn(
+        FetchManager::get()->getMyLevels(),
+        [this](auto entriesRes) {
+            if (GEODE_UNWRAP_IF_OK(entries, entriesRes)) {
+                log::debug("My levels fetched");
+                BrowserManager::get()->updateMyLevels(std::move(entries));
+                this->loadPage(m_searchObject);
+                m_list->m_listView->setVisible(true);
+            }
+            else {
+                Notification::create("Failed to fetch my levels", nullptr)->show();
+            }
+            m_circle->setVisible(false);
+        }
+    );
     m_list->m_listView->setVisible(false);
     m_circle->setVisible(true);
 
@@ -71,7 +86,21 @@ void LevelBrowserLayerUIHook::onSharedWithMe(CCObject* sender) {
     this->revisualizeButtons(sender);
     m_fields->onTabMenu->getChildByID("shared-with-me-tab-on"_spr)->setVisible(true);
     m_fields->currentTab = CurrentTab::SharedWithMe;
-    m_fields->sharedWithMeListener.setFilter(FetchManager::get()->getSharedWithMe());
+    m_fields->sharedWithMeListener.spawn(
+        FetchManager::get()->getSharedWithMe(),
+        [this](auto entriesRes) {
+            if (GEODE_UNWRAP_IF_OK(entries, entriesRes)) {
+                log::debug("My levels fetched");
+                BrowserManager::get()->updateSharedLevels(std::move(entries));
+                this->loadPage(m_searchObject);
+                m_list->m_listView->setVisible(true);
+            }
+            else {
+                Notification::create("Failed to fetch my levels", nullptr)->show();
+            }
+            m_circle->setVisible(false);
+        }
+    );
     m_list->m_listView->setVisible(false);
     m_circle->setVisible(true);
 
@@ -88,7 +117,21 @@ void LevelBrowserLayerUIHook::onDiscover(CCObject* sender) {
     this->revisualizeButtons(sender);
     m_fields->onTabMenu->getChildByID("discover-tab-on"_spr)->setVisible(true);
     m_fields->currentTab = CurrentTab::Discover;
-    m_fields->discoverListener.setFilter(FetchManager::get()->getDiscover());
+    m_fields->discoverListener.spawn(
+        FetchManager::get()->getDiscover(),
+        [this](auto entriesRes) {
+            if (GEODE_UNWRAP_IF_OK(entries, entriesRes)) {
+                log::debug("My levels fetched");
+                BrowserManager::get()->updateDiscoverLevels(std::move(entries));
+                this->loadPage(m_searchObject);
+                m_list->m_listView->setVisible(true);
+            }
+            else {
+                Notification::create("Failed to fetch my levels", nullptr)->show();
+            }
+            m_circle->setVisible(false);
+        }
+    );
 }
 
 $override
@@ -97,7 +140,7 @@ void LevelBrowserLayerUIHook::setupLevelBrowser(cocos2d::CCArray* items) {
 
     if (!m_searchObject || m_searchObject->m_searchType != SearchType::MyLevels) return;
 
-    if (!AccountManager::get()->isLoggedIn()) {
+    if (!WebManager::get()->isLoggedIn()) {
         return;
     }
 
@@ -165,7 +208,7 @@ void LevelBrowserLayerUIHook::loadLevelsFinished(CCArray* levels, char const* id
     auto const page = m_searchObject->m_page;
     CCArray* fullLevels;
 
-    if (!AccountManager::get()->isLoggedIn()) {
+    if (!WebManager::get()->isLoggedIn()) {
         return LevelBrowserLayer::loadLevelsFinished(levels, ident, searchType);
     }
 
@@ -250,58 +293,7 @@ bool LevelBrowserLayerUIHook::init(GJSearchObject* searchObject) {
 
 	if (searchObject->m_searchType != SearchType::MyLevels) return true;
 
-    m_fields->myLevelsListener.bind([=, this](auto* event) {
-        if (auto resultp = event->getValue(); resultp) {
-            if (GEODE_UNWRAP_IF_OK(levels, *resultp)) {
-                log::debug("My levels fetched");
-                BrowserManager::get()->updateMyLevels(std::move(levels));
-                this->loadPage(m_searchObject);
-                m_list->m_listView->setVisible(true);
-            }
-            else {
-                Notification::create("Failed to fetch my levels", nullptr)->show();
-            }
-            m_circle->setVisible(false);
-        }
-    });
-
-    m_fields->sharedWithMeListener.bind([=, this](auto* event) {
-        if (auto resultp = event->getValue(); resultp) {
-            if (GEODE_UNWRAP_IF_OK(levels, *resultp)) {
-                log::debug("Shared levels fetched");
-                // for (auto& entry : levels) {
-                //     log::debug("Level: {}", entry.key);
-                // }
-                BrowserManager::get()->updateSharedLevels(std::move(levels));
-                this->loadPage(m_searchObject);
-                m_list->m_listView->setVisible(true);
-            }
-            else {
-                Notification::create("Failed to fetch shared levels", nullptr)->show();
-            }
-            m_circle->setVisible(false);
-        }
-    });
-
-    m_fields->discoverListener.bind([=, this](auto* event) {
-        if (auto resultp = event->getValue(); resultp) {
-            if (GEODE_UNWRAP_IF_OK(levels, *resultp)) {
-                log::debug("Discover levels fetched");
-                for (auto& entry : levels) {
-                    //////// log::debug("Level: {}", entry.key);
-                }
-                BrowserManager::get()->updateDiscoverLevels(std::move(levels));
-                this->loadPage(m_searchObject);
-                m_list->m_listView->setVisible(true);
-            }
-            else {
-                Notification::create("Failed to fetch discover levels", nullptr)->show();
-            }
-            m_circle->setVisible(false);
-        }
-    });
-
-    if (!AccountManager::get()->getLoginToken().empty()) {
+    if (!WebManager::get()->getLoginToken().empty()) {
         this->onLocalLevels(nullptr);
     }
 	return true;

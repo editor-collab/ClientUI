@@ -146,7 +146,6 @@ void EditorPauseLayerUIHook::setupResumeMenu() {
     exitWithoutPromptButton->setID("exit-button"_spr);
 
     if (auto menu = static_cast<CCMenu*>(this->querySelector("resume-menu"))) {
-        if (menu->getLayout()) menu->getLayout()->ignoreInvisibleChildren(true);
         menu->insertAfter(playButton, saveAndPlay);
         menu->insertAfter(saveToLocalButton, saveAndExit);
         menu->insertAfter(playInLDMButton, save);

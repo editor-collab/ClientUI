@@ -1,6 +1,6 @@
 #include <ui/ShareSettings.hpp>
 #include <ui/LimitsSettings.hpp>
-#include <managers/AccountManager.hpp>
+#include <managers/WebManager.hpp>
 #include <managers/BrowserManager.hpp>
 #include <managers/LevelManager.hpp>
 #include <managers/FetchManager.hpp>
@@ -432,11 +432,14 @@ void ShareSettings::updateValues() {
     }
 
     if (m_entry->isShared()) {
-        auto task = LevelManager::get()->updateLevelSettings(
-            m_entry->key,
-            *m_setting
+        m_updateSettingsListener.spawn(
+            LevelManager::get()->updateLevelSettings(
+                m_entry->key,
+                *m_setting
+            ), [](auto entry) {
+
+            }
         );
-        task.listen([=](auto* result) {});
     }
     BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
 }
@@ -607,9 +610,9 @@ void ShareSettings::startSharing(cocos2d::CCObject* sender) {
 	}
 
     auto task = LevelManager::get()->createLevel(*m_setting);
-    m_createLevelListener.bind([=, this](auto* event) {
-        if (auto resultp = event->getValue(); resultp) {
-            if (GEODE_UNWRAP_EITHER(value, err, *resultp)) {
+    m_createLevelListener.spawn(
+        LevelManager::get()->createLevel(*m_setting), [this](auto res) {
+            if (GEODE_UNWRAP_EITHER(value, err, res)) {
                 BrowserManager::get()->replaceWithShadowLevel(m_editorLayer->m_level, true);
 
                 m_entry->key = value.levelKey;
@@ -617,32 +620,29 @@ void ShareSettings::startSharing(cocos2d::CCObject* sender) {
                 BrowserManager::get()->initializeKey(m_editorLayer->m_level, *m_entry);
                 BrowserManager::get()->saveLevel(m_editorLayer->m_level, true, true);
                 
-                auto token = AccountManager::get()->getLoginToken();
-                DispatchEvent<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
-                    "create-level"_spr, token, value.clientId, m_editorLayer->m_level, value.levelKey
-                ).post();
+                auto token = WebManager::get()->getLoginToken();
+                Dispatch<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
+                    "create-level"_spr).send(token, value.clientId, m_editorLayer->m_level, value.levelKey
+                );
                 Notification::create("Level started sharing", NotificationIcon::Success, 1.5f)->show();
 
                 m_popup->removeFromParent();
 
-                FetchManager::get()->getMyLevels().listen([](auto*){});
+                m_fetchMyLevelsListener.spawn(FetchManager::get()->getMyLevels(), [](auto val) {});
             }
             else {
                 Notification::create("Failed to start sharing the level", NotificationIcon::Error, 1.5f)->show();
             }
         }
-        return ListenerResult::Propagate;
-    });
-    m_createLevelListener.setFilter(task);
+    );
 }
 
 void ShareSettings::stopSharing(cocos2d::CCObject* sender) {
     auto const levelKey = m_entry->key;
 
-    auto task = LevelManager::get()->deleteLevel(levelKey);
-    m_deleteLevelListener.bind([=, this](auto* event) {
-        if (auto resultp = event->getValue(); resultp) {
-            if (resultp->isErr()) {
+    m_deleteLevelListener.spawn(
+        LevelManager::get()->deleteLevel(levelKey), [this](auto res) {
+            if (res.isErr()) {
                 Notification::create("Failed to stop sharing the level", NotificationIcon::Error, 1.5f)->show();
                 return ListenerResult::Propagate;
             }
@@ -654,17 +654,15 @@ void ShareSettings::stopSharing(cocos2d::CCObject* sender) {
             // BrowserManager::get()->saveLevel(m_editorLayer->m_level, true, false);
             // BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
 
-            auto token = AccountManager::get()->getLoginToken();
-            DispatchEvent<std::string_view, uint32_t>(
-                "delete-level"_spr, token, LevelManager::get()->getClientId()
-            ).post();
+            auto token = WebManager::get()->getLoginToken();
+            Dispatch<std::string_view, uint32_t>("delete-level"_spr).send(token, LevelManager::get()->getClientId());
             Notification::create("Level stopped sharing", NotificationIcon::Success, 1.5f)->show();
 
             m_popup->removeFromParent();
 
-            FetchManager::get()->getMyLevels().listen([](auto*){});
+            m_fetchMyLevelsListener.spawn(FetchManager::get()->getMyLevels(), [](auto val) {});
+
+            return ListenerResult::Propagate;
         }
-        return ListenerResult::Propagate;
-    });
-    m_deleteLevelListener.setFilter(task);
+    );
 }

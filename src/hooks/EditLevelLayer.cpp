@@ -1,6 +1,6 @@
 #include <hooks/EditLevelLayer.hpp>
 #include <managers/LevelManager.hpp>
-#include <managers/AccountManager.hpp>
+#include <managers/WebManager.hpp>
 #include <managers/BrowserManager.hpp>
 #include <managers/WebManager.hpp>
 #include <Geode/loader/Dispatch.hpp>
@@ -15,7 +15,7 @@ using namespace tulip::editor;
 
 struct ExitHook : Modify<ExitHook, GameManager> {
 	struct Fields {
-		EventListener<Task<Result<>, WebProgress>> leaveLevelListener;		
+		async::TaskHolder<Result<>> leaveLevelListener;
 	};
 
 	void returnToLastScene(GJGameLevel* level) {
@@ -27,27 +27,24 @@ struct ExitHook : Modify<ExitHook, GameManager> {
 				camera.zoom = editorLayer->m_objectLayer->getScale();
 			}
 
-			
-			auto task = LevelManager::get()->leaveLevel(camera);
-			m_fields->leaveLevelListener.bind([=](auto* event) {
-				if (auto resultp = event->getValue(); resultp && resultp->isOk()) {
-					auto token = AccountManager::get()->getLoginToken();
-					DispatchEvent<std::string_view>(
-						"leave-level"_spr, token
-					).post();
+			m_fields->leaveLevelListener.spawn(
+				LevelManager::get()->leaveLevel(camera),
+				[=](auto res) {
+					if (res.isOk()) {
+						Dispatch<std::string_view>("leave-level"_spr).send(WebManager::get()->getLoginToken());
+					}
+					else {
+						geode::createQuickPopup(
+							"Editor Collab (Error)",
+							res.unwrapErr(),
+							"OK",
+							nullptr,
+							[](auto, auto) {},
+							true
+						);
+					}
 				}
-				else if (resultp) {
-					geode::createQuickPopup(
-						"Editor Collab (Error)",
-						resultp->unwrapErr(),
-						"OK",
-						nullptr,
-						[](auto, auto) {},
-						true
-					);
-				}
-			});
-			m_fields->leaveLevelListener.setFilter(task);
+			);
 		}	
 		GameManager::returnToLastScene(level);
 	}
@@ -65,9 +62,15 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 		CCSprite* m_deleteButtonSprite = nullptr;
 		Ref<Notification> m_notification = nullptr;
 
-		EventListener<Task<Result<LevelManager::JoinLevelResult>, WebProgress>> m_joinListener;
-		EventListener<DispatchFilter<>> m_disconnectListener = DispatchFilter<>("alk.editor-collab/socket-disconnected");
-		EventListener<DispatchFilter<std::string_view>> m_levelKickedListener = DispatchFilter<std::string_view>("alk.editor-collab/level-kicked");
+
+		TaskHolder<Result<LevelManager::JoinLevelResult>> m_joinListener;
+		TaskHolder<Result<LevelEntry>> m_updateLevelListener;
+		TaskHolder<Result<>> m_deleteLevelListener;
+		// EventListener<Task<Result<LevelManager::JoinLevelResult>, WebProgress>> m_joinListener;
+		ListenerHandle m_disconnectHandle;
+		ListenerHandle m_levelKickedHandle;
+		// EventListener<DispatchFilter<>> m_disconnectListener = DispatchFilter<>("alk.editor-collab/socket-disconnected");
+		// EventListener<DispatchFilter<std::string_view>> m_levelKickedListener = DispatchFilter<std::string_view>("alk.editor-collab/level-kicked");
 
 		~Fields() {
 			if (m_notification) {
@@ -79,7 +82,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 	$override
 	void textChanged(CCTextInputNode* input) {
 		EditLevelLayer::textChanged(input);
-		if (AccountManager::get()->isLoggedIn() && BrowserManager::get()->isMyLevel(m_level)) {
+		if (WebManager::get()->isLoggedIn() && BrowserManager::get()->isMyLevel(m_level)) {
 			m_fields->m_textChanged = true;
 			auto* entry = BrowserManager::get()->getLevelEntry(m_level);
 			if (input->getTag() == 1) {
@@ -99,8 +102,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 				auto* entry = BrowserManager::get()->getLevelEntry(m_level);
 				BrowserManager::get()->updateLevelEntry(m_level);
 
-				auto task = LevelManager::get()->updateLevelSettings(entry->key, entry->settings);
-				task.listen([=](auto* result) {});
+				m_fields->m_updateLevelListener.spawn(LevelManager::get()->updateLevelSettings(entry->key, entry->settings), [](auto res) {});
 			}
 		}
 
@@ -127,40 +129,25 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 	}
 
 	void joinLevel(std::string levelKey) {
-		auto task = LevelManager::get()->joinLevel(levelKey);
-		m_fields->m_joinListener.bind([=, this](auto* event) {
-			if (auto v = event->getValue()) {
-				if (GEODE_UNWRAP_EITHER(value, err, *v)) {
-					//////// log::debug("join level task succeed");
-					m_fields->m_notification->runAction(CCSequence::create(
-						CCDelayTime::create(0.0),
-						CCCallFunc::create(m_fields->m_notification, callfunc_selector(Notification::hide)),
-						nullptr
-					));
-					m_fields->m_notification = nullptr;
-
-					auto token = AccountManager::get()->getLoginToken();
-					DispatchEvent<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>, GJGameLevel*>(
-						"join-level"_spr, token, value.clientId, levelKey, &value.snapshot, value.camera, m_level
-					).post();
-				}
-				else {
-					//////// log::debug("join level task error");
-					geode::createQuickPopup("Editor Collab (Error)", err, "OK", nullptr, [](auto, auto) {}, true);
-				}
-			}
-			else if (auto p = event->getProgress()) {
-				m_fields->m_notification->setString(
-					fmt::format("Joining: {:.2f}%", p->downloadProgress().value_or(0)).c_str()
-				);
-			}
-			else if (event->isCancelled()) {
-				m_fields->m_notification->cancel();
+		m_fields->m_joinListener.spawn(LevelManager::get()->joinLevel(levelKey), [=, this](auto event) {
+			if (GEODE_UNWRAP_EITHER(value, err, event)) {
+				//////// log::debug("join level task succeed");
+				m_fields->m_notification->runAction(CCSequence::create(
+					CCDelayTime::create(0.0),
+					CCCallFunc::create(m_fields->m_notification, callfunc_selector(Notification::hide)),
+					nullptr
+				));
 				m_fields->m_notification = nullptr;
+
+				auto token = WebManager::get()->getLoginToken();
+				Dispatch<std::string_view, uint32_t, std::string_view, std::vector<uint8_t> const*, std::optional<CameraValue>, GJGameLevel*>(
+					"join-level"_spr).send(token, value.clientId, levelKey, &value.snapshot, value.camera, m_level);
 			}
-			return ListenerResult::Propagate;
+			else {
+				//////// log::debug("join level task error");
+				geode::createQuickPopup("Editor Collab (Error)", err, "OK", nullptr, [](auto, auto) {}, true);
+			}
 		});
-		m_fields->m_joinListener.setFilter(task);
 	}
 
 	void updateToGray() {
@@ -183,7 +170,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 
 		m_fields->m_textChanged = false;
 
-		if (!AccountManager::get()->isLoggedIn()) return true;
+		if (!WebManager::get()->isLoggedIn()) return true;
 
 		if (auto menu = static_cast<CCMenu*>(this->getChildByIDRecursive("level-edit-menu"))) {
 			if (auto entry = BrowserManager::get()->getOnlineEntry(m_level)) {
@@ -233,8 +220,9 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 						auto const levelKey = entry->key;
 
 						this->updateToGray();
-						m_fields->m_levelKickedListener.bind([=, this](std::string_view reason) {
+						m_fields->m_levelKickedHandle = Dispatch<std::string_view>("alk.editor-collab/level-kicked").listen([=, this](std::string_view reason) {
 							this->updateToNormal();
+							geode::createQuickPopup("Editor Collab", fmt::format("You have been kicked from the level. Reason: {}", reason), "OK", nullptr, [](auto, auto) {}, true);
 							return ListenerResult::Propagate;
 						});
 
@@ -249,8 +237,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 								auto* entry = BrowserManager::get()->getLevelEntry(m_level);
 								BrowserManager::get()->updateLevelEntry(m_level);
 
-								auto task = LevelManager::get()->updateLevelSettings(entry->key, entry->settings);
-								task.listen([=, this](auto* result) {});
+								m_fields->m_updateLevelListener.spawn(LevelManager::get()->updateLevelSettings(entry->key, entry->settings), [](auto res) {});
 								this->joinLevel(levelKey);
 							}
 						}
@@ -271,19 +258,17 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 						.callback = [=, this](auto) {
 							auto const levelKey = entry->key;
 
-							auto task = LevelManager::get()->deleteLevel(levelKey);
-							task.listen([=, this](auto* resultp) {
-								if (GEODE_UNWRAP_IF_ERR(err, *resultp)) {
+							m_fields->m_deleteLevelListener.spawn(LevelManager::get()->deleteLevel(levelKey), [=, this](auto res) {
+								if (GEODE_UNWRAP_IF_ERR(err, res)) {
 									//////// log::debug("delete level task error");
 									geode::createQuickPopup("Editor Collab (Error)", err, "OK", nullptr, [](auto, auto) {}, true);
 								}
 								else {
 									//////// log::debug("delete level task succeed");
 
-									auto token = AccountManager::get()->getLoginToken();
-									DispatchEvent<std::string_view, uint32_t>(
-										"delete-level"_spr, token, LevelManager::get()->getClientId()
-									).post();
+									auto token = WebManager::get()->getLoginToken();
+									Dispatch<std::string_view, uint32_t>(
+										"delete-level"_spr).send(token, LevelManager::get()->getClientId());
 								}
 							});
 						},
@@ -312,7 +297,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 				this->addChild(node);
 
 				if (WebManager::get()->isSocketConnected()) {
-					m_fields->m_disconnectListener.bind([=, this]() {
+					m_fields->m_disconnectHandle = Dispatch<>("alk.editor-collab/socket-disconnected").listen([=, this]() {
 						this->updateToNormal();
 						return ListenerResult::Propagate;
 					});

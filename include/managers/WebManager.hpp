@@ -14,11 +14,19 @@ namespace tulip::editor {
     public:
         static WebManager* get();
 
+        geode::Result<> errorCallback(geode::utils::web::WebResponse* response);
         geode::utils::web::WebRequest createRequest() const;
         geode::utils::web::WebRequest createAuthenticatedRequest() const;
 
         std::string getServerURL() const;
         std::string getServerURL(std::string_view path) const;
+
+        void setLoginToken(std::string token);
+        std::string_view getLoginToken() const;
+        
+        inline bool isLoggedIn() const {
+            return !getLoginToken().empty();
+        }
 
         bool isSocketConnected() const;
     };

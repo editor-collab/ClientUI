@@ -19,11 +19,9 @@ namespace tulip::editor {
     public:
         static FetchManager* get();
 
-        using TaskType = Task<Result<std::vector<LevelEntry>>, WebProgress>;
-
-        Task<Result<std::vector<LevelEntry>>, WebProgress> getMyLevels();
-        Task<Result<std::vector<LevelEntry>>, WebProgress> getSharedWithMe();
-        Task<Result<std::vector<LevelEntry>>, WebProgress> getDiscover();
+        arc::Future<Result<std::vector<LevelEntry>>> getMyLevels();
+        arc::Future<Result<std::vector<LevelEntry>>> getSharedWithMe();
+        arc::Future<Result<std::vector<LevelEntry>>> getDiscover();
         size_t getHostableCount() const;
         void addHostableCount(size_t count);
     };

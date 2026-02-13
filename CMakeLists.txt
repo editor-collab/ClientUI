@@ -59,7 +59,7 @@ endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
-CPMAddPackage("gh:GlobedGD/argon@1.1.9")
+CPMAddPackage("gh:GlobedGD/argon@1.4.0")
 
 CPMAddPackage("gh:tplgy/cppcodec#8019b8b")
 

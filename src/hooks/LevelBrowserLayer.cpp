@@ -19,7 +19,7 @@ void LevelBrowserLayerHook::refreshButton() {
 	if (m_fields->menuButton) m_fields->menuButton->removeFromParent();
 	std::string filename;
 	if (Mod::get()->getSettingValue<bool>("alternate-button")) {
-		if (!AccountManager::get()->isLoggedIn()) {
+		if (!WebManager::get()->isLoggedIn()) {
 			filename = "DeactiveAlternateMenuButton.png"_spr;
 		}
 		else {
@@ -27,7 +27,7 @@ void LevelBrowserLayerHook::refreshButton() {
 		}
 	}
 	else {
-		if (!AccountManager::get()->isLoggedIn()) {
+		if (!WebManager::get()->isLoggedIn()) {
 			filename = "DeactiveMenuButton.png"_spr;
 		}
 		else {
@@ -39,11 +39,13 @@ void LevelBrowserLayerHook::refreshButton() {
 	menuSprite->setScale(0.9f);
 
 	auto menuButton = CCMenuItemExt::createSpriteExtra(menuSprite, [this](CCObject* sender) {
-		if (!AccountManager::get()->isLoggedIn()) {
-			AccountManager::get()->authenticate(std::bind(&LevelBrowserLayerHook::onLogin, this, std::placeholders::_1));
+		if (!WebManager::get()->isLoggedIn()) {
+			m_fields->loginListener.spawn(AccountManager::get()->login(argon::getGameAccountData()), [this](auto res) {
+				this->onLogin(res);
+			});
 		}
 		else {
-			AccountManager::get()->logout(std::bind(&LevelBrowserLayerHook::onLogout, this, std::placeholders::_1));
+			this->onLogout(AccountManager::get()->logout());
 		}
 	});
 	menuButton->setScale(0.9f);
@@ -57,7 +59,7 @@ void LevelBrowserLayerHook::refreshButton() {
 	this->loadPage(m_searchObject);
 }
 
-void LevelBrowserLayerHook::onLogin(Result<> result) {
+void LevelBrowserLayerHook::onLogin(Result<std::string> result) {
 	// auto req = WebManager::get()->createAuthenticatedRequest();
 	// auto task = req.post(WebManager::get()->getServerURL("admin/generate_key"));
 	// task.listen([this](web::WebResponse* response) {
@@ -73,13 +75,12 @@ void LevelBrowserLayerHook::onLogin(Result<> result) {
 	// });
 
 	// auto req = WebManager::get()->createAuthenticatedRequest();
-	// req.param("old_account_name", "oldAccount");
-	// req.param("new_account_name", "newAccount");
-	// auto task = req.post(WebManager::get()->getServerURL("admin/transfer_account"));
-	// task.listen([this](web::WebResponse* response) {
-	// 	auto result = response->string();
+	// req.param("old_account_name", "dannygd28");
+	// req.param("new_account_name", "Dannyplays64");
+	// m_fields->adminTask.spawn(req.post(WebManager::get()->getServerURL("admin/transfer_account")), [this](auto response) {
+	// 	auto result = response.string();
 	// 	if (result.isErr()) {
-	// 		Notification::create("Failed to transfer account!", nullptr)->show();
+	// 		Notification::create(fmt::format("Failed to transfer account: {}", result.unwrapErr()), nullptr)->show();
 	// 	}
 	// 	else {
 	// 		auto key = result.unwrap();
@@ -126,6 +127,8 @@ void LevelBrowserLayerHook::onLogin(Result<> result) {
 		Notification::create("Logged in successfully!", nullptr)->show();
 		LevelBrowserLayerUIHook::Fields::initialCall = false;
 
+		WebManager::get()->setLoginToken(result.unwrap());
+
 		if (Mod::get()->getSavedValue<bool>("shown-globed-compatibility-popup") == false) {
 			geode::createQuickPopup(
 				"Editor Collab", 
@@ -136,10 +139,8 @@ void LevelBrowserLayerHook::onLogin(Result<> result) {
 			Mod::get()->setSavedValue("shown-globed-compatibility-popup", true);
 		}
 
-		if (Fields::self == this) {
-			LevelBrowserLayerUIHook::from(this)->onLocalLevels(nullptr);
-			this->refreshButton();
-		}
+		LevelBrowserLayerUIHook::from(this)->onLocalLevels(nullptr);
+		this->refreshButton();
 	}
 }
 
@@ -148,11 +149,11 @@ void LevelBrowserLayerHook::onLogout(Result<> result) {
 		Notification::create("Failed to logout!", nullptr)->show();
 	}
 	else {
+		WebManager::get()->setLoginToken("");
+
 		Notification::create("Logged out successfully!", nullptr)->show();
 	}
-	if (Fields::self == this) {
-		this->refreshButton();
-	}
+	this->refreshButton();
 }
 
 $override
@@ -179,11 +180,15 @@ bool LevelBrowserLayerHook::init(GJSearchObject* searchObject) {
 			"Editor Collab (Error)", 
 			"<cg>Editor Collab</c> mod <cr>is not loaded</c>, <cf>Editor Collab UI</c> requires the mod to function.", 
 			"OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {
-				m_fields->modPageTask = geode::openInfoPopup("alk.editor-collab");
+				if (auto task = geode::openInfoPopup("alk.editor-collab")) {
+					m_fields->modPageTask.spawn(std::move(*task), [=](auto res) {
+
+					});
+				}
 			}, false);
 		popup->m_scene = this;
 		popup->show();
-		return true;
+		// return true;
 	}
 
 	this->refreshButton();

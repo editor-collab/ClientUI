@@ -12,10 +12,10 @@ namespace tulip::editor {
 		std::unordered_map<uint32_t, geode::Ref<cocos2d::CCLabelBMFont>> m_userLabels;
 		std::unordered_map<uint32_t, geode::Ref<cocos2d::extension::CCScale9Sprite>> m_userLabelsShadow;
 
-		geode::Ref<cocos2d::CCNode> m_userListListener;
-		geode::Ref<cocos2d::CCNode> m_redrawListener;
-		geode::Ref<cocos2d::CCNode> m_drawListener;
-		geode::Ref<cocos2d::CCNode> m_levelSettingListener;
+		geode::ListenerHandle m_userListHandle;
+		geode::ListenerHandle m_redrawHandle;
+		geode::ListenerHandle m_drawHandle;
+		geode::ListenerHandle m_levelSettingHandle;
 
 		LevelSetting m_levelSetting;
 		ConnectedUserList m_userList;

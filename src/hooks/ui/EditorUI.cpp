@@ -5,7 +5,7 @@
 #include <ui/BuyPopup.hpp>
 #include <ui/LevelUserList.hpp>
 #include <lavender/Lavender.hpp>
-#include <managers/AccountManager.hpp>
+#include <managers/WebManager.hpp>
 #include <cvolton.level-id-api/include/EditorIDs.hpp>
 
 using namespace geode::prelude;
@@ -14,7 +14,7 @@ using namespace tulip::editor;
 bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
     if (!EditorUI::init(editorLayer)) return false;
 
-    if (!AccountManager::get()->isLoggedIn()) {
+    if (!WebManager::get()->isLoggedIn()) {
         m_fields->m_shareButton = nullptr;
         return true;
     }

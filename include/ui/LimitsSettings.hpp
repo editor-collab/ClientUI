@@ -2,6 +2,7 @@
 #include <Geode/Geode.hpp>
 #include "../data/LevelEntry.hpp"
 #include <deque>
+#include <Geode/utils/async.hpp>
 
 namespace ui {
     struct Base;
@@ -13,6 +14,7 @@ namespace tulip::editor {
         SettingUserEntry* m_entry;
         LevelSetting* m_setting;
         std::string m_key;
+        geode::async::TaskHolder<geode::Result<LevelEntry>> m_updateLevelListener;
 
         cocos2d::CCNode* m_popup = nullptr;
 
