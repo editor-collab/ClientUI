@@ -75,8 +75,8 @@ void LevelBrowserLayerHook::onLogin(Result<std::string> result) {
 	// });
 
 	// auto req = WebManager::get()->createAuthenticatedRequest();
-	// req.param("old_account_name", "dannygd28");
-	// req.param("new_account_name", "Dannyplays64");
+	// req.param("old_account_name", "oldacc");
+	// req.param("new_account_name", "newacc");
 	// m_fields->adminTask.spawn(req.post(WebManager::get()->getServerURL("admin/transfer_account")), [this](auto response) {
 	// 	auto result = response.string();
 	// 	if (result.isErr()) {
