@@ -1,3 +1,6 @@
+## v0.3.4-alpha
+ - **Fix** Make the connecting notif not appear on playtest and back
+
 ## v0.3.3-alpha
  - **Add** 2.2081 support!
  - **Fix** Go to my levels automatically on login

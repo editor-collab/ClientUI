@@ -41,8 +41,16 @@ bool LevelEditorLayerUIHook::init(GJGameLevel* level, bool p1) {
 		m_objectLayer->addChild(overlay, 10000);
     }
 
-    m_fields->notification = Notification::create("Connecting to server, please wait...", NotificationIcon::Loading, 0.f);
-    m_fields->notification->show();
+    Loader::get()->queueInMainThread([this]() {
+        if (static_cast<EditorUIUIHook*>(m_editorUI)->m_fields->visibility) {
+            return;
+        }
+        if (m_fields->notification) {
+            m_fields->notification->hide();
+        }
+        m_fields->notification = Notification::create("Connecting to server, please wait...", NotificationIcon::Loading, 0.f);
+        m_fields->notification->show();
+    });
 
     log::debug("Setting up socket event listeners");
     m_fields->socketConnectedHandle = Dispatch<>("alk.editor-collab/socket-connected").listen([this]() {
