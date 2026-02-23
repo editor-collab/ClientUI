@@ -53,10 +53,17 @@ bool LevelEditorLayerUIHook::init(GJGameLevel* level, bool p1) {
     });
 
     log::debug("Setting up socket event listeners");
+    m_fields->actionsLoadedHandle = Dispatch<>("alk.editor-collab/actions-loaded").listen([this]() {
+        log::info("Actions loaded");
+        this->queueVisibility(true);
+        this->queueNotification("Loaded actions!", NotificationIcon::Success, 2.f);
+        LevelManager::get()->setSocketStatus(SocketStatus::Connected);
+        return ListenerResult::Propagate;
+    });
     m_fields->socketConnectedHandle = Dispatch<>("alk.editor-collab/socket-connected").listen([this]() {
         log::info("Socket connected");
-        this->queueVisibility(true);
-        this->queueNotification("Connected to server!", NotificationIcon::Success, 2.f);
+        // this->queueVisibility(true);
+        this->queueNotification("Connected to server, loading actions...", NotificationIcon::Loading, 0.f);
         LevelManager::get()->setSocketStatus(SocketStatus::Connected);
         return ListenerResult::Propagate;
     });

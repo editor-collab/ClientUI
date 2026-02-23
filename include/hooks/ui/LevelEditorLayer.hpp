@@ -12,6 +12,7 @@ namespace tulip::editor {
 
             geode::Ref<geode::Notification> notification;
 
+            ListenerHandle actionsLoadedHandle;
             ListenerHandle socketConnectedHandle;
             ListenerHandle socketReconnectedHandle;
             ListenerHandle socketDisconnectedHandle;

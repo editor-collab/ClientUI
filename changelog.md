@@ -1,3 +1,6 @@
+## v0.3.5-alpha
+ - **Fix** UI appearing early when connecting to level
+
 ## v0.3.4-alpha
  - **Fix** Make the connecting notif not appear on playtest and back
 
