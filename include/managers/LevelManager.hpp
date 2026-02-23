@@ -9,6 +9,12 @@ namespace tulip::editor {
     using geode::Result;
     using geode::Task;
     using geode::utils::web::WebProgress;
+    enum class SocketStatus {
+        Connected,
+        Disconnected,
+        Reconnecting,
+    };
+
     class LevelManager {
         class Impl;
         std::unique_ptr<Impl> impl;
@@ -31,24 +37,25 @@ namespace tulip::editor {
             std::optional<CameraValue> camera;
         };
 
-        arc::Future<Result<CreateLevelResult>> createLevel(LevelSetting const& settings);
-        arc::Future<Result<JoinLevelResult>> joinLevel(std::string_view levelKey);
-        arc::Future<Result<>> leaveLevel(CameraValue const& camera);
-        arc::Future<Result<>> deleteLevel(std::string_view levelKey);
-        arc::Future<Result<std::vector<uint8_t>>> getSnapshot(std::string_view levelKey, std::string_view hash);
-        arc::Future<Result<LevelEntry>> updateLevelSettings(std::string_view levelKey, LevelSetting const& settings);
-        arc::Future<Result<>> updateLevelSnapshot(std::string_view levelKey, std::string_view token, std::span<uint8_t> snapshot);
-        arc::Future<Result<>> kickUser(std::string_view levelKey, uint32_t accountId, std::string_view reason);
+        arc::Future<Result<CreateLevelResult>> createLevel(LevelSetting settings);
+        arc::Future<Result<JoinLevelResult>> joinLevel(std::string levelKey, arc::CancellationToken& cancelToken);
+        arc::Future<Result<>> leaveLevel(CameraValue camera);
+        arc::Future<Result<>> deleteLevel(std::string levelKey);
+        arc::Future<Result<std::vector<uint8_t>>> getSnapshot(std::string levelKey, std::string hash);
+        arc::Future<Result<LevelEntry>> updateLevelSettings(std::string levelKey, LevelSetting settings);
+        arc::Future<Result<>> updateLevelSnapshot(std::string levelKey, std::string token, std::vector<uint8_t> snapshot);
+        arc::Future<Result<>> kickUser(std::string levelKey, uint32_t accountId, std::string reason);
         void leaveLevelAbnormal();
 
-        std::vector<std::string> getHostedLevels() const;
-
-        std::optional<std::string> getJoinedLevelKey() const;
+        std::string getJoinedLevelKey() const;
 
         uint32_t getClientId() const;
 
-        bool isInLevel() const;
+        bool hasJoinedLevelKey() const;
 
-        void cancelReconnect();
+        arc::Future<Result<>> cancelReconnect();
+
+        SocketStatus getSocketStatus() const;
+        void setSocketStatus(SocketStatus status);
     };
 }

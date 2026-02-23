@@ -622,7 +622,7 @@ void ShareSettings::startSharing(cocos2d::CCObject* sender) {
                 
                 auto token = WebManager::get()->getLoginToken();
                 Dispatch<std::string_view, uint32_t, GJGameLevel*, std::string_view>(
-                    "create-level"_spr).send(token, value.clientId, m_editorLayer->m_level, value.levelKey
+                    "alk.editor-collab/create-level").send(token, value.clientId, m_editorLayer->m_level, value.levelKey
                 );
                 Notification::create("Level started sharing", NotificationIcon::Success, 1.5f)->show();
 
@@ -655,7 +655,7 @@ void ShareSettings::stopSharing(cocos2d::CCObject* sender) {
             // BrowserManager::get()->updateLevelEntry(m_editorLayer->m_level);
 
             auto token = WebManager::get()->getLoginToken();
-            Dispatch<std::string_view, uint32_t>("delete-level"_spr).send(token, LevelManager::get()->getClientId());
+            Dispatch<std::string_view, uint32_t>("alk.editor-collab/delete-level").send(token, LevelManager::get()->getClientId());
             Notification::create("Level stopped sharing", NotificationIcon::Success, 1.5f)->show();
 
             m_popup->removeFromParent();

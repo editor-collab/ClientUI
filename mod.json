@@ -1,5 +1,5 @@
 {
-	"geode": "5.0.0-alpha.2",
+	"geode": "5.0.0-beta.4",
 	"gd": {
 		"win": "2.2081",
 		"android": "2.2081",
@@ -8,7 +8,7 @@
 	},
 	"id": "alk.editor-collab-ui",
 	"name": "Editor Collab UI",
-	"version": "0.4.0-alpha",
+	"version": "0.3.3-alpha",
 	"developer": "alk",
 	"description": "UI for the Editor Collab mod",
 	"resources": {
@@ -31,12 +31,20 @@
 	"dependencies": {
 		"cvolton.level-id-api": {
 			"version": "2.0.0-beta.1",
-			"importance": "required"
+			"required": true
 		},
 		"geode.node-ids": {
             "version": ">=1.22.0-beta.1",
-            "importance": "required"
-        }
+            "required": true
+        },
+		"alk.editor-collab": {
+			"version": ">=0.3.8-alpha",
+			"required": false
+		},
+		"alk.better-touch-prio": {
+			"version": ">=1.0.6",
+			"required": true
+		}
 	},
 	"settings": {
 		"auto-connect": {

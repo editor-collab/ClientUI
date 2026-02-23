@@ -10,10 +10,6 @@ namespace tulip::editor {
             ListenerHandle levelKickedHandle;
             ListenerHandle updateSnapshotHandle;
             async::TaskHolder<Result<>> updateSnapshotTask;
-
-            ListenerHandle socketConnectedHandle;
-            ListenerHandle socketDisconnectedHandle;
-            ListenerHandle socketAbnormallyDisconnectedHandle;
         };
 
         $override

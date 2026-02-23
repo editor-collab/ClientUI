@@ -42,7 +42,7 @@ bool EditorOverlay::init(uint32_t hostAccountId) {
 	}
 	m_hostAccountId = hostAccountId;
 
-	Dispatch<ConnectedUserList*>("get-user-list"_spr).send(&m_userList);
+	Dispatch<ConnectedUserList*>("alk.editor-collab/get-user-list").send(&m_userList);
 
 	m_userListHandle = Dispatch<ConnectedUserList>("alk.editor-collab/update-user-list").listen([this](ConnectedUserList userList) {
 		m_userList = userList;

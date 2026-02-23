@@ -60,6 +60,31 @@ void LevelBrowserLayerHook::refreshButton() {
 }
 
 void LevelBrowserLayerHook::onLogin(Result<std::string> result) {
+	if (result.isErr()) {
+		log::info("Failed to login: {}", result.unwrapErr());
+		Notification::create(fmt::format("Failed to login!: {}", result.unwrapErr()), nullptr)->show();
+	}
+	else {
+		Notification::create("Logged in successfully!", nullptr)->show();
+		
+
+		WebManager::get()->setLoginToken(result.unwrap());
+
+		if (Mod::get()->getSavedValue<bool>("shown-globed-compatibility-popup") == false) {
+			geode::createQuickPopup(
+				"Editor Collab", 
+				"<cg>Editor Collab</c> is now compatible with <co>Globed</c>! "
+				"You can <cc>see your friends</c> playtesting <cl>while editing</c> at the same time, just <cb>join the same server</c>!",
+				"OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {}, true
+			);
+			Mod::get()->setSavedValue("shown-globed-compatibility-popup", true);
+		}
+
+		this->refreshButton();
+
+		LevelBrowserLayerUIHook::from(this)->onMyLevels();
+	}
+
 	// auto req = WebManager::get()->createAuthenticatedRequest();
 	// auto task = req.post(WebManager::get()->getServerURL("admin/generate_key"));
 	// task.listen([this](web::WebResponse* response) {
@@ -75,8 +100,8 @@ void LevelBrowserLayerHook::onLogin(Result<std::string> result) {
 	// });
 
 	// auto req = WebManager::get()->createAuthenticatedRequest();
-	// req.param("old_account_name", "oldacc");
-	// req.param("new_account_name", "newacc");
+	// req.param("old_account_name", "dannygd28");
+	// req.param("new_account_name", "dannyplays64");
 	// m_fields->adminTask.spawn(req.post(WebManager::get()->getServerURL("admin/transfer_account")), [this](auto response) {
 	// 	auto result = response.string();
 	// 	if (result.isErr()) {
@@ -118,30 +143,6 @@ void LevelBrowserLayerHook::onLogin(Result<std::string> result) {
 	// 		Notification::create(fmt::format("Revoke key: {}", res), nullptr)->show();
 	// 	}
 	// });
-
-	if (result.isErr()) {
-		log::info("Failed to login: {}", result.unwrapErr());
-		Notification::create(fmt::format("Failed to login!: {}", result.unwrapErr()), nullptr)->show();
-	}
-	else {
-		Notification::create("Logged in successfully!", nullptr)->show();
-		LevelBrowserLayerUIHook::Fields::initialCall = false;
-
-		WebManager::get()->setLoginToken(result.unwrap());
-
-		if (Mod::get()->getSavedValue<bool>("shown-globed-compatibility-popup") == false) {
-			geode::createQuickPopup(
-				"Editor Collab", 
-				"<cg>Editor Collab</c> is now compatible with <co>Globed</c>! "
-				"You can <cc>see your friends</c> playtesting <cl>while editing</c> at the same time, just <cb>join the same server</c>!",
-				"OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {}, true
-			);
-			Mod::get()->setSavedValue("shown-globed-compatibility-popup", true);
-		}
-
-		LevelBrowserLayerUIHook::from(this)->onLocalLevels(nullptr);
-		this->refreshButton();
-	}
 }
 
 void LevelBrowserLayerHook::onLogout(Result<> result) {

@@ -7,7 +7,7 @@ using namespace tulip::editor;
 void PauseLayerUIHook::customSetup() {
     PauseLayer::customSetup();
 
-    if (!LevelManager::get()->getJoinedLevelKey().has_value()) {
+    if (!LevelManager::get()->hasJoinedLevelKey()) {
         return;
     }
 

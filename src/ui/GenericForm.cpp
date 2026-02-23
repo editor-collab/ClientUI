@@ -27,16 +27,13 @@ bool GenericForm::init(std::string const& title) {
     }
     
     m_columnMenu = CCMenu::create();
-    m_columnMenu->setContentSize(CCSizeMake(300.f, 300.f));
+    m_columnMenu->setContentSize(CCSizeMake(300.f, 100.f));
     m_columnMenu->setAnchorPoint(ccp(0.5f, 1.f));
-    m_columnMenu->setLayout(ColumnLayout::create()
-        ->setAxisAlignment(AxisAlignment::Start)
-        ->setCrossAxisLineAlignment(AxisAlignment::Center)
-		->setAxisReverse(true)
-        ->setGrowCrossAxis(false)
-        ->setAutoScale(false)
+    m_columnMenu->setLayout(SimpleColumnLayout::create()
+        ->setMainAxisAlignment(MainAxisAlignment::Start)
+        ->setCrossAxisAlignment(CrossAxisAlignment::Center)
         ->setGap(10.f)
-        ->setAutoGrowAxis(100.f)
+        ->setMainAxisScaling(AxisScaling::Grow)
     );
     m_mainLayer->addChildAtPosition(m_columnMenu, Anchor::Top, ccp(0.f, 0.f));
 

@@ -17,7 +17,7 @@ namespace tulip::editor {
 
     struct LevelBrowserLayerUIHook : Modify<LevelBrowserLayerUIHook, LevelBrowserLayer> {
         struct Fields {
-            CurrentTab currentTab = CurrentTab::LocalLevels;
+            static inline CurrentTab currentTab = CurrentTab::LocalLevels;
 
             geode::ListView* m_myLevelsList;
 
@@ -38,7 +38,7 @@ namespace tulip::editor {
 
         CCSprite* generateTabSprite(std::string_view framename, std::string_view id, bool visible);
 
-        void revisualizeButtons(cocos2d::CCObject* sender);
+        void revisualizeButtons();
 
         $override
         void setupLevelBrowser(cocos2d::CCArray* items);
@@ -49,10 +49,10 @@ namespace tulip::editor {
         $override
         bool init(GJSearchObject* searchObject);
 
-        void onLocalLevels(cocos2d::CCObject* sender);
-        void onMyLevels(cocos2d::CCObject* sender);
-        void onSharedWithMe(cocos2d::CCObject* sender);
-        void onDiscover(cocos2d::CCObject* sender);
+        void onLocalLevels();
+        void onMyLevels();
+        void onSharedWithMe();
+        void onDiscover();
 
         static LevelBrowserLayerUIHook* from(LevelBrowserLayer* layer) {
             return static_cast<LevelBrowserLayerUIHook*>(layer);

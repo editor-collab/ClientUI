@@ -11,7 +11,12 @@ namespace tulip::editor {
     struct EditorUIUIHook : Modify<EditorUIUIHook, EditorUI> {
         struct Fields {
             CCMenuItemSpriteExtra* m_shareButton;
+            EditButtonBar* savedButtonBar = nullptr;
+            bool visibility = true;
+            ListenerHandle uiVisibilityHandle;
         };
+
+        void setVisibility(bool show);
 
         $override
         bool init(LevelEditorLayer* editorLayer);

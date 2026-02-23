@@ -39,7 +39,7 @@ bool LevelUserList::init(LevelEntry* entry, LevelEditorLayer* editorLayer) {
     m_setting = &entry->settings;
     m_editorLayer = editorLayer;
 
-    Dispatch<ConnectedUserList*>("get-user-list"_spr).send(&m_userList);
+    Dispatch<ConnectedUserList*>("alk.editor-collab/get-user-list").send(&m_userList);
 
     m_userListHandle = Dispatch<ConnectedUserList>("alk.editor-collab/update-user-list").listen([this](ConnectedUserList userList) {
         m_userList = userList;
@@ -171,7 +171,7 @@ void LevelUserList::updateUsers() {
                     this->createReasonPopup([=, this](std::string_view reason) {
                         m_userList.erase(entry.user.accountId);
 
-                        m_kickListener.spawn(LevelManager::get()->kickUser(m_entry->key, entry.user.accountId, reason), [=](auto result) {});
+                        m_kickListener.spawn(LevelManager::get()->kickUser(m_entry->key, entry.user.accountId, std::string(reason)), [=](auto result) {});
 
                         this->updateUsers();
                     });

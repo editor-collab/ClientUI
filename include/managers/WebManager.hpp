@@ -22,7 +22,7 @@ namespace tulip::editor {
         std::string getServerURL(std::string_view path) const;
 
         void setLoginToken(std::string token);
-        std::string_view getLoginToken() const;
+        std::string getLoginToken() const;
         
         inline bool isLoggedIn() const {
             return !getLoginToken().empty();

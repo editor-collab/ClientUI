@@ -1,4 +1,5 @@
 #include <hooks/ui/EditorPauseLayer.hpp>
+#include <hooks/ui/EditorUI.hpp>
 #include <managers/BrowserManager.hpp>
 #include <managers/LevelManager.hpp>
 #include <ui/LevelUserList.hpp>
@@ -10,7 +11,7 @@ using namespace tulip::editor;
 bool EditorPauseLayerUIHook::init(LevelEditorLayer* editorLayer) {
     if (!EditorPauseLayer::init(editorLayer)) return false;
 
-    if (!LevelManager::get()->getJoinedLevelKey().has_value()) {
+    if (!LevelManager::get()->hasJoinedLevelKey()) {
         return true;
     }
 
@@ -29,6 +30,16 @@ bool EditorPauseLayerUIHook::init(LevelEditorLayer* editorLayer) {
     this->setupGuidelinesMenu();
     this->setupInfoMenu();
     this->setupResumeMenu();
+
+    if (!static_cast<EditorUIUIHook*>(editorLayer->m_editorUI)->m_fields->visibility) {
+        if (auto menu = static_cast<CCMenu*>(this->querySelector("actions-menu"))) {
+            menu->setVisible(false);
+        }
+
+        if (auto menu = static_cast<CCMenu*>(this->querySelector("small-actions-menu"))) {
+            menu->setVisible(false);
+        }
+    }
 
     return true;
 }
@@ -192,7 +203,7 @@ void EditorPauseLayerUIHook::onPlayInLDM(cocos2d::CCObject* sender) {
     m_fields->playLock = false;
 }
 void EditorPauseLayerUIHook::onExitWithoutPrompt(cocos2d::CCObject* sender) {
-    if (LevelManager::get()->getJoinedLevelKey().has_value()) {
+    if (LevelManager::get()->hasJoinedLevelKey()) {
         GameManager::get()->m_sceneEnum = 3;
     }
     

@@ -1,3 +1,8 @@
+## v0.3.3-alpha
+ - **Add** 2.2081 support!
+ - **Fix** Go to my levels automatically on login
+ - **Fix** Better disconnection handling, better notifications
+
 ## v0.3.2-alpha
  - **Fix** Crash on new editor overlay if the main mod isn't updated
 

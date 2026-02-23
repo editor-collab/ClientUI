@@ -16,9 +16,13 @@ bool LevelEditorLayerHook::init(GJGameLevel* level, bool p1) {
     LevelEntry* entry = BrowserManager::get()->getLevelEntry(LevelEditorLayer::get()->m_level);
 	if (entry == nullptr) return true;
 
-    m_fields->levelKickedHandle = Dispatch<std::string_view>("alk.editor-collab/level-kicked").listen([this](std::string_view reason) {
+    m_fields->levelKickedHandle = Dispatch<std::string_view>("alk.editor-collab/level-kicked").listen([=, this](std::string_view reason) {
         log::debug("Level kicked: {}", reason);
-        LevelManager::get()->leaveLevelAbnormal();
+        Loader::get()->queueInMainThread([=]() {
+            Notification::create(fmt::format("Failed to connect: {}", reason), NotificationIcon::Error)->show();
+            GameManager::get()->returnToLastScene(level);
+            LevelManager::get()->leaveLevelAbnormal();
+        });
         return ListenerResult::Propagate;
     });
     m_fields->updateSnapshotHandle = Dispatch<std::string_view>("alk.editor-collab/update-level-snapshot").listen([this](std::string_view token) {
@@ -34,22 +38,6 @@ bool LevelEditorLayerHook::init(GJGameLevel* level, bool p1) {
         );
         return ListenerResult::Propagate;
     });
-
-    // m_fields->socketConnectedHandle = Dispatch<std::string_view>("alk.editor-collab/socket-connected").listen([this](std::string_view reason) {
-    //     log::debug("Socket connected: {}", reason);
-    //     WebManager::get()->connectSocket();
-    //     return ListenerResult::Propagate;
-    // });
-    // m_fields->socketDisconnectedHandle = Dispatch<std::string_view>("alk.editor-collab/socket-disconnected").listen([this](std::string_view reason) {
-    //     log::debug("Socket disconnected: {}", reason);
-    //     WebManager::get()->disconnectSocket();
-    //     return ListenerResult::Propagate;
-    // });
-    // m_fields->socketAbnormallyDisconnectedHandle = Dispatch<std::string_view>("alk.editor-collab/socket-abnormally-disconnected").listen([this](std::string_view reason) {
-    //     log::debug("Socket abnormally disconnected: {}", reason);
-    //     WebManager::get()->disconnectSocket();
-    //     return ListenerResult::Propagate;
-    // });
 
     return true;
 }

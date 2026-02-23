@@ -23,7 +23,7 @@ public:
         m_loginToken = std::move(token);
     }
 
-    std::string_view getLoginToken() const {
+    std::string getLoginToken() const {
         return m_loginToken;
     }
 
@@ -137,6 +137,6 @@ void WebManager::setLoginToken(std::string token) {
     impl->setLoginToken(std::move(token));
 }
 
-std::string_view WebManager::getLoginToken() const {
+std::string WebManager::getLoginToken() const {
     return impl->getLoginToken();
 }

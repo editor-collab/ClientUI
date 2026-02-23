@@ -90,13 +90,50 @@ bool EditorUIUIHook::init(LevelEditorLayer* editorLayer) {
         menu->updateLayout();
     }
 
+    m_fields->uiVisibilityHandle = Dispatch<bool>("alk.editor-collab/set-ui-visibility").listen([this](bool visible) {
+        this->setVisibility(visible);
+        return ListenerResult::Propagate;
+    });
+
     return true;
 }
 
 void EditorUIUIHook::showUI(bool show) {
+    show = show && m_fields->visibility;
     EditorUI::showUI(show);    
     if (m_fields->m_shareButton) {
         m_fields->m_shareButton->setVisible(show);
     }
+
+    // fixing robtop's bugs? in my editor collab? never...
+    m_goToBaseBtn->setVisible(show);
+    m_linkBtn->setVisible(show);
+    m_unlinkBtn->setVisible(show);
+    m_enableLinkBtn->setVisible(show);
 }
 
+void EditorUIUIHook::setVisibility(bool show) {
+    m_fields->visibility = show;
+
+    CCMenuItemSpriteExtra* hideUIToggle = static_cast<CCMenuItemSpriteExtra*>(this->querySelector("hjfod.betteredit/hide-ui-toggle"));
+
+	if (show) {
+        if (m_fields->savedButtonBar) {
+            this->toggleMode(m_fields->savedButtonBar);
+        }
+        else {
+            this->toggleMode(m_createButtonBar);
+        }
+		this->showUI(true);
+		this->m_playtestBtn->setVisible(true);
+        if (hideUIToggle) hideUIToggle->setVisible(true);
+	}
+	else {
+        m_fields->savedButtonBar = m_customTabBar;
+        this->toggleMode(m_editButtonBar);
+		this->showUI(false);
+		this->m_playtestBtn->setVisible(false);
+        if (hideUIToggle) hideUIToggle->setVisible(false);
+	}
+    this->updateButtons();
+}
