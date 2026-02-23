@@ -127,6 +127,8 @@ public:
     void overrideReflectedLevel(GJGameLevel* level, LevelEntry const& entry);
 
     void initializeKey(GJGameLevel* level, LevelEntry const& entry);
+
+    bool isShadowLevel(GJGameLevel* level);
 };
 
 $on_mod(Loaded) {
@@ -800,6 +802,15 @@ void BrowserManager::Impl::initializeKey(GJGameLevel* level, LevelEntry const& e
     }, variant);
 }
 
+bool BrowserManager::Impl::isShadowLevel(GJGameLevel* level) {
+    auto variant = reflected.convertLevel(level);
+    return std::visit(makeVisitor {
+        [&](ShadowLevel* shadowLevel) { return true; },
+        [&](ReflectedLevel* reflectedLevel) { return false; },
+        [&](GJGameLevel* gjLevel) { return false; }
+    }, variant);
+}
+
 BrowserManager* BrowserManager::get() {
     static BrowserManager instance;
     return &instance;
@@ -885,4 +896,8 @@ void BrowserManager::detachReflectedLevel(GJGameLevel*& level) {
 
 void BrowserManager::initializeKey(GJGameLevel* level, LevelEntry const& entry) {
     impl->initializeKey(level, entry);
+}
+
+bool BrowserManager::isShadowLevel(GJGameLevel* level) {
+    return impl->isShadowLevel(level);
 }

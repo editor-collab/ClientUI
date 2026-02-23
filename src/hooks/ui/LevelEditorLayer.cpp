@@ -18,7 +18,7 @@ void LevelEditorLayerUIHook::queueVisibility(bool visible) {
 void LevelEditorLayerUIHook::queueNotification(std::string message, geode::NotificationIcon icon, float duration) {
     Loader::get()->queueInMainThread([this, message = std::move(message), icon, duration]() {
         if (m_fields->notification) {
-            m_fields->notification->hide();
+            m_fields->notification->cancel();
         }
         m_fields->notification = Notification::create(message, icon, duration);
         m_fields->notification->show();
@@ -46,7 +46,7 @@ bool LevelEditorLayerUIHook::init(GJGameLevel* level, bool p1) {
             return;
         }
         if (m_fields->notification) {
-            m_fields->notification->hide();
+            m_fields->notification->cancel();
         }
         m_fields->notification = Notification::create("Connecting to server, please wait...", NotificationIcon::Loading, 0.f);
         m_fields->notification->show();

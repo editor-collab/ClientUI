@@ -1,3 +1,9 @@
+## v0.3.6-alpha
+ - **Fix** Update argon to fix MacOS crash
+ - **Fix** Opening local level instead sends to shared level
+ - **Fix** Notifications not appearing after first join
+ - **Fix** Login not resetting after changing accounts
+
 ## v0.3.5-alpha
  - **Fix** UI appearing early when connecting to level
 

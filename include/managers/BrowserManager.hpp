@@ -65,5 +65,7 @@ namespace tulip::editor {
         void detachReflectedLevel(GJGameLevel*& level);
 
         void initializeKey(GJGameLevel* level, LevelEntry const& entry);
+
+        bool isShadowLevel(GJGameLevel* level);
     };
 }

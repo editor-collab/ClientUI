@@ -15,6 +15,8 @@
 using namespace geode::prelude;
 using namespace tulip::editor;
 
+static inline std::string s_savedUsername;
+
 void LevelBrowserLayerHook::refreshButton() {
 	if (m_fields->menuButton) m_fields->menuButton->removeFromParent();
 	std::string filename;
@@ -100,8 +102,8 @@ void LevelBrowserLayerHook::onLogin(Result<std::string> result) {
 	// });
 
 	// auto req = WebManager::get()->createAuthenticatedRequest();
-	// req.param("old_account_name", "dannygd28");
-	// req.param("new_account_name", "dannyplays64");
+	// req.param("old_account_name", "Bjolkon");
+	// req.param("new_account_name", "JuicyPig");
 	// m_fields->adminTask.spawn(req.post(WebManager::get()->getServerURL("admin/transfer_account")), [this](auto response) {
 	// 	auto result = response.string();
 	// 	if (result.isErr()) {
@@ -164,6 +166,12 @@ bool LevelBrowserLayerHook::init(GJSearchObject* searchObject) {
 	Fields::self = this;
 
 	if (searchObject->m_searchType != SearchType::MyLevels) return true;
+
+	if (GJAccountManager::get()->m_username != s_savedUsername) {
+		s_savedUsername = GJAccountManager::get()->m_username;
+		WebManager::get()->setLoginToken("");
+		(void)AccountManager::get()->logout();
+	}
 
 	if (Mod::get()->getSavedValue<bool>("shown-introduction-popup") == false) {
 		auto popup = geode::createQuickPopup(

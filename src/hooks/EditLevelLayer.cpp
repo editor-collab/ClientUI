@@ -140,7 +140,7 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 		m_fields->m_joinListener.spawn(LevelManager::get()->joinLevel(levelKey, *m_fields->joinCancelToken), [=, this](auto event) {
 			if (GEODE_UNWRAP_EITHER(value, err, event)) {
 				//////// log::debug("join level task succeed");
-				m_fields->m_notification->hide();
+				m_fields->m_notification->cancel();
 				m_fields->m_notification = nullptr;
 
 				auto token = WebManager::get()->getLoginToken();
@@ -178,6 +178,8 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 
 		auto entry = BrowserManager::get()->getLevelEntry(m_level);
 		if (!entry) return true;
+
+		if (!BrowserManager::get()->isShadowLevel(m_level)) return true;
 		
 		auto menu = static_cast<CCMenu*>(this->getChildByIDRecursive("level-edit-menu"));
 		if (!menu) return true;
@@ -245,6 +247,9 @@ struct EditLevelLayerHook : Modify<EditLevelLayerHook, EditLevelLayer> {
 					return ListenerResult::Propagate;
 				});
 
+				if (m_fields->m_notification) {
+					m_fields->m_notification->cancel();
+				}
 				m_fields->m_notification = Notification::create(
 					"Joining level, please wait...",
 					NotificationIcon::Loading,

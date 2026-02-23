@@ -21,7 +21,7 @@ namespace tulip::editor {
 
             ~Fields() {
                 if (notification) {
-                    notification->hide();
+                    notification->cancel();
                     notification = nullptr;
                 }
             }
