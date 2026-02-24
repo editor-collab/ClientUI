@@ -40,9 +40,23 @@ void LevelBrowserLayerHook::refreshButton() {
 	auto menuSprite = CCSprite::createWithSpriteFrameName(filename.c_str());
 	menuSprite->setScale(0.9f);
 
-	auto menuButton = CCMenuItemExt::createSpriteExtra(menuSprite, [this](CCObject* sender) {
+	int accountId = GJAccountManager::get()->m_accountID;
+    int userId = GameManager::get()->m_playerUserID;
+    std::string username = GJAccountManager::get()->m_username;
+    std::string gjp = GJAccountManager::get()->m_GJP2;
+
+    auto data = argon::AccountData {
+        .accountId = accountId,
+        .userId = userId,
+        .username = std::move(username),
+        .gjp2 = std::move(gjp),
+        .serverUrl = "https://www.boomlings.com/database",
+    };
+
+	log::debug("Detected current thread id as {}", std::this_thread::get_id());
+	auto menuButton = CCMenuItemExt::createSpriteExtra(menuSprite, [this, data = std::move(data)](CCObject* sender) {
 		if (!WebManager::get()->isLoggedIn()) {
-			m_fields->loginListener.spawn(AccountManager::get()->login(argon::getGameAccountData()), [this](auto res) {
+			m_fields->loginListener.spawn(AccountManager::get()->login(std::move(data)), [this](auto res) {
 				this->onLogin(res);
 			});
 		}
@@ -59,6 +73,14 @@ void LevelBrowserLayerHook::refreshButton() {
 		menu->updateLayout();
 	}
 	this->loadPage(m_searchObject);
+}
+
+$execute {
+    ModStateEvent(ModEventType::Loaded, Mod::get()).listen([] {
+        Loader::get()->queueInMainThread([] {
+            log::debug("Detected current thread id as {}", std::this_thread::get_id());
+        });
+    }, -10000).leak();
 }
 
 void LevelBrowserLayerHook::onLogin(Result<std::string> result) {

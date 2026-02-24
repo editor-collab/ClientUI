@@ -1,3 +1,6 @@
+## v0.3.7-alpha
+ - **Fix** Pass the argon game data struct manually cause it still crashes on MacOS
+
 ## v0.3.6-alpha
  - **Fix** Update argon to fix MacOS crash
  - **Fix** Opening local level instead sends to shared level
