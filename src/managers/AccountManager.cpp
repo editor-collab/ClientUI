@@ -15,7 +15,7 @@ public:
     
     arc::Future<Result<std::string>> login(argon::AccountData accountData);
     Result<> logout();
-    arc::Future<Result<uint32_t>> claimKey(std::string_view key);
+    arc::Future<Result<uint32_t>> claimKey(std::string key);
 };
 
 arc::Future<Result<std::string>> AccountManager::Impl::login(argon::AccountData accountData) {  
@@ -64,9 +64,9 @@ Result<> AccountManager::Impl::logout() {
     return Ok();
 }
 
-arc::Future<Result<uint32_t>> AccountManager::Impl::claimKey(std::string_view key) {
+arc::Future<Result<uint32_t>> AccountManager::Impl::claimKey(std::string key) {
     auto req = WebManager::get()->createAuthenticatedRequest();
-    req.param("activation_key", std::string(key));
+    req.param("activation_key", std::move(key));
 
     auto response = co_await req.post(WebManager::get()->getServerURL("auth/claim_key"));
     GEODE_CO_UNWRAP(WebManager::get()->errorCallback(&response));
@@ -89,6 +89,6 @@ Result<> AccountManager::logout() {
     return impl->logout();
 }
 
-arc::Future<Result<uint32_t>> AccountManager::claimKey(std::string_view key) {
-    return impl->claimKey(key);
+arc::Future<Result<uint32_t>> AccountManager::claimKey(std::string key) {
+    return impl->claimKey(std::move(key));
 }

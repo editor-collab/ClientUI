@@ -1,5 +1,6 @@
 ## v0.3.7-alpha
  - **Fix** Pass the argon game data struct manually cause it still crashes on MacOS
+ - **Fix** Replace claim key from string view to string (how did i even forget that)
 
 ## v0.3.6-alpha
  - **Fix** Update argon to fix MacOS crash

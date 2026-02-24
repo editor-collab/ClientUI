@@ -20,6 +20,6 @@ namespace tulip::editor {
         arc::Future<Result<std::string>> login(argon::AccountData accountData);
         Result<> logout();
 
-        arc::Future<Result<uint32_t>> claimKey(std::string_view key);
+        arc::Future<Result<uint32_t>> claimKey(std::string key);
     };
 }

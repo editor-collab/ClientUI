@@ -86,7 +86,7 @@ bool BuyPopup::init() {
                                     if (m_text.size() == 19) {
                                         auto key = m_text.substr(0, 4) + m_text.substr(5, 4) + m_text.substr(10, 4) + m_text.substr(15, 4);
                                         m_claimListener.spawn(
-                                            AccountManager::get()->claimKey(key),
+                                            AccountManager::get()->claimKey(std::move(key)),
                                             [=, this](auto res) {
                                                 if (GEODE_UNWRAP_EITHER(value, err, res)) {
                                                     popupController->removeFromParentAndCleanup(true);
