@@ -125,6 +125,13 @@ void EditorOverlay::redrawSelectionRect() {
 		shadow->removeFromParent();
 	}
 
+	// std::vector<std::string> usernames = {
+	// 	"editorcollab",
+	// 	"alk1m123",
+	// 	"dankmeme01",
+	// 	"prevter"
+	// };
+	int i = 0;
 	for (auto& [selectedId, rect] : m_selectionRects) {
 		if (rect.equals(CCRectZero)) {
 			continue;
@@ -157,7 +164,9 @@ void EditorOverlay::redrawSelectionRect() {
 		) {
 			auto name = m_userList.contains(selectedId) ? m_userList.find(selectedId)->user.accountName : fmt::format("User {}", int(selectedId));
 			auto label = CCLabelBMFont::create(
-				name.c_str(), "chatFont.fnt"
+				name.c_str(), 
+				// usernames[i % usernames.size()].c_str(),
+				"chatFont.fnt"
 			);
 			label->setScale(1.f * multiplier);
 			label->setColor(this->getClientColor(selectedId));
@@ -176,6 +185,8 @@ void EditorOverlay::redrawSelectionRect() {
 
 			this->addChild(shadow);
 			this->addChild(label);
+
+			i++;
 		}
 
 		this->drawPolygon(

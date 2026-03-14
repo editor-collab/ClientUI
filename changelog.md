@@ -1,3 +1,6 @@
+## v0.3.8-alpha
+ - **Fix** Rare crash from executing set visibility on a queued in main thread function
+
 ## v0.3.7-alpha
  - **Fix** Pass the argon game data struct manually cause it still crashes on MacOS
  - **Fix** Replace claim key from string view to string (how did i even forget that)

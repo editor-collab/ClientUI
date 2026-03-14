@@ -110,7 +110,17 @@ void LevelBrowserLayerHook::onLogin(Result<std::string> result) {
 	}
 
 	// auto req = WebManager::get()->createAuthenticatedRequest();
-	// auto task = req.post(WebManager::get()->getServerURL("admin/generate_key"));
+	// m_fields->adminTask.spawn(req.post(WebManager::get()->getServerURL("admin/generate_key")), [this](auto response) {
+	// 	auto result = response.string();
+	// 	if (result.isErr()) {
+	// 		Notification::create("Failed to generate key!", nullptr)->show();
+	// 	}
+	// 	else {
+	// 		auto key = result.unwrap();
+	// 		log::info("Generated key: {}", key);
+	// 		Notification::create(fmt::format("Generated key: {}", key), nullptr)->show();
+	// 	}
+	// });
 	// task.listen([this](web::WebResponse* response) {
 	// 	auto result = response->string();
 	// 	if (result.isErr()) {
@@ -124,8 +134,8 @@ void LevelBrowserLayerHook::onLogin(Result<std::string> result) {
 	// });
 
 	// auto req = WebManager::get()->createAuthenticatedRequest();
-	// req.param("old_account_name", "Bjolkon");
-	// req.param("new_account_name", "JuicyPig");
+	// req.param("old_account_name", "username1");
+	// req.param("new_account_name", "username2");
 	// m_fields->adminTask.spawn(req.post(WebManager::get()->getServerURL("admin/transfer_account")), [this](auto response) {
 	// 	auto result = response.string();
 	// 	if (result.isErr()) {

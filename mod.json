@@ -1,5 +1,5 @@
 {
-	"geode": "5.0.1",
+	"geode": "5.1.0",
 	"gd": {
 		"win": "2.2081",
 		"android": "2.2081",
@@ -8,7 +8,7 @@
 	},
 	"id": "alk.editor-collab-ui",
 	"name": "Editor Collab UI",
-	"version": "0.3.7-alpha",
+	"version": "0.3.8-alpha",
 	"developer": "alk",
 	"description": "UI for the Editor Collab mod",
 	"resources": {
@@ -69,6 +69,12 @@
 			"type": "bool",
 			"name": "Show hide users toggle",
 			"description": "Show the hide users toggle in the share settings",
+			"default": false
+		},
+		"use-local-server": {
+			"type": "bool",
+			"name": "Use local server",
+			"description": "Use a local server instead of the default one. The local server must be running and configured correctly.",
 			"default": false
 		}
 	}

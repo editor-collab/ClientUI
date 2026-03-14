@@ -95,7 +95,7 @@ bool BuyPopup::init() {
                                                 }
                                                 else {
                                                     log::warn("Claim key error: {}", err);
-                                                    geode::createQuickPopup("Editor Collab (Error)", "<cr>Could not</c> claim the key.", "OK", nullptr, [](auto, auto) {}, true);
+                                                    geode::createQuickPopup("Editor Collab (Error)", fmt::format("<cr>Could not</c> claim the key: {}", err), "OK", nullptr, [](auto, auto) {}, true);
                                                 }
                                                 return ListenerResult::Propagate;
                                             }

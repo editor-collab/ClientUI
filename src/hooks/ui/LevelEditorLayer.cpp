@@ -10,18 +10,22 @@ using namespace geode::prelude;
 using namespace tulip::editor;
 
 void LevelEditorLayerUIHook::queueVisibility(bool visible) {
-    Loader::get()->queueInMainThread([this, visible]() {
-        static_cast<EditorUIUIHook*>(m_editorUI)->setVisibility(visible);
+    Loader::get()->queueInMainThread([visible]() {
+        if (auto editorUI = EditorUI::get()) {
+            static_cast<EditorUIUIHook*>(editorUI)->setVisibility(visible);
+        }
     });
 }
 
 void LevelEditorLayerUIHook::queueNotification(std::string message, geode::NotificationIcon icon, float duration) {
-    Loader::get()->queueInMainThread([this, message = std::move(message), icon, duration]() {
-        if (m_fields->notification) {
-            m_fields->notification->cancel();
+    Loader::get()->queueInMainThread([message = std::move(message), icon, duration]() {
+        if (auto editorLayer = LevelEditorLayer::get()) {
+            if (static_cast<LevelEditorLayerUIHook*>(editorLayer)->m_fields->notification) {
+                static_cast<LevelEditorLayerUIHook*>(editorLayer)->m_fields->notification->cancel();
+            }
+            static_cast<LevelEditorLayerUIHook*>(editorLayer)->m_fields->notification = Notification::create(message, icon, duration);
+            static_cast<LevelEditorLayerUIHook*>(editorLayer)->m_fields->notification->show();
         }
-        m_fields->notification = Notification::create(message, icon, duration);
-        m_fields->notification->show();
     });
 }
 
