@@ -97,5 +97,28 @@ bool LevelEditorLayerUIHook::init(GJGameLevel* level, bool p1) {
         return ListenerResult::Propagate;
     });
 
+    m_fields->levelKickedHandle = Dispatch<std::string_view>("alk.editor-collab/level-kicked").listen([=, this](std::string_view reason) {
+        log::debug("Level kicked: {}", reason);
+        Loader::get()->queueInMainThread([=]() {
+            Notification::create(std::string(reason), NotificationIcon::Info)->show();
+            GameManager::get()->returnToLastScene(level);
+            LevelManager::get()->leaveLevelAbnormal();
+        });
+        return ListenerResult::Propagate;
+    });
+    m_fields->updateSnapshotHandle = Dispatch<std::string_view>("alk.editor-collab/update-level-snapshot").listen([this](std::string_view token) {
+        std::vector<uint8_t> snapshot;
+        Dispatch<std::vector<uint8_t>*>("get-level-snapshot"_spr).send(&snapshot);
+        if (snapshot.empty()) {
+            log::warn("No snapshot data available for update");
+            return ListenerResult::Propagate;
+        }
+        m_fields->updateSnapshotTask.spawn(
+            LevelManager::get()->updateLevelSnapshot(LevelManager::get()->getJoinedLevelKey(), std::string(token), std::move(snapshot)),
+            [](auto res) {}
+        );
+        return ListenerResult::Propagate;
+    });
+
     return true;
 }

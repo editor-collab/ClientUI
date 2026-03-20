@@ -19,6 +19,10 @@ namespace tulip::editor {
             ListenerHandle socketReconnectingHandle;
             ListenerHandle socketAbnormallyDisconnectedHandle;
 
+            ListenerHandle levelKickedHandle;
+            ListenerHandle updateSnapshotHandle;
+            async::TaskHolder<Result<>> updateSnapshotTask;
+
             ~Fields() {
                 if (notification) {
                     notification->cancel();

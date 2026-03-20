@@ -15,7 +15,7 @@ using namespace tulip::editor;
 
 struct ExitHook : Modify<ExitHook, GameManager> {
 	struct Fields {
-		async::TaskHolder<Result<>> leaveLevelListener;
+		async::TaskHolder<Result<>> setLeaveDataListener;
 	};
 
 	void returnToLastScene(GJGameLevel* level) {
@@ -28,8 +28,8 @@ struct ExitHook : Modify<ExitHook, GameManager> {
 			}
 			log::debug("Leaving level with camera values: {} {} {}", camera.x, camera.y, camera.zoom);
 
-			m_fields->leaveLevelListener.spawn(
-				LevelManager::get()->leaveLevel(camera),
+			m_fields->setLeaveDataListener.spawn(
+				LevelManager::get()->setLeaveData(LevelManager::get()->getJoinedLevelKey(), camera),
 				[=](auto res) {
 					if (res.isOk()) {
 						Dispatch<std::string_view>("alk.editor-collab/leave-level").send(WebManager::get()->getLoginToken());
@@ -46,6 +46,7 @@ struct ExitHook : Modify<ExitHook, GameManager> {
 					}
 				}
 			);
+			LevelManager::get()->leaveLevelAbnormal();
 		}	
 		GameManager::returnToLastScene(level);
 	}

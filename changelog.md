@@ -1,3 +1,7 @@
+## v0.3.9-alpha
+ - **Add** Add a/b testing for FastSpring
+ - **Fix** Abnormal leave kicking
+
 ## v0.3.8-alpha
  - **Fix** Rare crash from executing set visibility on a queued in main thread function
 

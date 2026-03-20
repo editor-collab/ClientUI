@@ -24,7 +24,7 @@ public:
 
     arc::Future<Result<LevelManager::CreateLevelResult>> createLevel(LevelSetting settings);
     arc::Future<Result<LevelManager::JoinLevelResult>> joinLevel(std::string levelKey, arc::CancellationToken& cancelToken);
-    arc::Future<Result<>> leaveLevel(CameraValue camera);
+    arc::Future<Result<>> setLeaveData(std::string levelKey, CameraValue camera);
     arc::Future<Result<>> deleteLevel(std::string levelKey);
     arc::Future<Result<std::vector<uint8_t>>> getSnapshot(std::string levelKey, std::string hash);
     arc::Future<Result<LevelEntry>> updateLevelSettings(std::string levelKey, LevelSetting settings);
@@ -64,7 +64,9 @@ std::string LevelManager::Impl::getJoinedLevelKey() const {
 arc::Future<Result<>> LevelManager::Impl::cancelReconnect() {
     Dispatch<std::string>("alk.editor-collab/cancel-reconnect").send("Cancelled reconnect");
 
-    co_return co_await this->leaveLevel(CameraValue{});
+    this->leaveLevelAbnormal();
+
+    co_return Ok();
 }
 
 void LevelManager::Impl::leaveLevelAbnormal() {
@@ -172,15 +174,15 @@ arc::Future<Result<LevelManager::JoinLevelResult>> LevelManager::Impl::joinLevel
 
     co_return Ok(LevelManager::JoinLevelResult{clientId, hash, std::move(snapshot), camera});
 }
-arc::Future<Result<>> LevelManager::Impl::leaveLevel(CameraValue camera) {
+arc::Future<Result<>> LevelManager::Impl::setLeaveData(std::string levelKey, CameraValue camera) {
     //////// log::debug("Leaving level");
-    m_joinedLevel.lock() = "";
+    matjson::Value value;
+    value["camera"] = camera;
 
     auto req = WebManager::get()->createAuthenticatedRequest();
-    req.param("camera_x", numToString(camera.x));
-    req.param("camera_y", numToString(camera.y));
-    req.param("camera_zoom", numToString(camera.zoom));
-    auto response = co_await req.post(WebManager::get()->getServerURL("level/leave"));
+    req.param("level_key", levelKey);
+    req.bodyJSON(value);
+    auto response = co_await req.post(WebManager::get()->getServerURL("level/leave_data"));
     GEODE_CO_UNWRAP(WebManager::get()->errorCallback(&response));
     
     co_return Ok();
@@ -259,8 +261,8 @@ arc::Future<Result<LevelManager::CreateLevelResult>> LevelManager::createLevel(L
 arc::Future<Result<LevelManager::JoinLevelResult>> LevelManager::joinLevel(std::string levelKey, arc::CancellationToken& cancelToken) {
     return impl->joinLevel(std::move(levelKey), cancelToken);
 }
-arc::Future<Result<>> LevelManager::leaveLevel(CameraValue camera) {
-    return impl->leaveLevel(std::move(camera));
+arc::Future<Result<>> LevelManager::setLeaveData(std::string levelKey, CameraValue camera) {
+    return impl->setLeaveData(std::move(levelKey), std::move(camera));
 }
 arc::Future<Result<>> LevelManager::deleteLevel(std::string levelKey) {
     return impl->deleteLevel(std::move(levelKey));

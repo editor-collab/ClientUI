@@ -102,7 +102,32 @@ bool BuyPopup::init() {
                                         );
                                     }
                                     else if (m_text.size() == 0) {
-                                        web::openLinkInBrowser("https://buy.stripe.com/aEUbLb38R2Cw91K9AA");
+                                        auto cond = [](auto number) {
+                                            using namespace std::chrono;
+
+                                            auto today = floor<days>(system_clock::now());
+                                            year_month_day ymd{today};
+
+                                            int year  = int(ymd.year());
+                                            unsigned month = unsigned(ymd.month());
+                                            unsigned day   = unsigned(ymd.day());
+
+                                            if (year == 2026 && month == 3 && day >= 20 && day <= 29) {
+                                                int secondDigit = day % 10;
+
+                                                return (number % 10) < secondDigit;
+                                            }
+
+                                            return true;
+                                        };
+                                        if (cond(GJAccountManager::get()->m_accountID)) {
+                                            utils::clipboard::write("https://editorcollab.onfastspring.com/editor-collab-host");
+                                            web::openLinkInBrowser("https://editorcollab.onfastspring.com/editor-collab-host");
+                                            createQuickPopup("Editor Collab", "Please send a mail to <cg>alk.editorcollab@gmail.com</c> for support after your purchase!", "OK", nullptr, [](auto, auto) {}, true);
+                                        }
+                                        else {
+                                            web::openLinkInBrowser("https://buy.stripe.com/aEUbLb38R2Cw91K9AA");
+                                        }
                                     }
                                 },
                                 .child = new ui::Scale9Sprite {

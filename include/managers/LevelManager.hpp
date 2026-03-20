@@ -39,7 +39,7 @@ namespace tulip::editor {
 
         arc::Future<Result<CreateLevelResult>> createLevel(LevelSetting settings);
         arc::Future<Result<JoinLevelResult>> joinLevel(std::string levelKey, arc::CancellationToken& cancelToken);
-        arc::Future<Result<>> leaveLevel(CameraValue camera);
+        arc::Future<Result<>> setLeaveData(std::string levelKey, CameraValue camera);
         arc::Future<Result<>> deleteLevel(std::string levelKey);
         arc::Future<Result<std::vector<uint8_t>>> getSnapshot(std::string levelKey, std::string hash);
         arc::Future<Result<LevelEntry>> updateLevelSettings(std::string levelKey, LevelSetting settings);

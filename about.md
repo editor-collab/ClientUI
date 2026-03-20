@@ -1,6 +1,6 @@
 # Editor Collab
 
-The ultimate <co>live multiplayer editor collaboration tool</c>! Go to [<cg>Stripe</c>](https://buy.stripe.com/aEUbLb38R2Cw91K9AA) to be able to <cp>host levels</c>!
+The ultimate <co>live multiplayer editor collaboration tool</c>! Go to [<cg>FastSpring</c>](https://editorcollab.onfastspring.com/editor-collab-host) to be able to <cp>host levels</c>!
 
 Editor Collab is a <cp>one-time purchase of $10</c> to unlock the ability to host levels. You can host <cf>unlimited levels</c>, but only one level can be hosted at a time per activation key. Only the <cy>Host</c> needs to purchase, your friends can join your hosted level <cg>for free</c>!
 
@@ -28,7 +28,7 @@ In the <cg>Share Menu</c>, you can press the <cy>Start Sharing</c> button to beg
 
 Developed by Alk1m123 (alk) with love and tears. Please support me!
 
- * [Stripe](https://buy.stripe.com/aEUbLb38R2Cw91K9AA)
+ * [FastSpring](https://editorcollab.onfastspring.com/editor-collab-host)
 
  * [Ko-Fi](https://ko-fi.com/alk1m123)
 

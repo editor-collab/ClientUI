@@ -73,7 +73,7 @@ void ExploreMenu::onJoinCode(cocos2d::CCObject* sender) {
 }
 
 void ExploreMenu::onPromo(cocos2d::CCObject* sender) {
-    AppDelegate::get()->openURL("https://buy.stripe.com/aEUbLb38R2Cw91K9AA");
+    AppDelegate::get()->openURL("https://editorcollab.onfastspring.com/editor-collab-host");
 }
 
 void ExploreMenu::onJoinHosted(cocos2d::CCObject* sender) {
@@ -124,7 +124,7 @@ void ExploreMenu::createBanner(cocos2d::CCSize const& size) {
 void ExploreMenu::createPromoBanner(cocos2d::CCSize const& size) {
     this->createBanner(size);
 
-    auto label = CCLabelBMFont::create("Visit Stripe to get hosting!", "bigFont.fnt");
+    auto label = CCLabelBMFont::create("Visit FastSpring to get hosting!", "bigFont.fnt");
     label->limitLabelWidth(240.0, 0.6, 0.0);
     label->setAnchorPoint(ccp(0.0f, 0.5f));
     label->setID("promo-label");
