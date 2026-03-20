@@ -70,12 +70,6 @@
 			"name": "Show hide users toggle",
 			"description": "Show the hide users toggle in the share settings",
 			"default": false
-		},
-		"use-local-server": {
-			"type": "bool",
-			"name": "Use local server",
-			"description": "Use a local server instead of the default one. The local server must be running and configured correctly.",
-			"default": false
 		}
 	}
 	
