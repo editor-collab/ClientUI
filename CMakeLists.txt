@@ -12,6 +12,7 @@ project(EditorCollabUI VERSION 1.0.0)
 
 add_library(${PROJECT_NAME} SHARED
     src/main.cpp
+    src/compat/Globed.cpp
     src/hooks/CustomSongLayer.cpp
     src/hooks/EditLevelLayer.cpp
     src/hooks/LevelBrowserLayer.cpp

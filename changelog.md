@@ -1,3 +1,6 @@
+## v0.3.10-alpha
+ - **Fix** Globed compatibility
+
 ## v0.3.9-alpha
  - **Add** Add a/b testing for FastSpring
  - **Fix** Abnormal leave kicking
