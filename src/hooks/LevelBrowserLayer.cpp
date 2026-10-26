@@ -36,7 +36,7 @@ void LevelBrowserLayerHook::refreshButton() {
 			filename = "MenuButton.png"_spr;
 		}
 	}
-	
+
 	auto menuSprite = CCSprite::createWithSpriteFrameName(filename.c_str());
 	menuSprite->setScale(0.9f);
 
@@ -90,13 +90,13 @@ void LevelBrowserLayerHook::onLogin(Result<std::string> result) {
 	}
 	else {
 		Notification::create("Logged in successfully!", nullptr)->show();
-		
+
 
 		WebManager::get()->setLoginToken(result.unwrap());
 
 		if (Mod::get()->getSavedValue<bool>("shown-globed-compatibility-popup") == false) {
 			geode::createQuickPopup(
-				"Editor Collab", 
+				"Editor Collab",
 				"<cg>Editor Collab</c> is now compatible with <co>Globed</c>! "
 				"You can <cc>see your friends</c> playtesting <cl>while editing</c> at the same time, just <cb>join the same server</c>!",
 				"OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {}, true
@@ -121,21 +121,10 @@ void LevelBrowserLayerHook::onLogin(Result<std::string> result) {
 	// 		Notification::create(fmt::format("Generated key: {}", key), nullptr)->show();
 	// 	}
 	// });
-	// task.listen([this](web::WebResponse* response) {
-	// 	auto result = response->string();
-	// 	if (result.isErr()) {
-	// 		Notification::create("Failed to generate key!", nullptr)->show();
-	// 	}
-	// 	else {
-	// 		auto key = result.unwrap();
-	// 		log::info("Generated key: {}", key);
-	// 		Notification::create(fmt::format("Generated key: {}", key), nullptr)->show();
-	// 	}
-	// });
 
 	// auto req = WebManager::get()->createAuthenticatedRequest();
-	// req.param("old_account_name", "Pugs20");
-	// req.param("new_account_name", "PuggyBuggys");
+	// req.param("old_account_name", "Denis12333");
+	// req.param("new_account_name", "tdort");
 	// m_fields->adminTask.spawn(req.post(WebManager::get()->getServerURL("admin/transfer_account")), [this](auto response) {
 	// 	auto result = response.string();
 	// 	if (result.isErr()) {
@@ -207,8 +196,8 @@ bool LevelBrowserLayerHook::init(GJSearchObject* searchObject) {
 
 	if (Mod::get()->getSavedValue<bool>("shown-introduction-popup") == false) {
 		auto popup = geode::createQuickPopup(
-			"Editor Collab", 
-			"Press the <cl>button</c> at the <cp>bottom left corner</c> to login to <cg>Editor Collab</c> and <co>share your levels</c> with others!", 
+			"Editor Collab",
+			"Press the <cl>button</c> at the <cp>bottom left corner</c> to login to <cg>Editor Collab</c> and <co>share your levels</c> with others!",
 			"OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {}, false);
 		popup->m_scene = this;
 		popup->show();
@@ -218,8 +207,8 @@ bool LevelBrowserLayerHook::init(GJSearchObject* searchObject) {
 	if (!Loader::get()->isModLoaded("alk.editor-collab")) {
 		log::warn("Editor Collab mod is not loaded, Editor Collab UI requires the mod to function.");
 		auto popup = geode::createQuickPopup(
-			"Editor Collab (Error)", 
-			"<cg>Editor Collab</c> mod <cr>is not loaded</c>, <cf>Editor Collab UI</c> requires the mod to function.", 
+			"Editor Collab (Error)",
+			"<cg>Editor Collab</c> mod <cr>is not loaded</c>, <cf>Editor Collab UI</c> requires the mod to function.",
 			"OK", nullptr, 350.f, [this](FLAlertLayer* layer, bool btn2) {
 				if (auto task = geode::openInfoPopup("alk.editor-collab")) {
 					m_fields->modPageTask.spawn(std::move(*task), [=](auto res) {

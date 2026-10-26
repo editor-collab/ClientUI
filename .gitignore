@@ -43,6 +43,7 @@
 **/build
 # Ignore platform specific build folders
 build-*/
+build
 
 # Workspace files are user-specific
 *.sublime-workspace
@@ -62,3 +63,7 @@ build-*/
 # CLion
 .idea/
 /cmake-build-*/
+
+.clangd
+CMakePresets.json
+output/

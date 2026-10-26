@@ -60,7 +60,7 @@ endif()
 
 add_subdirectory($ENV{GEODE_SDK} ${CMAKE_CURRENT_BINARY_DIR}/geode)
 
-CPMAddPackage("gh:GlobedGD/argon@1.4.4")
+CPMAddPackage("gh:GlobedGD/argon@1.5.1")
 
 CPMAddPackage("gh:tplgy/cppcodec#8019b8b")
 
@@ -76,43 +76,53 @@ setup_geode_mod(${PROJECT_NAME} EXTERNALS )
 
 
 if (ANDROID)
-	if (CMAKE_BUILD_TYPE STREQUAL "Release")
-		# 1. Extract full debug info into a separate .sym file
-        add_custom_command(
+	  if (CMAKE_BUILD_TYPE STREQUAL "Release")
+			  target_link_options(${PROJECT_NAME} PRIVATE
+   			    "-Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/exports.android.map"
+    		)
+
+			  string(REPLACE ".so" ".debug.so"
+  					EDITOR_COLLAB_DEBUG_SUFFIX
+  					${GEODE_MOD_BINARY_SUFFIX}
+				)
+
+	      add_custom_command(
             TARGET "${PROJECT_NAME}" POST_BUILD
             DEPENDS "${PROJECT_NAME}"
-            COMMAND ${CMAKE_OBJCOPY} 
-			ARGS --only-keep-debug "$<TARGET_FILE:${PROJECT_NAME}>" "$<TARGET_FILE:${PROJECT_NAME}>.dbg"
+            COMMAND cp $<TARGET_FILE:${PROJECT_NAME}>
+            ARGS "$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>${EDITOR_COLLAB_DEBUG_SUFFIX}"
         )
-		# 2. Strip everything from the binary
-		add_custom_command(
-			TARGET "${PROJECT_NAME}" POST_BUILD
-			DEPENDS "${PROJECT_NAME}"
-			COMMAND $<$<CONFIG:release>:${CMAKE_STRIP}>
-			ARGS --strip-all $<TARGET_FILE:${PROJECT_NAME}>
-		)
-		# 3. Link the .dbg file back for debugging tools
-        add_custom_command(
-            TARGET "${PROJECT_NAME}" POST_BUILD
-            DEPENDS "${PROJECT_NAME}"
-            COMMAND ${CMAKE_OBJCOPY} --add-gnu-debuglink="$<TARGET_FILE:${PROJECT_NAME}>.dbg" "$<TARGET_FILE:${PROJECT_NAME}>"
-        )
-	endif()
+
+    		add_custom_command(
+       			TARGET "${PROJECT_NAME}" POST_BUILD
+       			DEPENDS "${PROJECT_NAME}"
+       			COMMAND $<$<CONFIG:release>:${CMAKE_STRIP}>
+       			ARGS --strip-all $<TARGET_FILE:${PROJECT_NAME}>
+    		)
+    endif()
 elseif(APPLE)
-	if (CMAKE_BUILD_TYPE STREQUAL "Release")
-		# Generate dSYM bundle
+  	if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        target_link_options(${PROJECT_NAME} PRIVATE
+     			  "-Wl,-exported_symbols_list,${CMAKE_CURRENT_SOURCE_DIR}/exports.darwin.map"
+    		)
+
+        string(REPLACE ".dylib" ".debug.dylib"
+  					EDITOR_COLLAB_DEBUG_SUFFIX
+  					${GEODE_MOD_BINARY_SUFFIX}
+				)
+
         add_custom_command(
             TARGET "${PROJECT_NAME}" POST_BUILD
             DEPENDS "${PROJECT_NAME}"
-            COMMAND dsymutil $<TARGET_FILE:${PROJECT_NAME}> 
-			ARGS -o $<TARGET_FILE:${PROJECT_NAME}>.dSYM
+            COMMAND cp $<TARGET_FILE:${PROJECT_NAME}>
+            ARGS "$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>${EDITOR_COLLAB_DEBUG_SUFFIX}"
         )
-        # Strip the executable
-		add_custom_command(
-			TARGET "${PROJECT_NAME}" POST_BUILD
-			DEPENDS "${PROJECT_NAME}"
-			COMMAND $<$<CONFIG:release>:${CMAKE_STRIP}>
-			ARGS -x $<TARGET_FILE:${PROJECT_NAME}>
-		)
-	endif()
+
+    		add_custom_command(
+       			TARGET "${PROJECT_NAME}" POST_BUILD
+       			DEPENDS "${PROJECT_NAME}"
+       			COMMAND $<$<CONFIG:release>:${CMAKE_STRIP}>
+       			ARGS -x $<TARGET_FILE:${PROJECT_NAME}>
+    		)
+  	endif()
 endif()

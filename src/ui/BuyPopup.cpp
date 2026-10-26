@@ -147,7 +147,7 @@ bool BuyPopup::init() {
                     },
                 },
             },
-        },  
+        },
     };
 
     m_popup = gen->get();

@@ -1,0 +1,20 @@
+{
+    # because c++ is dumb silly bitch
+    # stripping everything from binary
+    # removes things that are also marked as
+    # visibility default because its just a
+    # suggesting ig idfk
+    # so we need to actually preserve these
+    # so that we have an entry and our arc
+    # runtime can actually fucking work
+    # and not shit itself the first time it's
+    # tried to be used with
+    # god this has cost me too many discord pings
+    # and lots of mental torture fuck you c++
+    # yet another time
+    # find why its needed in your dms with dank
+    global:
+        geodeImplicitEntry;
+    local:
+        *;
+};

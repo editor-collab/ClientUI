@@ -1,3 +1,10 @@
+## v0.3.12-alpha
+ - **Fix** Crash related to implicit entry??? I think??
+
+## v0.3.11-alpha
+ - **Fix** Switch to Docker build in an effort to distance away from Github
+ - **Fix** Update Argon version to fix stage 2 error issues
+
 ## v0.3.10-alpha
  - **Fix** Globed compatibility
 

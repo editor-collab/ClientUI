@@ -7,7 +7,7 @@
 
 namespace tulip::editor {
     using geode::Result;
-    using geode::Task;
+    using arc::Task;
     using geode::utils::web::WebProgress;
     enum class SocketStatus {
         Connected,

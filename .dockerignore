@@ -1,0 +1,16 @@
+
+*
+!src
+!include
+!resources
+!about.md
+!changelog.md
+!CMakeLists.txt
+!logo.png
+!mod.json
+!README.md
+!support.md
+!extract.sh
+!cmake
+!exports.android.map
+!exports.darwin.map

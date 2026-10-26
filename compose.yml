@@ -1,0 +1,17 @@
+services:
+  combine-build:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      # secrets:
+      # - github_token
+      args:
+        MOD_ID: alk.editor-collab-ui
+        SDK_VERSION: 5.9.0
+
+    image: alk.editor-collab-ui/export-combine
+    volumes:
+      - cpm-cache:/workspace/cpm-cache
+      - ./output:/workspace/output
+volumes:
+  cpm-cache:
